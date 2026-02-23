@@ -1,0 +1,11 @@
+
+modInfo {
+	name = 'Another Vehicle Claim System Map View'
+	workshopId = '3664384101'
+	workshopVisibility = 'public'
+	description = '''\
+		Shows AVCS claimed cars on the global map and mini map.
+		
+		Toggleable on the map view.
+	'''.stripIndent()
+}

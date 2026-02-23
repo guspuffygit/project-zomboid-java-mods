@@ -1,0 +1,8 @@
+.gradle/
+build/
+game/
+local.properties
+
+lib/
+logs/
+Gemfile

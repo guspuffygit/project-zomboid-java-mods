@@ -1,0 +1,175 @@
+plugins {
+	id 'java'
+	id 'com.diffplug.spotless' version '8.1.0'
+	id 'io.freefair.lombok' version '9.2.0'
+}
+
+interface ModInfo {
+	Property<String> getName()
+	Property<String> getPoster()
+	Property<String> getDescription()
+	Property<String> getId()
+	Property<String> getUrl()
+	Property<String> getModVersion()
+
+	Property<String> getWorkshopTitle()
+	Property<String> getWorkshopId()
+	Property<String> getWorkshopTags()
+	Property<String> getWorkshopVisibility()
+}
+
+def getLocalProperty(String property, String defaultValue = null) {
+	return providers.provider {
+		def props = new Properties()
+		def propFile = file("local.properties")
+
+		if (propFile.exists()) {
+			propFile.withInputStream { props.load(it) }
+			return props.getProperty(property, defaultValue)
+		} else {
+			throw new GradleException("local.properties file not found!")
+		}
+	}
+}
+
+tasks.register('deployAll') {
+	dependsOn subprojects.deployMod
+}
+
+subprojects { subproj ->
+	apply plugin: 'java'
+	apply plugin: 'com.diffplug.spotless'
+	apply plugin: 'io.freefair.lombok'
+
+	extensions.create('modInfo', ModInfo)
+
+	tasks.register('extractZomboidFiles', Copy) {
+		from getLocalProperty('gameDir')
+		into layout.buildDirectory.dir('zomboid-classpath')
+		include '**/*.class', '*.jar'
+	}
+
+	tasks.register('writeModInfo') {
+		def info = project.extensions.getByType(ModInfo)
+		def outputFile = layout.buildDirectory.file("mod.info")
+
+		inputs.property("name", info.name)
+		inputs.property("id", info.id.orElse(subproj.name))
+		inputs.property("description", info.description.orElse(""))
+
+		outputs.file(outputFile)
+
+		doLast {
+			def formattedDescription = info.description.getOrElse("").trim().split('\n').join('\ndescription=')
+			def f = outputFile.get().asFile
+			f.text = [
+                "name=${info.name.getOrElse("Unnamed Mod")}",
+                "poster=${info.poster.getOrElse("poster.png")}",
+				"description=${formattedDescription}",
+				"id=${info.id.getOrElse(subproj.name)}",
+				"url=${info.url.getOrElse('')}",
+				"modversion=${info.modVersion.getOrElse("1.0")}",
+            ].join('\n')
+		}
+	}
+
+	tasks.register('generateWorkshopFile') {
+		def info = project.extensions.getByType(ModInfo)
+		def outputFile = layout.buildDirectory.file('generated/workshop.txt')
+
+		outputs.file(outputFile)
+
+		inputs.property('id', info.workshopId.orElse(''))
+		inputs.property('title', info.workshopTitle.orElse(info.name))
+		inputs.property('description', info.description.orElse(''))
+		inputs.property('tags', info.workshopTags.orElse('Build 42'))
+		inputs.property('visibility', info.workshopVisibility.orElse('private'))
+
+		doLast {
+			def file = outputFile.get().asFile
+			file.parentFile.mkdirs()
+
+			def formattedDescription = info.description.getOrElse("").trim().split('\n').join('\ndescription=')
+
+			file.text = [
+					"version=2",
+					"id=${info.workshopId.getOrElse('')}",
+					"title=${info.workshopTitle.getOrElse(info.name.get())}",
+					"description=${formattedDescription}",
+					"tags=${info.workshopTags.getOrElse('Build 42')}",
+					"visibility=${info.workshopVisibility.getOrElse('private')}",
+			].join('\n')
+		}
+	}
+
+	tasks.register('deployMod', Sync) {
+		dependsOn jar, 'writeModInfo', 'generateWorkshopFile'
+
+		def workshopRoot = getLocalProperty('zomboidDir').map {
+			"${it}/Workshop/${subproj.name}"
+		}
+		def modRoot = "Contents/mods/${subproj.name}"
+
+		// B42: JAR goes in common/ (version-independent code)
+		from(jar) {
+			into "${modRoot}/common"
+		}
+
+		// B42: mod.info goes in the version folder
+		from(writeModInfo) {
+			into "${modRoot}/42"
+		}
+
+		// B42: loose game resources (lua scripts, etc.) go in the version folder
+		from(sourceSets.main.resources.srcDirs) {
+			into "${modRoot}/42"
+		}
+
+		from(generateWorkshopFile) {
+			into "."
+		}
+
+		def previewFile = subproj.file('preview.png')
+		if (!previewFile.exists()) {
+			previewFile = rootProject.file('preview.png')
+		}
+
+		from(previewFile) {
+			into "."
+		}
+
+		into workshopRoot
+	}
+
+	spotless {
+		java {
+			target 'src/**/*.java'
+			cleanthat()
+			googleJavaFormat().aosp().reflowLongStrings(false)
+			removeUnusedImports()
+			trimTrailingWhitespace()
+			endWithNewline()
+		}
+		groovyGradle {
+			target '*.gradle'
+			greclipse()
+		}
+	}
+
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(25)
+		}
+	}
+
+	repositories {
+		mavenLocal()
+		mavenCentral()
+	}
+
+	dependencies {
+		implementation 'at.mlem:storm:0.2.7-SNAPSHOT'
+
+        compileOnly fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
+	}
+}

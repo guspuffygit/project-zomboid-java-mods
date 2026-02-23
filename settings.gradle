@@ -1,0 +1,6 @@
+rootProject.name = 'guspuffy-storm-java-mods'
+
+include('after-the-fall-settlements')
+include('another-vehicle-claim-system-map-view')
+include('guspuffy-shoutcast-streamer')
+include('mouse-vehicle-steering')

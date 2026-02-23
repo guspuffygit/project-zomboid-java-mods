@@ -1,0 +1,9 @@
+
+modInfo {
+	name = 'Mouse Vehicle Steering'
+	workshopId = ''
+	workshopVisibility = 'public'
+	description = '''\
+		Steer vehicles in the direction that you point your mouse.
+	'''.stripIndent()
+}
