@@ -54,7 +54,7 @@ subprojects { subproj ->
 		def outputFile = layout.buildDirectory.file("mod.info")
 
 		inputs.property("name", info.name)
-		inputs.property("id", info.id.orElse(subproj.name))
+		inputs.property("id", info.id.orElse("${subproj.name}-b42"))
 		inputs.property("description", info.description.orElse(""))
 
 		outputs.file(outputFile)
@@ -66,7 +66,7 @@ subprojects { subproj ->
                 "name=${info.name.getOrElse("Unnamed Mod")}",
                 "poster=${info.poster.getOrElse("poster.png")}",
 				"description=${formattedDescription}",
-				"id=${info.id.getOrElse(subproj.name)}",
+				"id=${info.id.getOrElse("${subproj.name}-b42")}",
 				"url=${info.url.getOrElse('')}",
 				"modversion=${info.modVersion.getOrElse("1.0")}",
             ].join('\n')
@@ -106,21 +106,18 @@ subprojects { subproj ->
 		dependsOn jar, 'writeModInfo', 'generateWorkshopFile'
 
 		def workshopRoot = getLocalProperty('zomboidDir').map {
-			"${it}/Workshop/${subproj.name}"
+			"${it}/Workshop/${subproj.name}-b42"
 		}
-		def modRoot = "Contents/mods/${subproj.name}"
+		def modRoot = "Contents/mods/${subproj.name}-b42"
 
-		// B42: JAR goes in common/ (version-independent code)
 		from(jar) {
 			into "${modRoot}/common"
 		}
 
-		// B42: mod.info goes in the version folder
 		from(writeModInfo) {
 			into "${modRoot}/42"
 		}
 
-		// B42: loose game resources (lua scripts, etc.) go in the version folder
 		from(sourceSets.main.resources.srcDirs) {
 			into "${modRoot}/42"
 		}

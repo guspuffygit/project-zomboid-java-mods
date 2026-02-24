@@ -1,7 +1,7 @@
 
 modInfo {
 	name = 'Mouse Vehicle Steering'
-	workshopId = ''
+	workshopId = '3672982483'
 	workshopVisibility = 'public'
 	description = '''\
 		Steer vehicles in the direction that you point your mouse.
