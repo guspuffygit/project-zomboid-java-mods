@@ -15,7 +15,7 @@ import zombie.core.raknet.UdpConnection;
 @CommandHelp(
         helpText =
                 "Configure mouse steering parameters: /mousesteering <deadzone|fulllock|mindist|print> <value>")
-@RequiredCapability(requiredCapability = Capability.DebugConsole)
+@RequiredCapability(requiredCapability = Capability.None)
 public class MouseSteeringCommand extends CommandBase {
 
     public MouseSteeringCommand(

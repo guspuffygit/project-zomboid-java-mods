@@ -7,6 +7,7 @@ import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.zomboid.OnGetWorldMapFilterOptions;
 import io.pzstorm.storm.event.zomboid.OnWorldMapRenderEvent;
 import io.pzstorm.storm.event.zomboid.OnZomboidGlobalsLoadEvent;
+import io.pzstorm.storm.lua.LuaManagerUtils;
 import io.pzstorm.storm.mod.ZomboidMod;
 import io.pzstorm.storm.wrappers.ui.PersistedBooleanConfigOption;
 import zombie.config.BooleanConfigOption;
@@ -35,10 +36,9 @@ public class AfterTheFallSettlementsMod implements ZomboidMod {
 
     @SubscribeEvent
     public void onResetLuaEvent(OnZomboidGlobalsLoadEvent event) {
-//        Object atfFunction = LuaManagerUtils.getEnv().rawget("ATF_SetGlobalLighting");
-//
-//        atfModLoaded = (atfFunction != null);
-        atfModLoaded = true;
+        Object atfFunction = LuaManagerUtils.getEnv().rawget("ATF_SetGlobalLighting");
+
+        atfModLoaded = (atfFunction != null);
     }
 
     @SubscribeEvent
