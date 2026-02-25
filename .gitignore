@@ -8,3 +8,4 @@ logs/
 Gemfile
 .claude/
 CLAUDE.md
+.emmyrc.json
