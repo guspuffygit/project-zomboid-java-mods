@@ -1,0 +1,9 @@
+Tooltip_IT = {
+    Tooltip_AVCS_Needs = "Richiede una",
+    Tooltip_AVCS_ClaimVehicle = "Claima veicolo",
+    Tooltip_AVCS_Unsupported = "Veicolo non supportato, contatta un admyno",
+    Tooltip_AVCS_Owner = "Proprietario",
+    Tooltip_AVCS_Expire = "Scadrebbe il",
+    Tooltip_AVCS_Towed = "Non può trainare né essere trainato",
+    Tooltip_AVCS_ExceedLimit = "Limite di veicoli claimati superato",
+}

@@ -1,0 +1,13 @@
+
+modInfo {
+	name = 'Another Vehicle Claim System'
+	workshopId = '3672982692'
+	workshopVisibility = 'public'
+	description = '''\
+		Another Vehicle Claim System ported to b42.
+		
+		Shows AVCS claimed cars on the global map and mini map if the Storm Mod loader is running.
+		
+		Toggleable on the map view.
+	'''.stripIndent()
+}

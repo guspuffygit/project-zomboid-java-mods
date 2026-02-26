@@ -49,7 +49,7 @@ public class AnotherVehicleClaimSystemMapView implements ZomboidMod {
                 Optional<StormKahluaTable> avcsTable =
                         LuaManagerUtils.getEnv().getOptionalTable("AVCS");
                 if (avcsTable.isEmpty() || player == null) {
-                    LOGGER.info("AVCS mod not loaded.");
+                    LOGGER.debug("AVCS mod not loaded.");
                     return;
                 }
 

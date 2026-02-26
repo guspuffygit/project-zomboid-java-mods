@@ -1,0 +1,11 @@
+module
+{
+	sound AVCSClaimSound
+    {
+        clip { file = media/sound/avcs_weird_claim1.ogg, }
+    }
+	sound CarLock
+    {
+        clip { file = media/sound/car_lock.ogg, }
+    }
+}

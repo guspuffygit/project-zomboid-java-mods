@@ -36,6 +36,10 @@ tasks.register('deployAll') {
 	dependsOn subprojects.deployMod
 }
 
+tasks.register('uploadAll') {
+	dependsOn subprojects.uploadWorkshop
+}
+
 subprojects { subproj ->
 	apply plugin: 'java'
 	apply plugin: 'com.diffplug.spotless'
@@ -111,7 +115,7 @@ subprojects { subproj ->
 		def modRoot = "Contents/mods/${subproj.name}-b42"
 
 		from(jar) {
-			into "${modRoot}/common"
+			into "${modRoot}/42"
 		}
 
 		from(writeModInfo) {
@@ -120,6 +124,14 @@ subprojects { subproj ->
 
 		from(sourceSets.main.resources.srcDirs) {
 			into "${modRoot}/42"
+		}
+
+		from(subproj.file('common')) {
+			into "${modRoot}/common"
+		}
+
+		from(subproj.file('media')) {
+			into "${modRoot}/42/media"
 		}
 
 		from(generateWorkshopFile) {
@@ -136,6 +148,65 @@ subprojects { subproj ->
 		}
 
 		into workshopRoot
+	}
+
+	tasks.register('writeWorkshopVdf') {
+		def info = project.extensions.getByType(ModInfo)
+		def workshopDir = getLocalProperty('zomboidDir').map {
+			"${it}/Workshop/${subproj.name}-b42"
+		}
+		def outputFile = layout.buildDirectory.file('workshop.vdf')
+
+		inputs.property('appid', '108600')
+		inputs.property('publishedfileid', info.workshopId.orElse(''))
+		inputs.property('contentfolder', workshopDir.map { "${it}/Contents" })
+		inputs.property('previewfile', workshopDir.map { "${it}/preview.png" })
+		inputs.property('visibility', info.workshopVisibility.orElse('private').map { it == 'public' ? '0' : '3' })
+		inputs.property('title', info.workshopTitle.orElse(info.name))
+		inputs.property('description', info.description.orElse(''))
+		inputs.property('changenote', 'Deployment')
+
+		outputs.file(outputFile)
+
+		doLast {
+			def f = outputFile.get().asFile
+			f.parentFile.mkdirs()
+			f.text = """\
+				"workshopitem"
+				{
+				\t"appid" "${inputs.properties['appid']}"
+				\t"publishedfileid" "${inputs.properties['publishedfileid']}"
+				\t"contentfolder" "${inputs.properties['contentfolder']}"
+				\t"previewfile" "${inputs.properties['previewfile']}"
+				\t"visibility" "${inputs.properties['visibility']}"
+				\t"title" "${inputs.properties['title']}"
+				\t"description" "${inputs.properties['description']}"
+				\t"changenote" "${inputs.properties['changenote']}"
+				}
+			""".stripIndent()
+		}
+	}
+
+	tasks.register('uploadWorkshop', Exec) {
+		group = 'publishing'
+		description = 'Uploads the mod to the Steam Workshop via steamcmd'
+
+		dependsOn 'writeWorkshopVdf', 'deployMod'
+
+		doFirst {
+			def username = System.getenv('STEAM_USERNAME')
+			def password = System.getenv('STEAM_PASSWORD')
+
+			if (!username || !password) {
+				throw new GradleException('STEAM_USERNAME and STEAM_PASSWORD environment variables must be set')
+			}
+		}
+
+		def steamcmdPath = "${System.getProperty('user.home')}/Steam/steamcmd.sh"
+		commandLine steamcmdPath,
+				'+login', System.getenv('STEAM_USERNAME'), System.getenv('STEAM_PASSWORD'),
+				'+workshop_build_item', layout.buildDirectory.file('workshop.vdf').get().asFile.absolutePath,
+				'+quit'
 	}
 
 	spotless {

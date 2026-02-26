@@ -1,0 +1,12 @@
+module Base
+{
+    item AVCSClaimOrb
+    {
+        DisplayCategory = AVCS,
+        Weight = 0.1,
+        ItemType = base:normal,
+        Icon = AVCSClaimOrb,
+        WorldStaticModel = AVCS.ClaimOrb,
+        Tags = avcs:claim_orb,
+    }
+}

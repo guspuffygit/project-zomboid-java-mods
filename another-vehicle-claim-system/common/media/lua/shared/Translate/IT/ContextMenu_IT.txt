@@ -1,0 +1,7 @@
+ContextMenu_IT = {
+    ContextMenu_AVCS_ClaimVehicle = "Claima veicolo",
+    ContextMenu_AVCS_UnclaimVehicle = "Rimuovi claim",
+    ContextMenu_AVCS_UnsupportedVehicle = "Claima veicolo [Errore]",
+    ContextMenu_AVCS_ClientUserUI = "Gestione veicoli",
+    ContextMenu_AVCS_AdminUserUI = "Gestione veicoli (Admyno)",
+}
