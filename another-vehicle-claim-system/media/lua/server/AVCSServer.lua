@@ -47,8 +47,6 @@ ModData AVRByPlayerID is stored like this
 and so on
 --]]
 
-Storm.debug('Why am I not seeing this?')
-
 -- vehicleID is vehicle object ID
 ---@param playerObj IsoPlayer
 function AVCS.claimVehicle(playerObj, vehicleID)
