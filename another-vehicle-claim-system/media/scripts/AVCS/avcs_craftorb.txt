@@ -1,0 +1,24 @@
+module AVCS {
+    imports {
+        Base
+	}
+
+    craftRecipe CraftAVCSOrb {
+        time = 60,
+        tags = AnySurfaceCraft,
+        category = General,
+        timedAction = Hammering,
+        inputs {
+            item 25 [Base.RippedSheets] mode:destroy,
+            item 5 [Base.Thread] mode:destroy,
+            item 1 [Base.MetalPipe] mode:destroy,
+            item 5 [Base.Screws] mode:destroy,
+            item 1 tags[Write] mode:keep,
+            item 1 tags[Hammer] mode:keep,
+        }
+        outputs {
+            item 1 Base.AVCSClaimOrb,
+        }
+    }
+}
+/clear
