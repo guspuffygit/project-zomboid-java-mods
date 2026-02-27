@@ -2,22 +2,18 @@ module Base
 {
     craftRecipe CraftAVCSClaimOrb
 	{
-        timedAction = HammerMetalStanding,
-        time = 60,
+        timedAction = Making,
+        time = 30,
         Tags = InHandCraft,
         category = Miscellaneous,
 
         inputs
         {
-            item 17 tags[base:charcoal],
-            item 8 [Base.SmallSheetMetal],
-            item 6 [Base.LeatherStrips] mode:destroy,
-            item 4 [Base.Buckle],
-            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
-            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
-            item 1 tags[base:sewingneedle] mode:keep flags[MayDegradeLight],
-            item 1 tags[base:awl] mode:keep flags[MayDegradeLight],
-            item 1 tags[base:heavythread],
+            item 3 [Base.SheetPaper2],
+            item 1 tags[base:pen] mode:keep,
+            item 1 [Base.Scotchtape],
+            item 1 tags[base:glue],
+            item 2 [Base.Paperclip],
         }
         outputs
         {
