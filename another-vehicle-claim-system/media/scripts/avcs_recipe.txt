@@ -1,0 +1,27 @@
+module Base
+{
+    craftRecipe CraftAVCSClaimOrb
+	{
+        timedAction = HammerMetalStanding,
+        time = 60,
+        Tags = InHandCraft,
+        category = Miscellaneous,
+
+        inputs
+        {
+            item 17 tags[base:charcoal],
+            item 8 [Base.SmallSheetMetal],
+            item 6 [Base.LeatherStrips] mode:destroy,
+            item 4 [Base.Buckle],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+            item 1 tags[base:sewingneedle] mode:keep flags[MayDegradeLight],
+            item 1 tags[base:awl] mode:keep flags[MayDegradeLight],
+            item 1 tags[base:heavythread],
+        }
+        outputs
+        {
+            item 1 Base.AVCSClaimOrb,
+        }
+	}
+}

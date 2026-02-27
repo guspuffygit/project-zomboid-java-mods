@@ -1,0 +1,3 @@
+RecipesEN {
+    CraftAVCSClaimOrb = "Craft Vehicle Claim Orb",
+}
