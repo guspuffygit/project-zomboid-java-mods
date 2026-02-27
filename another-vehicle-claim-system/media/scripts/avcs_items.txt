@@ -1,9 +1,7 @@
-module AVCS {
-    imports {
-        Base
-    }
-
-    item AVCSClaimOrb {
+module Base
+{
+    item AVCSClaimOrb
+    {
         DisplayCategory = AVCS,
         Weight = 0.1,
         ItemType = base:normal,

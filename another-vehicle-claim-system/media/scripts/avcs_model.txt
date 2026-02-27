@@ -1,5 +1,7 @@
-module AVCS {
-    model ClaimOrb {
+module AVCS
+{
+    model ClaimOrb
+	{
 		mesh = WorldItems/BaseBall,
 		texture = WorldItems/AVCSClaimOrb,
 		scale = 0.1,
