@@ -14,8 +14,8 @@ interface ModInfo {
 
 	Property<String> getWorkshopTitle()
 	Property<String> getWorkshopId()
+	Property<String> getWorkshopIdProd()
 	Property<String> getWorkshopTags()
-	Property<String> getWorkshopVisibility()
 }
 
 def getLocalProperty(String property, String defaultValue = null) {
@@ -40,12 +40,28 @@ tasks.register('uploadAll') {
 	dependsOn subprojects.uploadWorkshop
 }
 
+def isProd = rootProject.hasProperty('prod')
+
 subprojects { subproj ->
 	apply plugin: 'java'
 	apply plugin: 'com.diffplug.spotless'
 	apply plugin: 'io.freefair.lombok'
 
 	extensions.create('modInfo', ModInfo)
+
+	afterEvaluate {
+		def info = extensions.getByType(ModInfo)
+		if (isProd) {
+			if (info.workshopIdProd.isPresent()) {
+				info.workshopId.set(info.workshopIdProd.get())
+			}
+		} else {
+			info.name.set("[DEV] ${info.name.get()}")
+			if (info.workshopTitle.isPresent()) {
+				info.workshopTitle.set("[DEV] ${info.workshopTitle.get()}")
+			}
+		}
+	}
 
 	tasks.register('extractZomboidFiles', Copy) {
 		from getLocalProperty('gameDir')
@@ -68,11 +84,13 @@ subprojects { subproj ->
 			def f = outputFile.get().asFile
 			f.text = [
                 "name=${info.name.getOrElse("Unnamed Mod")}",
+				"author=SentientSimulations",
+				"url=https://github.com/guspuffygit/project-zomboid-java-mods",
                 "poster=${info.poster.getOrElse("poster.png")}",
 				"description=${formattedDescription}",
 				"id=${info.id.getOrElse("${subproj.name}-b42")}",
-				"url=${info.url.getOrElse('')}",
 				"modversion=${info.modVersion.getOrElse("1.0")}",
+				'require=\\storm-core-b42',
             ].join('\n')
 		}
 	}
@@ -87,7 +105,7 @@ subprojects { subproj ->
 		inputs.property('title', info.workshopTitle.orElse(info.name))
 		inputs.property('description', info.description.orElse(''))
 		inputs.property('tags', info.workshopTags.orElse('Build 42'))
-		inputs.property('visibility', info.workshopVisibility.orElse('private'))
+		inputs.property('visibility', isProd ? '0' : '3')
 
 		doLast {
 			def file = outputFile.get().asFile
@@ -101,7 +119,7 @@ subprojects { subproj ->
 					"title=${info.workshopTitle.getOrElse(info.name.get())}",
 					"description=${formattedDescription}",
 					"tags=${info.workshopTags.getOrElse('Build 42')}",
-					"visibility=${info.workshopVisibility.getOrElse('private')}",
+					"visibility=${isProd ? '0' : '3'}",
 			].join('\n')
 		}
 	}
@@ -161,7 +179,7 @@ subprojects { subproj ->
 		inputs.property('publishedfileid', info.workshopId.orElse(''))
 		inputs.property('contentfolder', workshopDir.map { "${it}/Contents" })
 		inputs.property('previewfile', workshopDir.map { "${it}/preview.png" })
-		inputs.property('visibility', info.workshopVisibility.orElse('private').map { it == 'public' ? '0' : '3' })
+		inputs.property('visibility', isProd ? '0' : '3')
 		inputs.property('title', info.workshopTitle.orElse(info.name))
 		inputs.property('description', info.description.orElse(''))
 		inputs.property('changenote', 'Deployment')

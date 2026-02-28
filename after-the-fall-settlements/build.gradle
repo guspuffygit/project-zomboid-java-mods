@@ -1,7 +1,7 @@
 modInfo {
 	name = 'After The Fall Settlements'
-	workshopId = '3672982771'
-	workshopVisibility = 'public'
+	workshopId = '3675507839'
+	workshopIdProd = '3675508263'
 	description = '''\
 		|Shows After The Fall Settlements and locations on the global map.
 		|
