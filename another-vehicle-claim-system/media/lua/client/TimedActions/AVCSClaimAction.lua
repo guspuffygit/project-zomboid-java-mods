@@ -1,5 +1,4 @@
 require "TimedActions/ISBaseTimedAction"
-require "StormLib"
 
 ---@class ISAVCSVehicleClaimAction : ISBaseTimedAction
 ---@field character IsoGameCharacter
@@ -17,7 +16,6 @@ function ISAVCSVehicleClaimAction:waitToStart()
 end
 
 function ISAVCSVehicleClaimAction:update()
-    Storm.debug('Facing vehicle')
     self.character:faceThisObject(self.vehicle)
     self.character:setMetabolicTarget(Metabolics.LightDomestic)
     if not self.character:getEmitter():isPlaying(self.sound) then
@@ -26,7 +24,6 @@ function ISAVCSVehicleClaimAction:update()
 end
 
 function ISAVCSVehicleClaimAction:start()
-    Storm.debug('Walking to vehicle')
     self:setActionAnim("VehicleWorkOnMid")
     self.sound = self.character:playSound("AVCSClaimSound")
 end
@@ -39,16 +36,12 @@ function ISAVCSVehicleClaimAction:stop()
 end
 
 function ISAVCSVehicleClaimAction:perform()
-    Storm.debug('performing')
     if self.sound ~= 0 then
-        Storm.debug('stopping sound')
         self.character:getEmitter():stopSound(self.sound)
     end
 
-    Storm.debug('Sending client command AVCS.claimVehicle(' .. self.vehicle:getId() .. ')')
 	sendClientCommand(self.character, "AVCS", "claimVehicle", { vehicle = self.vehicle:getId() })
 
-    Storm.debug('playSound CarLock')
     self.character:playSound("CarLock")
 
     if UdderlyVehicleRespawn and SandboxVars.AVCS.UdderlyRespawn then

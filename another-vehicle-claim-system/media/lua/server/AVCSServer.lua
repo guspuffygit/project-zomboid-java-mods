@@ -9,8 +9,6 @@ if isClient() and not isServer() then
 	return
 end
 
-require "StormLib"
-
 --[[
 Global variables that is accessed frequently
 sortedPlayerTimeoutClaim is a table sorted in last known logon time timestamp and associated player id
@@ -46,8 +44,6 @@ ModData AVRByPlayerID is stored like this
 - <Vehicle SQL ID 2>
 and so on
 --]]
-
-Storm.debug('Why am I not seeing this?')
 
 -- vehicleID is vehicle object ID
 ---@param playerObj IsoPlayer
@@ -114,11 +110,8 @@ function AVCS.claimVehicle(playerObj, vehicleID)
 
 		local item = playerObj:getInventory():getFirstTypeRecurse("AVCSClaimOrb")
 		if item then
-			Storm.debug('AVCSClaimOrb exists')
 			playerObj:getInventory():Remove(item)
-			Storm.debug('AVCSClaimOrb removed from player inventory')
 			sendRemoveItemFromContainer(playerObj:getInventory(), item);
-			Storm.debug('Send info to client to remove AVCSClaimOrb')
 		end
 		
 		--[[ Send the updated ModData to all clients
