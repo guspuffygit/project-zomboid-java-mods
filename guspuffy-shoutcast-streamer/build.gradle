@@ -1,8 +1,8 @@
 
 modInfo {
 	name = 'Gus Puffy Shoutcast Streamer'
-	workshopId = '3675509489'
-	workshopIdProd = '3675509666'
+	workshopId = '3676488932'
+	workshopIdProd = '3672982574'
 	description = '''\
 		Allows Gus Puffy to stream audio from shoutcast for a DJ set in game.
 	'''.stripIndent()
