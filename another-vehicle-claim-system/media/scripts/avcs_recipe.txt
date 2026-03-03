@@ -10,7 +10,7 @@ module Base
         inputs
         {
             item 3 [Base.SheetPaper2],
-            item 1 tags[base:pen] mode:keep,
+            item 1 tags[base:pen;base:bluepen;base:redpen;base:greenpen] mode:keep,
             item 1 [Base.Scotchtape],
             item 1 tags[base:glue],
             item 2 [Base.Paperclip],
