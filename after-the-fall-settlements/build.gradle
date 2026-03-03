@@ -8,3 +8,5 @@ modInfo {
 		|Toggleable on the map view.
 	'''.stripMargin('|')
 }
+
+uploadWorkshop.enabled = false

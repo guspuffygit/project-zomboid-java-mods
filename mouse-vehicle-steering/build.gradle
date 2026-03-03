@@ -7,3 +7,5 @@ modInfo {
 		Steer vehicles in the direction that you point your mouse.
 	'''.stripIndent()
 }
+
+uploadWorkshop.enabled = false

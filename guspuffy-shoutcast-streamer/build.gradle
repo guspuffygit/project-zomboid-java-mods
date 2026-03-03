@@ -7,3 +7,5 @@ modInfo {
 		Allows Gus Puffy to stream audio from shoutcast for a DJ set in game.
 	'''.stripIndent()
 }
+
+uploadWorkshop.enabled = false
