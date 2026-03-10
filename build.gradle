@@ -240,6 +240,10 @@ subprojects { subproj ->
 			target '*.gradle'
 			greclipse()
 		}
+		json {
+			target '**/*.json'
+			gson().indentWithSpaces(2)
+		}
 	}
 
 	java {

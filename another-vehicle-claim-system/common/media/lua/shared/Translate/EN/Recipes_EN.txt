@@ -1,3 +1,0 @@
-RecipesEN {
-    CraftAVCSClaimOrb = "Craft Vehicle Ownership Title",
-}
