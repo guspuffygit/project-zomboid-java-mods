@@ -160,6 +160,8 @@ function AVCS.UI.AdminManagerMain:onFilterChange()
 end
 
 function AVCS.UI.AdminManagerMain:initList()
+    if not AVCS.dbByVehicleSQLID or not AVCS.dbByPlayerID then return end
+
     -- We sort by player first, than sort by display name of the car model
     -- Ultimately, we will have a vehicle ID list sorted in the way we want
 

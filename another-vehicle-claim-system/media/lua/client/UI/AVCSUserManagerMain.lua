@@ -9,6 +9,9 @@ function AVCS.UI.UserManagerMain:initialise()
 end
 
 function AVCS.UI.UserManagerMain:setVehiclePreview(vehicleID)
+    if not AVCS.dbByVehicleSQLID or not AVCS.dbByPlayerID then
+        vehicleID = nil
+    end
     if vehicleID == nil then
         self.listVehicles:addItem(getText("IGUI_AVCS_User_Manager_listVehicles_NoVehicle"), nil)
         self.vehiclePreview.javaObject:fromLua2("setVehicleScript", "previewVeh", "")
@@ -140,6 +143,11 @@ end
 
 function AVCS.UI.UserManagerMain:updateListVehicles()
     self.listVehicles:clear()
+
+    if not AVCS.dbByVehicleSQLID or not AVCS.dbByPlayerID then
+        self.setVehiclePreview(self, nil)
+        return
+    end
 
     if prevTabBtn.internal == "tabPersonal" then
         if AVCS.dbByPlayerID[getPlayer():getUsername()] then

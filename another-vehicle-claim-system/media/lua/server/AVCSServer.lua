@@ -230,8 +230,17 @@ function AVCS.rebuildDB()
 	ModData.add("AVCSByPlayerID", AVCS.dbByPlayerID)
 end
 
+-- Send full database tables to a specific client via sendServerCommand
+-- Workaround for broken ModData.request() / OnReceiveGlobalModData in Build 42.15.0
+function AVCS.sendFullSync(playerObj)
+	sendServerCommand(playerObj, "AVCS", "fullSyncVehicleDB", AVCS.dbByVehicleSQLID)
+	sendServerCommand(playerObj, "AVCS", "fullSyncPlayerDB", AVCS.dbByPlayerID)
+end
+
 AVCS.onClientCommand = function(moduleName, command, playerObj, arg)
-	if moduleName == "AVCS" and command == "claimVehicle" then
+	if moduleName == "AVCS" and command == "requestFullSync" then
+		AVCS.sendFullSync(playerObj)
+	elseif moduleName == "AVCS" and command == "claimVehicle" then
 		AVCS.claimVehicle(playerObj, arg)
 	elseif moduleName == "AVCS" and command == "unclaimVehicle" then
 		-- Game send everything as table...

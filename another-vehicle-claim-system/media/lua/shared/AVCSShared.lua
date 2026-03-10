@@ -93,7 +93,12 @@ function AVCS.checkMaxClaim(playerObj)
 		return true
 	end
 
-	if AVCS.dbByPlayerID[playerObj:getUsername()] == nil then return true end
+	if not AVCS.dbByPlayerID then
+		return true
+	end
+	if AVCS.dbByPlayerID[playerObj:getUsername()] == nil then
+		return true
+	end
 
 	-- No easy way to get size other than count one by one, for key-value pair table
 	local tempSize = 0
@@ -109,6 +114,9 @@ function AVCS.checkMaxClaim(playerObj)
 end
 
 function AVCS.getPublicPermission(vehicleObj, type)
+	if not AVCS.dbByVehicleSQLID then
+		return true
+	end
 	local vehicleSQL = AVCS.getVehicleID(vehicleObj)
 	if vehicleSQL then
 		if AVCS.dbByVehicleSQLID[vehicleSQL] then
@@ -136,6 +144,10 @@ table / array = owned and permission
 --]]
 
 function AVCS.checkPermission(playerObj, vehicleObj)
+	if not AVCS.dbByVehicleSQLID or not AVCS.dbByPlayerID then
+		return true
+	end
+
 	local vehicleSQL = nil
 	if type(vehicleObj) ~= "number" then
 		vehicleSQL = AVCS.getVehicleID(vehicleObj)

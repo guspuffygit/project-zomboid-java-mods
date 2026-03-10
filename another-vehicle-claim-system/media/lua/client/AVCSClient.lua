@@ -9,12 +9,17 @@ if not isClient() and isServer() then
 	return
 end
 
+-- Request full database sync from server via sendClientCommand
+-- Workaround for broken ModData.request() / OnReceiveGlobalModData in Build 42.15.0
+local function requestFullSync()
+	sendClientCommand(getPlayer(), "AVCS", "requestFullSync", nil)
+end
+
 function AVCS.updateClientClaimVehicle(arg)
 	-- A desync has occurred, this shouldn't happen
 	-- We will request full data from server
-	if AVCS.dbByVehicleSQLID == nil then
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+	if not AVCS.dbByVehicleSQLID then
+		requestFullSync()
 		return
 	end
 
@@ -41,18 +46,16 @@ end
 function AVCS.updateClientUnclaimVehicle(arg)
 	-- A desync has occurred, this shouldn't happen
 	-- We will request full data from server
-	if AVCS.dbByVehicleSQLID == nil then
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+	if not AVCS.dbByVehicleSQLID then
+		requestFullSync()
 		return
 	end
-	
+
 	if AVCS.dbByVehicleSQLID[arg.VehicleID] == nil then
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+		requestFullSync()
 		return
 	end
-	
+
 	AVCS.dbByVehicleSQLID[arg.VehicleID] = nil
 	AVCS.dbByPlayerID[arg.OwnerPlayerID][arg.VehicleID] = nil
 end
@@ -60,15 +63,13 @@ end
 function AVCS.updateClientVehicleCoordinate(arg)
 	-- A desync has occurred, this shouldn't happen
 	-- We will request full data from server
-	if AVCS.dbByVehicleSQLID == nil then
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+	if not AVCS.dbByVehicleSQLID then
+		requestFullSync()
 		return
 	end
 
 	if AVCS.dbByVehicleSQLID[arg.VehicleID] == nil then
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+		requestFullSync()
 		return
 	end
 
@@ -78,15 +79,13 @@ function AVCS.updateClientVehicleCoordinate(arg)
 end
 
 function AVCS.updateClientLastLogon(arg)
-	if AVCS.dbByPlayerID == nil then
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+	if not AVCS.dbByPlayerID then
+		requestFullSync()
 		return
 	end
 
 	if AVCS.dbByPlayerID[arg.PlayerID] == nil then
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+		requestFullSync()
 		return
 	end
 
@@ -94,11 +93,14 @@ function AVCS.updateClientLastLogon(arg)
 end
 
 function AVCS.forcesyncClientGlobalModData()
-	ModData.request("AVCSByVehicleSQLID")
-	ModData.request("AVCSByPlayerID")
+	requestFullSync()
 end
 
 function AVCS.updateClientSpecifyVehicleUserPermission(arg)
+	if not AVCS.dbByVehicleSQLID then
+		requestFullSync()
+		return
+	end
 	if AVCS.dbByVehicleSQLID[arg.VehicleID] then
 		for k, v in pairs(arg) do
 			if k ~= "VehicleID" then
@@ -110,8 +112,7 @@ function AVCS.updateClientSpecifyVehicleUserPermission(arg)
 			end
 		end
 	else
-		ModData.request("AVCSByVehicleSQLID")
-		ModData.request("AVCSByPlayerID")
+		requestFullSync()
 	end
 end
 
@@ -124,19 +125,25 @@ function AVCS.registerClientVehicleSQLID(arg)
 end
 
 AVCS.OnServerCommand = function(moduleName, command, arg)
-	if moduleName == "AVCS" and command == "updateClientClaimVehicle" then
+	if moduleName ~= "AVCS" then return end
+
+	if command == "fullSyncVehicleDB" then
+		AVCS.dbByVehicleSQLID = arg
+	elseif command == "fullSyncPlayerDB" then
+		AVCS.dbByPlayerID = arg
+	elseif command == "updateClientClaimVehicle" then
 		AVCS.updateClientClaimVehicle(arg)
-	elseif moduleName == "AVCS" and command == "updateClientUnclaimVehicle" then
+	elseif command == "updateClientUnclaimVehicle" then
 		AVCS.updateClientUnclaimVehicle(arg)
-	elseif moduleName == "AVCS" and command == "updateClientVehicleCoordinate" then
+	elseif command == "updateClientVehicleCoordinate" then
 		AVCS.updateClientVehicleCoordinate(arg)
-	elseif moduleName == "AVCS" and command == "updateClientLastLogon" then
+	elseif command == "updateClientLastLogon" then
 		AVCS.updateClientLastLogon(arg)
-	elseif moduleName == "AVCS" and command == "forcesyncClientGlobalModData" then
+	elseif command == "forcesyncClientGlobalModData" then
 		AVCS.forcesyncClientGlobalModData()
-	elseif moduleName == "AVCS" and command == "updateClientSpecifyVehicleUserPermission" then
+	elseif command == "updateClientSpecifyVehicleUserPermission" then
 		AVCS.updateClientSpecifyVehicleUserPermission(arg)
-	elseif moduleName == "AVCS" and command == "registerClientVehicleSQLID" then
+	elseif command == "registerClientVehicleSQLID" then
 		AVCS.registerClientVehicleSQLID(arg)
 	end
 end
@@ -182,30 +189,19 @@ function AVCS.ClientOnPreFillWorldObjectContextMenu(player, context, worldObject
 	end
 end
 
-function AVCS.ClientOnReceiveGlobalModData(key, modData)
-	if key == "AVCSByVehicleSQLID" then
-		AVCS.dbByVehicleSQLID = modData
-	end
-	if key == "AVCSByPlayerID" then
-		AVCS.dbByPlayerID = modData
-	end
-end
-
 function AVCS.ClientEveryHours()
-	if AVCS.dbByPlayerID[getPlayer():getUsername()] ~= nil then
+	if AVCS.dbByPlayerID and AVCS.dbByPlayerID[getPlayer():getUsername()] ~= nil then
 		sendClientCommand(getPlayer(), "AVCS", "updateLastKnownLogonTime", nil)
 	end
 end
 
 function AVCS.AfterGameStart()
-	ModData.request("AVCSByVehicleSQLID")
-	ModData.request("AVCSByPlayerID")
+	requestFullSync()
 	sendClientCommand(getPlayer(), "AVCS", "updateLastKnownLogonTime", nil)
 	Events.OnServerCommand.Add(AVCS.OnServerCommand)
 	Events.OnTick.Remove(AVCS.AfterGameStart)
 end
 
-Events.OnReceiveGlobalModData.Add(AVCS.ClientOnReceiveGlobalModData)
 Events.OnTick.Add(AVCS.AfterGameStart)
 Events.OnPreFillWorldObjectContextMenu.Add(AVCS.ClientOnPreFillWorldObjectContextMenu)
 Events.EveryHours.Add(AVCS.ClientEveryHours)
