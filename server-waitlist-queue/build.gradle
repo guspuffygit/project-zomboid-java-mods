@@ -11,4 +11,6 @@ modInfo {
 		|Requires LoginQueueEnabled=true in server options.
 	'''.stripMargin('|')
 	modVersion = '1.0.0'
+        workshopId = '3682731461'
+	workshopIdProd = '3682732041'
 }
