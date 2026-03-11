@@ -1,0 +1,14 @@
+modInfo {
+	name = 'Server Waitlist Queue'
+	description = '''\
+		|Enables a server-side waitlist queue when the server is full.
+		|
+		|Instead of immediately rejecting players with "ServerFull", players are placed
+		|into the existing LoginQueue and shown their position while waiting for a slot.
+		|
+		|Fully backwards compatible with vanilla (unmodified) clients.
+		|
+		|Requires LoginQueueEnabled=true in server options.
+	'''.stripMargin('|')
+	modVersion = '1.0.0'
+}

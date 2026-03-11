@@ -261,5 +261,14 @@ subprojects { subproj ->
 		implementation 'com.sentientsimulations:project-zomboid-storm:1.2.0-SNAPSHOT'
 
         compileOnly fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
+
+		testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
+		testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.11.4'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+		testImplementation fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
+	}
+
+	test {
+		useJUnitPlatform()
 	}
 }
