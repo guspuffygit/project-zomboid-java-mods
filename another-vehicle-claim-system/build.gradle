@@ -9,5 +9,9 @@ modInfo {
 		Shows AVCS claimed cars on the global map and mini map if the Storm Mod loader is running.
 		
 		Toggleable on the map view.
+
+		Tested and compatible with 42.15.2
+
+		3/12/2026 - Fixed a bug that would prevent mechanic XP gain when removing a vehicle part
 	'''.stripIndent()
 }

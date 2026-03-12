@@ -74,7 +74,7 @@ function ISAVCSTakeEngineParts:complete()
 
     self.part:setCondition(0)
     self.vehicle:transmitPartCondition(self.part)
-    self.character:sendObjectChange("mechanicActionDone", { success = (numParts > 0) })
+    self.character:sendObjectChange(IsoObjectChange.MECHANIC_ACTION_DONE, { success = (numParts > 0) })
 
     if numParts > 0 then
         self.character:addMechanicsItem(

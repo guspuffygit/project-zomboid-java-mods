@@ -88,7 +88,7 @@ function ISAVCSUninstallVehiclePart:complete()
             end
         end
 
-        self.character:sendObjectChange("mechanicActionDone", { success = true })
+        self.character:sendObjectChange(IsoObjectChange.MECHANIC_ACTION_DONE, { success = true })
         self.character:addMechanicsItem(
             item:getID() .. self.vehicle:getMechanicalID() .. "0",
             self.part,
@@ -98,7 +98,7 @@ function ISAVCSUninstallVehiclePart:complete()
         self.part:setCondition(self.part:getCondition() - ZombRand(5, 10))
         self.vehicle:transmitPartCondition(self.part)
         playServerSound("PZ_MetalSnap", self.character:getCurrentSquare())
-        self.character:sendObjectChange("mechanicActionDone", { success = false })
+        self.character:sendObjectChange(IsoObjectChange.MECHANIC_ACTION_DONE, { success = false })
         self.character:getXp():AddXP(Perks.Mechanics, 1, false, false, true)
     end
 
