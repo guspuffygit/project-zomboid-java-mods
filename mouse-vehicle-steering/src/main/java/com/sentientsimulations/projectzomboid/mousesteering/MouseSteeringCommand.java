@@ -1,6 +1,5 @@
 package com.sentientsimulations.projectzomboid.mousesteering;
 
-import io.pzstorm.storm.vehicle.MouseSteeringCalculator;
 import zombie.characters.Capability;
 import zombie.characters.Role;
 import zombie.commands.CommandArgs;

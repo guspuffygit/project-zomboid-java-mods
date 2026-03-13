@@ -1,7 +1,6 @@
 package com.sentientsimulations.projectzomboid.mousesteering;
 
 import io.pzstorm.storm.core.StormClassTransformer;
-import io.pzstorm.storm.vehicle.MouseSteeringCalculator;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.DynamicType;
