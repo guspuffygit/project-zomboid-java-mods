@@ -134,8 +134,17 @@ class MapMetaBinParserTest {
         List<SafeHouseData> safehouses =
                 List.of(
                         new SafeHouseData(
-                                100, 200, 10, 10, "alice", 500, List.of("bob", "charlie"),
-                                1234567890L, "Alice's Base", 9876543210L, "Muldraugh",
+                                100,
+                                200,
+                                10,
+                                10,
+                                "alice",
+                                500,
+                                List.of("bob", "charlie"),
+                                1234567890L,
+                                "Alice's Base",
+                                9876543210L,
+                                "Muldraugh",
                                 List.of("bob")));
 
         List<NonPvpZoneData> nonPvpZones =
@@ -144,8 +153,14 @@ class MapMetaBinParserTest {
         List<FactionData> factions =
                 List.of(
                         new FactionData(
-                                "Survivors", "alice", List.of("alice", "bob"), true, "SRV", 0.5f,
-                                0.7f, 0.3f));
+                                "Survivors",
+                                "alice",
+                                List.of("alice", "bob"),
+                                true,
+                                "SRV",
+                                0.5f,
+                                0.7f,
+                                0.3f));
 
         List<DesignationZoneData> designationZones =
                 List.of(
@@ -161,8 +176,17 @@ class MapMetaBinParserTest {
         List<String> uniqueRds = List.of("rds_item_1", "rds_item_2");
 
         return buildComplete(
-                0, 0, 1, 1, cells, safehouses, nonPvpZones, factions, designationZones,
-                stashSystem, uniqueRds);
+                0,
+                0,
+                1,
+                1,
+                cells,
+                safehouses,
+                nonPvpZones,
+                factions,
+                designationZones,
+                stashSystem,
+                uniqueRds);
     }
 
     // ===== String I/O =====
@@ -311,8 +335,17 @@ class MapMetaBinParserTest {
         void emptyWorldParsesCorrectly() {
             ByteBuffer buf =
                     buildComplete(
-                            0, 0, 0, 0, List.of(new CellData(0, 0, List.of(), List.of())),
-                            List.of(), List.of(), List.of(), List.of(), null, List.of());
+                            0,
+                            0,
+                            0,
+                            0,
+                            List.of(new CellData(0, 0, List.of(), List.of())),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            null,
+                            List.of());
             ParseResult result = MapMetaBinParser.parse(buf, "empty.bin");
 
             assertTrue(result.errors().isEmpty());
@@ -388,8 +421,17 @@ class MapMetaBinParserTest {
         void repairWithEmptyWorld() {
             ByteBuffer buf =
                     buildComplete(
-                            5, 5, 5, 5, List.of(new CellData(5, 5, List.of(), List.of())),
-                            List.of(), List.of(), List.of(), List.of(), null, List.of());
+                            5,
+                            5,
+                            5,
+                            5,
+                            List.of(new CellData(5, 5, List.of(), List.of())),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            null,
+                            List.of());
             ParseResult result = MapMetaBinParser.parse(buf, "test.bin");
             assertTrue(result.errors().isEmpty());
 
@@ -582,9 +624,19 @@ class MapMetaBinParserTest {
         @Test
         void insaneSafehouseCountStopsParsing() {
             // Build a valid file but corrupt the safehouse count
-            ByteBuffer full = buildComplete(
-                    0, 0, 0, 0, List.of(new CellData(0, 0, List.of(), List.of())),
-                    List.of(), List.of(), List.of(), List.of(), null, List.of());
+            ByteBuffer full =
+                    buildComplete(
+                            0,
+                            0,
+                            0,
+                            0,
+                            List.of(new CellData(0, 0, List.of(), List.of())),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            null,
+                            List.of());
             byte[] bytes = new byte[full.remaining()];
             full.get(bytes);
 
@@ -657,13 +709,21 @@ class MapMetaBinParserTest {
         List<FactionData> factions =
                 List.of(
                         new FactionData(
-                                "Loners", "dave", List.of("dave", "eve"), false, null, 0f, 0f,
-                                0f));
+                                "Loners", "dave", List.of("dave", "eve"), false, null, 0f, 0f, 0f));
 
         ByteBuffer buf =
                 buildComplete(
-                        0, 0, 0, 0, List.of(new CellData(0, 0, List.of(), List.of())), List.of(),
-                        List.of(), factions, List.of(), null, List.of());
+                        0,
+                        0,
+                        0,
+                        0,
+                        List.of(new CellData(0, 0, List.of(), List.of())),
+                        List.of(),
+                        List.of(),
+                        factions,
+                        List.of(),
+                        null,
+                        List.of());
 
         ParseResult result = MapMetaBinParser.parse(buf, "test.bin");
         assertTrue(result.errors().isEmpty(), "Errors: " + result.errors());

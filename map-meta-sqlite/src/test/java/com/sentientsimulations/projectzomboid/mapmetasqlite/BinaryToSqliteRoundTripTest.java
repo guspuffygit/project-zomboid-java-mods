@@ -193,7 +193,17 @@ class BinaryToSqliteRoundTripTest {
         }
 
         return new SafeHouseRecord(
-                x, y, w, h, owner, hitPoints, players, lastVisited, title, datetimeCreated,
-                location, playersRespawn);
+                x,
+                y,
+                w,
+                h,
+                owner,
+                hitPoints,
+                players,
+                lastVisited,
+                title,
+                datetimeCreated,
+                location,
+                playersRespawn);
     }
 }

@@ -5,7 +5,6 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.mod.ZomboidMod;
-
 import java.util.Collections;
 import java.util.List;
 

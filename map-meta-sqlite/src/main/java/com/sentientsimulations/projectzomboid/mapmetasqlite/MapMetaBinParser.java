@@ -19,8 +19,7 @@ public class MapMetaBinParser {
 
     // ===== Data Records =====
 
-    public record Header(
-            String magic, int worldVersion, int minX, int minY, int maxX, int maxY) {
+    public record Header(String magic, int worldVersion, int minX, int minY, int maxX, int maxY) {
         public int gridWidth() {
             return maxX - minX + 1;
         }
@@ -35,34 +34,65 @@ public class MapMetaBinParser {
     }
 
     public record RoomData(
-            long metaId, boolean explored, boolean lightsActive, boolean doneSpawn,
+            long metaId,
+            boolean explored,
+            boolean lightsActive,
+            boolean doneSpawn,
             boolean roofFixed) {}
 
     public record BuildingData(
-            long metaId, boolean alarmed, int keyId, boolean seen, boolean hasBeenVisited,
-            int lootRespawnHour, int alarmDecay) {}
+            long metaId,
+            boolean alarmed,
+            int keyId,
+            boolean seen,
+            boolean hasBeenVisited,
+            int lootRespawnHour,
+            int alarmDecay) {}
 
     public record CellData(int x, int y, List<RoomData> rooms, List<BuildingData> buildings) {}
 
     public record SafeHouseData(
-            int x, int y, int w, int h, String owner, int hitPoints, List<String> players,
-            long lastVisited, String title, long datetimeCreated, String location,
+            int x,
+            int y,
+            int w,
+            int h,
+            String owner,
+            int hitPoints,
+            List<String> players,
+            long lastVisited,
+            String title,
+            long datetimeCreated,
+            String location,
             List<String> playersRespawn) {}
 
     public record NonPvpZoneData(int x, int y, int x2, int y2, int size, String title) {}
 
     public record FactionData(
-            String name, String owner, List<String> players, boolean hasTag, String tag,
-            float tagR, float tagG, float tagB) {}
+            String name,
+            String owner,
+            List<String> players,
+            boolean hasTag,
+            String tag,
+            float tagR,
+            float tagG,
+            float tagB) {}
 
     public record DesignationZoneData(
-            double id, int x, int y, int z, int h, int w, String type, String name,
+            double id,
+            int x,
+            int y,
+            int z,
+            int h,
+            int w,
+            String type,
+            String name,
             int hourLastSeen) {}
 
     public record StashBuildingData(String stashName, int buildingX, int buildingY) {}
 
     public record StashSystemData(
-            List<StashBuildingData> possibleStashes, List<StashBuildingData> buildingsToDo,
+            List<StashBuildingData> possibleStashes,
+            List<StashBuildingData> buildingsToDo,
             List<String> alreadyReadMap) {}
 
     public record ParseError(String section, int offset, String message) {}
@@ -164,7 +194,12 @@ public class MapMetaBinParser {
                     int alarmDecay = worldVersion >= 201 ? buf.getInt() : 0;
                     buildings.add(
                             new BuildingData(
-                                    metaId, alarmed, keyId, seen, hasBeenVisited, lootRespawnHour,
+                                    metaId,
+                                    alarmed,
+                                    keyId,
+                                    seen,
+                                    hasBeenVisited,
+                                    lootRespawnHour,
                                     alarmDecay));
                 }
 
@@ -198,13 +233,27 @@ public class MapMetaBinParser {
             playersRespawn.add(readString(buf));
         }
         return new SafeHouseData(
-                x, y, w, h, owner, hitPoints, players, lastVisited, title, datetimeCreated,
-                location, playersRespawn);
+                x,
+                y,
+                w,
+                h,
+                owner,
+                hitPoints,
+                players,
+                lastVisited,
+                title,
+                datetimeCreated,
+                location,
+                playersRespawn);
     }
 
     static NonPvpZoneData parseNonPvpZone(ByteBuffer buf) {
         return new NonPvpZoneData(
-                buf.getInt(), buf.getInt(), buf.getInt(), buf.getInt(), buf.getInt(),
+                buf.getInt(),
+                buf.getInt(),
+                buf.getInt(),
+                buf.getInt(),
+                buf.getInt(),
                 readString(buf));
     }
 
@@ -299,7 +348,11 @@ public class MapMetaBinParser {
         try {
             cells =
                     parseCells(
-                            buf, worldVersion, header.minX(), header.minY(), header.maxX(),
+                            buf,
+                            worldVersion,
+                            header.minX(),
+                            header.minY(),
+                            header.maxX(),
                             header.maxY());
         } catch (Exception e) {
             errors.add(new ParseError("cells", buf.position(), e.getMessage()));
@@ -381,8 +434,11 @@ public class MapMetaBinParser {
                 } catch (Exception e2) {
                     errors.add(
                             new ParseError(
-                                    "stashSystem", savedPos,
-                                    "SP parse: " + e1.getMessage() + "; Server parse: "
+                                    "stashSystem",
+                                    savedPos,
+                                    "SP parse: "
+                                            + e1.getMessage()
+                                            + "; Server parse: "
                                             + e2.getMessage()));
                 }
             }
@@ -404,8 +460,18 @@ public class MapMetaBinParser {
         }
 
         return new ParseResult(
-                fileName, fileSize, header, cells, expectedCells, safehouses, nonPvpZones, factions,
-                designationZones, stashSystem, uniqueRdsSpawned, errors);
+                fileName,
+                fileSize,
+                header,
+                cells,
+                expectedCells,
+                safehouses,
+                nonPvpZones,
+                factions,
+                designationZones,
+                stashSystem,
+                uniqueRdsSpawned,
+                errors);
     }
 
     // ===== Write/Repair Methods =====
@@ -945,6 +1011,8 @@ public class MapMetaBinParser {
                         + " factions, "
                         + result.designationZones().size()
                         + " designation zones"
-                        + (result.errors().isEmpty() ? "" : " (" + result.errors().size() + " errors)"));
+                        + (result.errors().isEmpty()
+                                ? ""
+                                : " (" + result.errors().size() + " errors)"));
     }
 }
