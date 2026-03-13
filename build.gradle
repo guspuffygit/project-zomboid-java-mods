@@ -1,7 +1,6 @@
 plugins {
-	id 'java'
 	id 'com.diffplug.spotless' version '8.1.0'
-	id 'io.freefair.lombok' version '9.2.0'
+	id 'io.freefair.lombok' version '9.2.0' apply false
 }
 
 interface ModInfo {
@@ -44,6 +43,7 @@ def isProd = rootProject.hasProperty('prod')
 
 subprojects { subproj ->
 	apply plugin: 'java'
+	apply plugin: 'jacoco'
 	apply plugin: 'com.diffplug.spotless'
 	apply plugin: 'io.freefair.lombok'
 
@@ -229,7 +229,7 @@ subprojects { subproj ->
 
 	spotless {
 		java {
-			target 'src/**/*.java'
+			target '**/src/**/*.java'
 			cleanthat()
 			googleJavaFormat().aosp().reflowLongStrings(false)
 			removeUnusedImports()
@@ -270,5 +270,30 @@ subprojects { subproj ->
 
 	test {
 		useJUnitPlatform()
+		finalizedBy jacocoTestReport
+	}
+
+	tasks.register('unpackZomboidJar', Copy) {
+		dependsOn 'extractZomboidFiles'
+		from(zipTree(layout.buildDirectory.file('zomboid-classpath/projectzomboid.jar')))
+		into layout.buildDirectory.dir('zomboid-classes')
+		exclude 'META-INF/versions/**'
+	}
+
+	jacocoTestReport {
+		dependsOn test, 'unpackZomboidJar'
+
+		def zomboidClasses = layout.buildDirectory.dir('zomboid-classes')
+		def zomboidSrcDir = file("${System.getProperty('user.home')}/projects/project-zomboid-base/src/main/java")
+
+		additionalClassDirs(files(zomboidClasses).asFileTree.matching {
+			include 'zombie/**'
+		})
+		additionalSourceDirs(files(zomboidSrcDir))
+
+		reports {
+			html.required = true
+			xml.required = true
+		}
 	}
 }

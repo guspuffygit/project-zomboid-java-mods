@@ -1,12 +1,10 @@
-package com.sentientsimulations.projectzomboid.shoutcast;
+package com.sentientsimulations.projectzomboid.mousesteering;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.mod.ZomboidMod;
-import io.pzstorm.storm.patch.vehicle.CarControllerPatch;
-import io.pzstorm.storm.patch.vehicle.MouseSteeringCommand;
 import java.util.Collections;
 import java.util.List;
 
