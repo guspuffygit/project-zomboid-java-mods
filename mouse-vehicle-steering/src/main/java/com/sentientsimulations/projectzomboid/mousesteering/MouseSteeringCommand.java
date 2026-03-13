@@ -1,4 +1,4 @@
-package io.pzstorm.storm.patch.vehicle;
+package com.sentientsimulations.projectzomboid.mousesteering;
 
 import io.pzstorm.storm.vehicle.MouseSteeringCalculator;
 import zombie.characters.Capability;

@@ -1,3 +1,9 @@
+apply plugin: 'application'
+
+application {
+	mainClass = 'com.sentientsimulations.projectzomboid.mapmetasqlite.MapMetaBinParser'
+}
+
 modInfo {
 	name = 'Map Meta SQLite'
 	description = '''\
