@@ -302,3 +302,59 @@ do
         return AVCS_IgnoredAction(character)
     end
 end
+
+-- =========================
+-- Container transfer protection (trailers + all vehicles)
+-- =========================
+
+---@param playerObj IsoGameCharacter
+---@param vehicle BaseVehicle?
+---@return boolean
+local function AVCS_canAccessVehicleContainer(playerObj, vehicle)
+    if not vehicle then return true end
+    if AVCS.getSimpleBooleanPermission(AVCS.checkPermission(playerObj, vehicle)) then
+        return true
+    end
+    if AVCS.getPublicPermission(vehicle, "AllowOpeningTrunk") then
+        return true
+    end
+    return false
+end
+
+---@param container ItemContainer?
+---@return BaseVehicle?
+local function AVCS_getVehicleFromContainer(container)
+    if not container then return nil end
+    ---@type IsoObject
+    local parent = container:getParent()
+    if parent and instanceof(parent, "BaseVehicle") then
+        ---@cast parent BaseVehicle
+        return parent
+    end
+    ---@type ItemContainer
+    local outermost = container:getOutermostContainer()
+    if outermost and outermost ~= container then
+        ---@type IsoObject
+        local outerParent = outermost:getParent()
+        if outerParent and instanceof(outerParent, "BaseVehicle") then
+            ---@cast outerParent BaseVehicle
+            return outerParent
+        end
+    end
+    return nil
+end
+
+-- Block inventory transfers from claimed vehicle containers
+if ISInventoryTransferAction and ISInventoryTransferAction.isValid then
+    ---@type fun(self: ISInventoryTransferAction): boolean
+    local _avcsOldTransferIsValid = ISInventoryTransferAction.isValid
+
+    function ISInventoryTransferAction:isValid()
+        ---@type BaseVehicle?
+        local vehicle = AVCS_getVehicleFromContainer(self.srcContainer)
+        if vehicle and not AVCS_canAccessVehicleContainer(self.character, vehicle) then
+            return false
+        end
+        return _avcsOldTransferIsValid(self)
+    end
+end

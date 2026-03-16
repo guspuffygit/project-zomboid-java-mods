@@ -581,3 +581,101 @@ do
         return AVCS_IgnoredAction(character)
     end
 end
+
+-- =========================
+-- Container access protection (trailers + all vehicles)
+-- =========================
+
+---@param playerObj IsoGameCharacter
+---@param vehicle BaseVehicle?
+---@return boolean
+local function AVCS_canAccessVehicleContainer(playerObj, vehicle)
+    if not vehicle then return true end
+    -- Owner / faction / safehouse
+    if AVCS.getSimpleBooleanPermission(AVCS.checkPermission(playerObj, vehicle)) then
+        return true
+    end
+    -- Only AllowOpeningTrunk grants container access to non-owners
+    if AVCS.getPublicPermission(vehicle, "AllowOpeningTrunk") then
+        return true
+    end
+    return false
+end
+
+---@param container ItemContainer?
+---@return BaseVehicle?
+local function AVCS_getVehicleFromContainer(container)
+    if not container then return nil end
+    ---@type IsoObject
+    local parent = container:getParent()
+    if parent and instanceof(parent, "BaseVehicle") then
+        ---@cast parent BaseVehicle
+        return parent
+    end
+    -- Bag inside a vehicle container: walk up to outermost container
+    ---@type ItemContainer
+    local outermost = container:getOutermostContainer()
+    if outermost and outermost ~= container then
+        ---@type IsoObject
+        local outerParent = outermost:getParent()
+        if outerParent and instanceof(outerParent, "BaseVehicle") then
+            ---@cast outerParent BaseVehicle
+            return outerParent
+        end
+    end
+    return nil
+end
+
+-- Layer 1: Hide containers from claimed vehicles in the loot panel
+---@param inventoryPage ISInventoryPage
+---@param phase string
+Events.OnRefreshInventoryWindowContainers.Add(function(inventoryPage, phase)
+    if phase ~= "buttonsAdded" then return end
+    if inventoryPage.onCharacter then return end
+
+    ---@type IsoPlayer
+    local playerObj = getSpecificPlayer(inventoryPage.player)
+    if not playerObj then return end
+
+    local removed = false
+    local i = 1
+    while i <= #inventoryPage.backpacks do
+        ---@type ISButton
+        local button = inventoryPage.backpacks[i]
+        ---@type BaseVehicle?
+        local vehicle = AVCS_getVehicleFromContainer(button.inventory)
+
+        if vehicle and not AVCS_canAccessVehicleContainer(playerObj, vehicle) then
+            table.remove(inventoryPage.backpacks, i)
+            inventoryPage.containerButtonPanel:removeChild(button)
+            inventoryPage.buttonPool = inventoryPage.buttonPool or {}
+            table.insert(inventoryPage.buttonPool, button)
+            removed = true
+        else
+            i = i + 1
+        end
+    end
+
+    -- Re-position remaining buttons after removal
+    if removed then
+        for idx, button in ipairs(inventoryPage.backpacks) do
+            button:setY(((idx - 1) * inventoryPage.buttonSize) - 1)
+        end
+    end
+end)
+
+-- Layer 2: Block inventory transfers from claimed vehicle containers
+if ISInventoryTransferAction and ISInventoryTransferAction.isValid then
+    ---@type fun(self: ISInventoryTransferAction): boolean
+    local _avcsOldTransferIsValid = ISInventoryTransferAction.isValid
+
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function ISInventoryTransferAction:isValid()
+        ---@type BaseVehicle?
+        local vehicle = AVCS_getVehicleFromContainer(self.srcContainer)
+        if vehicle and not AVCS_canAccessVehicleContainer(self.character, vehicle) then
+            return false
+        end
+        return _avcsOldTransferIsValid(self)
+    end
+end
