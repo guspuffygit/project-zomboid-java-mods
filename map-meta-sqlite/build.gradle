@@ -11,6 +11,6 @@ modInfo {
 		|the world's meta grid state (rooms, buildings, safehouses, factions, etc.).
 	'''.stripMargin('|')
 	modVersion = '1.0.0'
-	workshopId = ''
-	workshopIdProd = ''
+	workshopId = '3686714710'
+	workshopIdProd = '3686199425'
 }

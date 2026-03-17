@@ -1,0 +1,25 @@
+modInfo {
+	name = 'Zone Marker'
+	workshopId = '3686692295'
+	workshopIdProd = '3686768770'
+	description = '''\
+		|Allows server admins to define and manage colored zone overlays on the world map.
+		|
+		|Zones are organized into categories with custom colors and can be added, removed, and toggled at runtime. Each category appears as a filter toggle on the map options panel.
+		|
+		|Server commands (requires DebugConsole capability):
+		|
+		|/zoneaddcategory <r> <g> <b> [a] "<name>"          -- create a category with color (0-1)
+		|/zoneremovecategory "<name>"                        -- delete category + all its zones
+		|/zoneadd "<category>" <x1> <y1> <x2> <y2> "<name>" -- add a zone
+		|/zoneremove "<category>" "<zone name>"              -- remove a zone
+		|/zonelist ["<category>"]                            -- list categories or zones
+		|
+		|Example:
+		|/zoneaddcategory 0.6 0.3 0.6 1.0 "PVE Settlements"
+		|/zoneadd "PVE Settlements" 8700 8500 8750 8560 "Beacon's Car Repair"
+		|/zonelist "PVE Settlements"
+		|
+		|Requires Storm mod loader.
+	'''.stripMargin('|')
+}

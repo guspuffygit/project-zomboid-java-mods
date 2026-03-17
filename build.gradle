@@ -166,6 +166,10 @@ subprojects { subproj ->
 		}
 
 		into workshopRoot
+
+		doLast {
+			file("${workshopRoot.get()}/${modRoot}/common").mkdirs()
+		}
 	}
 
 	tasks.register('writeWorkshopVdf') {
@@ -189,6 +193,8 @@ subprojects { subproj ->
 		doLast {
 			def f = outputFile.get().asFile
 			f.parentFile.mkdirs()
+			def escDesc = inputs.properties['description'].replace('"', "'").replace('\n', '\\n').replace('\r', '')
+			def escTitle = inputs.properties['title'].replace('"', "'").replace('\n', '\\n').replace('\r', '')
 			f.text = """\
 				"workshopitem"
 				{
@@ -197,8 +203,8 @@ subprojects { subproj ->
 				\t"contentfolder" "${inputs.properties['contentfolder']}"
 				\t"previewfile" "${inputs.properties['previewfile']}"
 				\t"visibility" "${inputs.properties['visibility']}"
-				\t"title" "${inputs.properties['title']}"
-				\t"description" "${inputs.properties['description']}"
+				\t"title" "${escTitle}"
+				\t"description" "${escDesc}"
 				\t"changenote" "${inputs.properties['changenote']}"
 				}
 			""".stripIndent()
