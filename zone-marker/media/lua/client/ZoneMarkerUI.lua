@@ -64,7 +64,7 @@ function ZoneMarkerUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     local x = PAD
-    local y = 24
+    local y = 28
     local w = self.width - PAD * 2
     local gap = 8
     local halfW = (w - gap) / 2
@@ -74,7 +74,7 @@ function ZoneMarkerUI:createChildren()
     local lbl = ISLabel:new(x, y, ROW_H, "Categories", 1, 1, 1, 1, UIFont.Medium, true)
     lbl:initialise()
     self:addChild(lbl)
-    y = y + ROW_H
+    y = y + ROW_H + 4
 
     self.catList = ISScrollingListBox:new(x, y, w, LIST_H)
     self.catList:initialise()
@@ -84,57 +84,57 @@ function ZoneMarkerUI:createChildren()
     self.catList.borderColor = {r = 0.4, g = 0.4, b = 0.4, a = 0.9}
     self.catList:setOnMouseDownFunction(self, ZoneMarkerUI.onSelectCategory)
     self:addChild(self.catList)
-    y = y + LIST_H + 6
+    y = y + LIST_H + 10
 
     -- Name input
-    lbl = ISLabel:new(x, y, ROW_H, "Name:", 1, 1, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(x, y + 2, ROW_H, "Name:", 1, 1, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.catNameEntry = ISTextEntryBox:new("", x + 45, y + 2, w - 45, ROW_H - 4)
+    self.catNameEntry = ISTextEntryBox:new("", x + 50, y + 2, w - 50, ROW_H - 4)
     self.catNameEntry:initialise()
     self.catNameEntry:instantiate()
     self:addChild(self.catNameEntry)
-    y = y + ROW_H + 2
+    y = y + ROW_H + 8
 
     -- RGBA color inputs
     local colorW = 50
     local cx = x
 
-    lbl = ISLabel:new(cx, y, ROW_H, "R:", 1, 0.4, 0.4, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "R:", 1, 0.4, 0.4, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.catR = ISTextEntryBox:new("1.0", cx + 18, y + 2, colorW, ROW_H - 4)
+    self.catR = ISTextEntryBox:new("1.0", cx + 20, y + 2, colorW, ROW_H - 4)
     self.catR:initialise()
     self.catR:instantiate()
     self:addChild(self.catR)
-    cx = cx + 18 + colorW + gap
+    cx = cx + 20 + colorW + gap
 
-    lbl = ISLabel:new(cx, y, ROW_H, "G:", 0.4, 1, 0.4, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "G:", 0.4, 1, 0.4, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.catG = ISTextEntryBox:new("0.0", cx + 18, y + 2, colorW, ROW_H - 4)
+    self.catG = ISTextEntryBox:new("0.0", cx + 20, y + 2, colorW, ROW_H - 4)
     self.catG:initialise()
     self.catG:instantiate()
     self:addChild(self.catG)
-    cx = cx + 18 + colorW + gap
+    cx = cx + 20 + colorW + gap
 
-    lbl = ISLabel:new(cx, y, ROW_H, "B:", 0.4, 0.4, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "B:", 0.4, 0.4, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.catB = ISTextEntryBox:new("0.0", cx + 18, y + 2, colorW, ROW_H - 4)
+    self.catB = ISTextEntryBox:new("0.0", cx + 20, y + 2, colorW, ROW_H - 4)
     self.catB:initialise()
     self.catB:instantiate()
     self:addChild(self.catB)
-    cx = cx + 18 + colorW + gap
+    cx = cx + 20 + colorW + gap
 
-    lbl = ISLabel:new(cx, y, ROW_H, "A:", 1, 1, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "A:", 1, 1, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.catA = ISTextEntryBox:new("0.5", cx + 18, y + 2, colorW, ROW_H - 4)
+    self.catA = ISTextEntryBox:new("0.5", cx + 20, y + 2, colorW, ROW_H - 4)
     self.catA:initialise()
     self.catA:instantiate()
     self:addChild(self.catA)
-    y = y + ROW_H + 6
+    y = y + ROW_H + 10
 
     -- Category buttons
     self.addCatBtn = ISButton:new(x, y, halfW, BTN_H, "Add Category", self, ZoneMarkerUI.onAddCategory)
@@ -146,17 +146,17 @@ function ZoneMarkerUI:createChildren()
     self.delCatBtn:initialise()
     self.delCatBtn:instantiate()
     self:addChild(self.delCatBtn)
-    y = y + BTN_H + 14
+    y = y + BTN_H + 16
 
     -- Divider position
-    self.dividerY = y - 7
+    self.dividerY = y - 8
 
     -- === ZONES SECTION ===
 
     self.zoneLabel = ISLabel:new(x, y, ROW_H, "Zones", 1, 1, 1, 1, UIFont.Medium, true)
     self.zoneLabel:initialise()
     self:addChild(self.zoneLabel)
-    y = y + ROW_H
+    y = y + ROW_H + 4
 
     self.zoneList = ISScrollingListBox:new(x, y, w, LIST_H)
     self.zoneList:initialise()
@@ -165,59 +165,59 @@ function ZoneMarkerUI:createChildren()
     self.zoneList.backgroundColor = {r = 0, g = 0, b = 0, a = 0.5}
     self.zoneList.borderColor = {r = 0.4, g = 0.4, b = 0.4, a = 0.9}
     self:addChild(self.zoneList)
-    y = y + LIST_H + 6
+    y = y + LIST_H + 10
 
     -- Zone name input
-    lbl = ISLabel:new(x, y, ROW_H, "Name:", 1, 1, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(x, y + 2, ROW_H, "Name:", 1, 1, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.zoneNameEntry = ISTextEntryBox:new("", x + 45, y + 2, w - 45, ROW_H - 4)
+    self.zoneNameEntry = ISTextEntryBox:new("", x + 50, y + 2, w - 50, ROW_H - 4)
     self.zoneNameEntry:initialise()
     self.zoneNameEntry:instantiate()
     self:addChild(self.zoneNameEntry)
-    y = y + ROW_H + 2
+    y = y + ROW_H + 8
 
     -- Coordinate inputs: X1, Y1, X2 on first row
     local coordW = 65
     cx = x
 
-    lbl = ISLabel:new(cx, y, ROW_H, "X1:", 1, 1, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "X1:", 1, 1, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.zoneX1 = ISTextEntryBox:new("", cx + 24, y + 2, coordW, ROW_H - 4)
+    self.zoneX1 = ISTextEntryBox:new("", cx + 28, y + 2, coordW, ROW_H - 4)
     self.zoneX1:initialise()
     self.zoneX1:instantiate()
     self:addChild(self.zoneX1)
-    cx = cx + 24 + coordW + gap
+    cx = cx + 28 + coordW + gap
 
-    lbl = ISLabel:new(cx, y, ROW_H, "Y1:", 1, 1, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "Y1:", 1, 1, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.zoneY1 = ISTextEntryBox:new("", cx + 24, y + 2, coordW, ROW_H - 4)
+    self.zoneY1 = ISTextEntryBox:new("", cx + 28, y + 2, coordW, ROW_H - 4)
     self.zoneY1:initialise()
     self.zoneY1:instantiate()
     self:addChild(self.zoneY1)
-    cx = cx + 24 + coordW + gap
+    cx = cx + 28 + coordW + gap
 
-    lbl = ISLabel:new(cx, y, ROW_H, "X2:", 1, 1, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "X2:", 1, 1, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.zoneX2 = ISTextEntryBox:new("", cx + 24, y + 2, coordW, ROW_H - 4)
+    self.zoneX2 = ISTextEntryBox:new("", cx + 28, y + 2, coordW, ROW_H - 4)
     self.zoneX2:initialise()
     self.zoneX2:instantiate()
     self:addChild(self.zoneX2)
-    y = y + ROW_H + 2
+    y = y + ROW_H + 8
 
     -- Y2 on second row
     cx = x
-    lbl = ISLabel:new(cx, y, ROW_H, "Y2:", 1, 1, 1, 1, UIFont.Small, true)
+    lbl = ISLabel:new(cx, y + 2, ROW_H, "Y2:", 1, 1, 1, 1, UIFont.Small, true)
     lbl:initialise()
     self:addChild(lbl)
-    self.zoneY2 = ISTextEntryBox:new("", cx + 24, y + 2, coordW, ROW_H - 4)
+    self.zoneY2 = ISTextEntryBox:new("", cx + 28, y + 2, coordW, ROW_H - 4)
     self.zoneY2:initialise()
     self.zoneY2:instantiate()
     self:addChild(self.zoneY2)
-    y = y + ROW_H + 6
+    y = y + ROW_H + 10
 
     -- Zone buttons
     self.addZoneBtn = ISButton:new(x, y, halfW, BTN_H, "Add Zone", self, ZoneMarkerUI.onAddZone)
@@ -398,7 +398,7 @@ function ZoneMarkerUI.open(worldX, worldY)
     local sw = getCore():getScreenWidth()
     local sh = getCore():getScreenHeight()
     local w = 460
-    local h = 530
+    local h = 590
     local ui = ZoneMarkerUI:new((sw - w) / 2, (sh - h) / 2, w, h)
     ui:initialise()
     ui:addToUIManager()
@@ -415,12 +415,15 @@ end
 
 require "ISUI/Maps/ISWorldMap"
 
-local originalOnRightMouseUp = ISWorldMap.onRightMouseUp
+-- Store original only once so reloads don't capture the patched version
+if not ISWorldMap._zoneMarkerOriginalOnRightMouseUp then
+    ISWorldMap._zoneMarkerOriginalOnRightMouseUp = ISWorldMap.onRightMouseUp
+end
 
 ---@param x number
 ---@param y number
 function ISWorldMap:onRightMouseUp(x, y)
-    originalOnRightMouseUp(self, x, y)
+    ISWorldMap._zoneMarkerOriginalOnRightMouseUp(self, x, y)
 
     -- Same admin gate as the base game uses for the world map context menu
     if not getDebug() and not (isClient() and (getAccessLevel() == "admin")) then
