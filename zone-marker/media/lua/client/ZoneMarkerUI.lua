@@ -31,7 +31,6 @@ require "ZoneMarkerShared"
 ---@field lastVersion integer Last seen ZoneMarkerCache.version
 ---@field selectedCategory string|nil Currently selected category name
 ---@field instance ZoneMarkerUI|nil Singleton instance (class-level)
----@field _onContextMenu fun(player: integer, context: ISContextMenu, worldobjects: table, test: boolean)|nil Stored for reload cleanup
 ZoneMarkerUI = ISCollapsableWindow:derive("ZoneMarkerUI")
 
 ---@type string
@@ -387,10 +386,11 @@ if ZoneMarkerUI.instance then
 end
 ZoneMarkerUI.instance = nil
 
---- Open the Zone Marker UI, pre-filling X1/Y1 with the player's position.
+--- Open the Zone Marker UI, pre-filling X1/Y1 with the given world coordinates.
 --- If already open, closes it instead (toggle behaviour).
----@param playerObj IsoPlayer
-function ZoneMarkerUI.openFromContext(playerObj)
+---@param worldX number World X coordinate to pre-fill
+---@param worldY number World Y coordinate to pre-fill
+function ZoneMarkerUI.open(worldX, worldY)
     if ZoneMarkerUI.instance then
         ZoneMarkerUI.instance:close()
         return
@@ -404,34 +404,38 @@ function ZoneMarkerUI.openFromContext(playerObj)
     ui:addToUIManager()
     ui:setVisible(true)
     ZoneMarkerUI.instance = ui
-    -- Pre-fill X1/Y1 with player's current position
-    local px = math.floor(playerObj:getX())
-    local py = math.floor(playerObj:getY())
-    ui.zoneX1:setText(tostring(px))
-    ui.zoneY1:setText(tostring(py))
+    -- Pre-fill X1/Y1 with the clicked map coordinates
+    ui.zoneX1:setText(tostring(math.floor(worldX)))
+    ui.zoneY1:setText(tostring(math.floor(worldY)))
 end
 
 --
--- Right-click context menu (admin only)
+-- Patch ISWorldMap right-click menu to add Zone Marker option
 --
 
--- Remove previous handler on reload to avoid duplicate menu entries
-if ZoneMarkerUI._onContextMenu then
-    Events.OnFillWorldObjectContextMenu.Remove(ZoneMarkerUI._onContextMenu)
-end
+require "ISUI/Maps/ISWorldMap"
 
----@param player integer Player index (0-based)
----@param context ISContextMenu
----@param worldobjects table
----@param test boolean
-local function onFillWorldObjectContextMenu(player, context, worldobjects, test)
-    if test then return end
-    local playerObj = getSpecificPlayer(player)
-    if not playerObj then return end
-    local access = playerObj:getAccessLevel()
-    if access == "" or access == "None" then return end
-    context:addOption("Zone Marker", playerObj, ZoneMarkerUI.openFromContext)
-end
+local originalOnRightMouseUp = ISWorldMap.onRightMouseUp
 
-ZoneMarkerUI._onContextMenu = onFillWorldObjectContextMenu
-Events.OnFillWorldObjectContextMenu.Add(onFillWorldObjectContextMenu)
+---@param x number
+---@param y number
+function ISWorldMap:onRightMouseUp(x, y)
+    originalOnRightMouseUp(self, x, y)
+
+    -- Same admin gate as the base game uses for the world map context menu
+    if not getDebug() and not (isClient() and (getAccessLevel() == "admin")) then
+        return true
+    end
+
+    local context = getPlayerContextMenu(0)
+    if not context or context.numOptions <= 1 then return true end
+
+    local worldX = self.mapAPI:uiToWorldX(x, y)
+    local worldY = self.mapAPI:uiToWorldY(x, y)
+
+    context:addOption("Zone Marker", nil, function()
+        ZoneMarkerUI.open(worldX, worldY)
+    end)
+
+    return true
+end
