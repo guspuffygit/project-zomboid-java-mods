@@ -3,6 +3,7 @@ package com.sentientsimulations.projectzomboid.zonemarker;
 import static com.sentientsimulations.projectzomboid.zonemarker.ZoneModDataHelper.*;
 
 import se.krka.kahlua.vm.KahluaTable;
+import zombie.Lua.LuaManager;
 import zombie.characters.Capability;
 import zombie.characters.Role;
 import zombie.commands.CommandArgs;
@@ -71,11 +72,11 @@ public class ZoneAddCommand extends CommandBase {
         KahluaTable zones = (KahluaTable) data.rawget("zones");
         KahluaTable categoryZones = (KahluaTable) zones.rawget(category);
         if (categoryZones == null) {
-            categoryZones = newTable();
+            categoryZones = LuaManager.platform.newTable();
             zones.rawset(category, categoryZones);
         }
 
-        KahluaTable zone = newTable();
+        KahluaTable zone = LuaManager.platform.newTable();
         zone.rawset("xStart", xStart);
         zone.rawset("xEnd", xEnd);
         zone.rawset("yStart", yStart);
