@@ -16,10 +16,10 @@ public final class ZoneModDataHelper {
     public static KahluaTable getZoneData() {
         KahluaTable data = ModData.getOrCreate(MODDATA_KEY);
         if (data.rawget("categories") == null) {
-            data.rawset("categories", newTable());
+            data.rawset("categories", LuaManager.platform.newTable());
         }
         if (data.rawget("zones") == null) {
-            data.rawset("zones", newTable());
+            data.rawset("zones", LuaManager.platform.newTable());
         }
         return data;
     }
@@ -29,15 +29,10 @@ public final class ZoneModDataHelper {
     /** Broadcast zone data to all connected clients via sendServerCommand. */
     public static void broadcast() {
         KahluaTable data = getZoneData();
-        KahluaTable args = newTable();
+        KahluaTable args = LuaManager.platform.newTable();
         args.rawset("categories", data.rawget("categories"));
         args.rawset("zones", data.rawget("zones"));
         GameServer.sendServerCommand(MODULE, "sync", args);
-    }
-
-    /** Create a new empty KahluaTable. */
-    public static KahluaTable newTable() {
-        return LuaManager.platform.newTable();
     }
 
     /**
@@ -81,7 +76,9 @@ public final class ZoneModDataHelper {
             java.util.function.IntFunction<String> argGetter, int startIdx, int endIdx) {
         StringBuilder sb = new StringBuilder();
         for (int i = startIdx; i < endIdx; i++) {
-            if (sb.length() > 0) sb.append(" ");
+            if (!sb.isEmpty()) {
+                sb.append(" ");
+            }
             sb.append(argGetter.apply(i));
         }
         return sb.toString();
