@@ -1,9 +1,7 @@
-package com.sentientsimulations.projectzomboid.zonemarker;
+package com.sentientsimulations.projectzomboid.zonemarker.commands;
 
-import static com.sentientsimulations.projectzomboid.zonemarker.ZoneModDataHelper.*;
+import static com.sentientsimulations.projectzomboid.zonemarker.ZoneMarkerBridge.*;
 
-import se.krka.kahlua.vm.KahluaTable;
-import zombie.Lua.LuaManager;
 import zombie.characters.Capability;
 import zombie.characters.Role;
 import zombie.commands.CommandArgs;
@@ -21,16 +19,15 @@ import zombie.core.raknet.UdpConnection;
         shouldTranslated = false)
 @RequiredCapability(requiredCapability = Capability.DebugConsole)
 @CommandArgs(varArgs = true)
-public class ZoneAddCategoryCommand extends CommandBase {
+public class ZoneCategoryAddCommand extends CommandBase {
 
-    public ZoneAddCategoryCommand(
+    public ZoneCategoryAddCommand(
             String username, Role userRole, String command, UdpConnection connection) {
         super(username, userRole, command, connection);
     }
 
     @Override
     protected String Command() {
-        // zoneaddcategory <r> <g> <b> [a] "<name>"
         if (getCommandArgsCount() < 4) {
             return "Usage: /zoneaddcategory <r> <g> <b> [a] \"<name>\"";
         }
@@ -63,25 +60,8 @@ public class ZoneAddCategoryCommand extends CommandBase {
             return "Category name is required.";
         }
 
-        KahluaTable data = getZoneData();
-        KahluaTable categories = (KahluaTable) data.rawget("categories");
-
-        if (findCategoryIndex(categories, name) != -1) {
-            return "Category '" + name + "' already exists.";
-        }
-
-        KahluaTable cat = LuaManager.platform.newTable();
-        cat.rawset("name", name);
-        cat.rawset("r", r);
-        cat.rawset("g", g);
-        cat.rawset("b", b);
-        cat.rawset("a", a);
-        categories.rawset(categories.len() + 1, cat);
-
-        KahluaTable zones = (KahluaTable) data.rawget("zones");
-        if (zones.rawget(name) == null) {
-            zones.rawset(name, LuaManager.platform.newTable());
-        }
+        String error = addCategory(name, r, g, b, a);
+        if (error != null) return error;
 
         broadcast();
         return "Created category '" + name + "'.";

@@ -1,8 +1,7 @@
-package com.sentientsimulations.projectzomboid.zonemarker;
+package com.sentientsimulations.projectzomboid.zonemarker.commands;
 
-import static com.sentientsimulations.projectzomboid.zonemarker.ZoneModDataHelper.*;
+import static com.sentientsimulations.projectzomboid.zonemarker.ZoneMarkerBridge.*;
 
-import se.krka.kahlua.vm.KahluaTable;
 import zombie.characters.Capability;
 import zombie.characters.Role;
 import zombie.commands.CommandArgs;
@@ -19,9 +18,9 @@ import zombie.core.raknet.UdpConnection;
         shouldTranslated = false)
 @RequiredCapability(requiredCapability = Capability.DebugConsole)
 @CommandArgs(varArgs = true)
-public class ZoneRemoveCategoryCommand extends CommandBase {
+public class ZoneCategoryRemoveCommand extends CommandBase {
 
-    public ZoneRemoveCategoryCommand(
+    public ZoneCategoryRemoveCommand(
             String username, Role userRole, String command, UdpConnection connection) {
         super(username, userRole, command, connection);
     }
@@ -34,18 +33,8 @@ public class ZoneRemoveCategoryCommand extends CommandBase {
 
         String name = joinArgs(this::getCommandArg, 0, getCommandArgsCount());
 
-        KahluaTable data = getZoneData();
-        KahluaTable categories = (KahluaTable) data.rawget("categories");
-
-        int idx = findCategoryIndex(categories, name);
-        if (idx == -1) {
-            return "Category '" + name + "' not found.";
-        }
-
-        removeArrayElement(categories, idx);
-
-        KahluaTable zones = (KahluaTable) data.rawget("zones");
-        zones.rawset(name, null);
+        String error = removeCategory(name);
+        if (error != null) return error;
 
         broadcast();
         return "Removed category '" + name + "' and all its zones.";

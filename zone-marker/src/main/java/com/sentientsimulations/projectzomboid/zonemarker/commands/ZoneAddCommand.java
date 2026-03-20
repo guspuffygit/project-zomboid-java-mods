@@ -1,9 +1,7 @@
-package com.sentientsimulations.projectzomboid.zonemarker;
+package com.sentientsimulations.projectzomboid.zonemarker.commands;
 
-import static com.sentientsimulations.projectzomboid.zonemarker.ZoneModDataHelper.*;
+import static com.sentientsimulations.projectzomboid.zonemarker.ZoneMarkerBridge.*;
 
-import se.krka.kahlua.vm.KahluaTable;
-import zombie.Lua.LuaManager;
 import zombie.characters.Capability;
 import zombie.characters.Role;
 import zombie.commands.CommandArgs;
@@ -16,8 +14,7 @@ import zombie.core.raknet.UdpConnection;
 @CommandName(name = "zoneadd")
 @CommandHelp(
         helpText =
-                "Add a zone to a category. Usage: /zoneadd \"<category>\" <xStart> <yStart> <xEnd>"
-                        + " <yEnd> \"<name>\"",
+                "Add a zone to a category. Usage: /zoneadd \"<category>\" <xStart> <yStart> <xEnd> <yEnd> \"<name>\"",
         shouldTranslated = false)
 @RequiredCapability(requiredCapability = Capability.DebugConsole)
 @CommandArgs(varArgs = true)
@@ -30,21 +27,16 @@ public class ZoneAddCommand extends CommandBase {
 
     @Override
     protected String Command() {
-        // zoneadd "<category>" <xStart> <yStart> <xEnd> <yEnd> "<name>"
         if (getCommandArgsCount() < 6) {
             return "Usage: /zoneadd \"<category>\" <xStart> <yStart> <xEnd> <yEnd> \"<name>\"";
         }
 
-        KahluaTable data = getZoneData();
-        KahluaTable categories = (KahluaTable) data.rawget("categories");
-
-        // Find the category by trying progressively longer matches from arg 0
         String category = null;
         int coordStart = -1;
 
         for (int catEnd = 1; catEnd <= getCommandArgsCount() - 5; catEnd++) {
             String candidate = joinArgs(this::getCommandArg, 0, catEnd);
-            if (findCategoryIndex(categories, candidate) != -1) {
+            if (categoryExists(candidate)) {
                 category = candidate;
                 coordStart = catEnd;
             }
@@ -69,20 +61,8 @@ public class ZoneAddCommand extends CommandBase {
         }
         String region = joinArgs(this::getCommandArg, nameStart, getCommandArgsCount());
 
-        KahluaTable zones = (KahluaTable) data.rawget("zones");
-        KahluaTable categoryZones = (KahluaTable) zones.rawget(category);
-        if (categoryZones == null) {
-            categoryZones = LuaManager.platform.newTable();
-            zones.rawset(category, categoryZones);
-        }
-
-        KahluaTable zone = LuaManager.platform.newTable();
-        zone.rawset("xStart", xStart);
-        zone.rawset("xEnd", xEnd);
-        zone.rawset("yStart", yStart);
-        zone.rawset("yEnd", yEnd);
-        zone.rawset("region", region);
-        categoryZones.rawset(categoryZones.len() + 1, zone);
+        String error = addZone(category, xStart, yStart, xEnd, yEnd, region);
+        if (error != null) return error;
 
         broadcast();
         return "Added '" + region + "' to " + category + ".";
