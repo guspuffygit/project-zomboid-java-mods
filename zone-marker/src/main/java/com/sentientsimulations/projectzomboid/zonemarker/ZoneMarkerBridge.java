@@ -2,12 +2,11 @@ package com.sentientsimulations.projectzomboid.zonemarker;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneCategoryRecord;
+import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneRecord;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
-
-import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneCategoryRecord;
-import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneRecord;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;
 import zombie.ZomboidFileSystem;
@@ -192,30 +191,5 @@ public final class ZoneMarkerBridge {
             args.rawset("zones", zonesTable);
             return args;
         }
-    }
-
-    // ---- Utilities (moved from ZoneModDataHelper) ----
-
-    /** Parse a string as a Double, returning null on failure. */
-    public static Double parseDouble(String s) {
-        if (s == null) return null;
-        try {
-            return Double.parseDouble(s);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    /** Join command args from startIdx (inclusive) to endIdx (exclusive). */
-    public static String joinArgs(
-            java.util.function.IntFunction<String> argGetter, int startIdx, int endIdx) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = startIdx; i < endIdx; i++) {
-            if (!sb.isEmpty()) {
-                sb.append(" ");
-            }
-            sb.append(argGetter.apply(i));
-        }
-        return sb.toString();
     }
 }

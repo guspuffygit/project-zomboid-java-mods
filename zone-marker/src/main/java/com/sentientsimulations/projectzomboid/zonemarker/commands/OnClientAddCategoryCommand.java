@@ -12,5 +12,23 @@ public class OnClientAddCategoryCommand extends ClientCommandEvent {
         super(player, args);
     }
 
+    public String getName() {
+        return getString("name");
+    }
 
+    public Double getR() {
+        return getDouble("r");
+    }
+
+    public Double getG() {
+        return getDouble("g");
+    }
+
+    public Double getB() {
+        return getDouble("b");
+    }
+
+    public Double getA() {
+        return getDouble("a");
+    }
 }

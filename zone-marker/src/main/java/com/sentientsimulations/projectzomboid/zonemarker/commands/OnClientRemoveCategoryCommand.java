@@ -11,4 +11,8 @@ public class OnClientRemoveCategoryCommand extends ClientCommandEvent {
     public OnClientRemoveCategoryCommand(IsoPlayer player, @Nullable KahluaTable args) {
         super(player, args);
     }
+
+    public String getName() {
+        return getString("name");
+    }
 }

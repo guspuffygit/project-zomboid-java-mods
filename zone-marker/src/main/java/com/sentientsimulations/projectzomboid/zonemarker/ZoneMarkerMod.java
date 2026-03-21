@@ -20,10 +20,7 @@ public class ZoneMarkerMod implements ZomboidMod {
 
     @Override
     public List<Class<?>> getCommandClasses() {
-        return List.of(
-                ZoneAddCommand.class,
-                ZoneRemoveCommand.class,
-                ZoneListCommand.class);
+        return List.of();
     }
 
     @SubscribeEvent
@@ -37,11 +34,11 @@ public class ZoneMarkerMod implements ZomboidMod {
 
     @OnClientCommand
     public void onAddCategory(OnClientAddCategoryCommand event) {
-        String name = event.getString("name");
-        Double r = event.getDouble("r");
-        Double g = event.getDouble("g");
-        Double b = event.getDouble("b");
-        Double a = event.getDouble("a");
+        String name = event.getName();
+        Double r = event.getR();
+        Double g = event.getG();
+        Double b = event.getB();
+        Double a = event.getA();
         if (name == null || r == null || g == null || b == null || a == null) {
             LOGGER.warn("Invalid addCategory args from player {}", event.getPlayer().getUsername());
             return;
@@ -56,14 +53,56 @@ public class ZoneMarkerMod implements ZomboidMod {
 
     @OnClientCommand
     public void onRemoveCategory(OnClientRemoveCategoryCommand event) {
-        String name = event.getString("name");
+        String name = event.getName();
         if (name == null) {
-            LOGGER.warn("Invalid removeCategory args from player {}", event.getPlayer().getUsername());
+            LOGGER.warn(
+                    "Invalid removeCategory args from player {}", event.getPlayer().getUsername());
             return;
         }
         String error = ZoneMarkerBridge.removeCategory(name);
         if (error != null) {
             LOGGER.warn("removeCategory failed: {}", error);
+            return;
+        }
+        ZoneMarkerBridge.broadcast();
+    }
+
+    @OnClientCommand
+    public void onAddZone(OnClientAddZoneCommand event) {
+        String categoryName = event.getCategoryName();
+        Double xStart = event.getXStart();
+        Double yStart = event.getYStart();
+        Double xEnd = event.getXEnd();
+        Double yEnd = event.getYEnd();
+        String region = event.getRegion();
+        if (categoryName == null
+                || xStart == null
+                || yStart == null
+                || xEnd == null
+                || yEnd == null
+                || region == null) {
+            LOGGER.warn("Invalid addZone args from player {}", event.getPlayer().getUsername());
+            return;
+        }
+        String error = ZoneMarkerBridge.addZone(categoryName, xStart, yStart, xEnd, yEnd, region);
+        if (error != null) {
+            LOGGER.warn("addZone failed: {}", error);
+            return;
+        }
+        ZoneMarkerBridge.broadcast();
+    }
+
+    @OnClientCommand
+    public void onRemoveZone(OnClientRemoveZoneCommand event) {
+        String categoryName = event.getCategoryName();
+        String region = event.getRegion();
+        if (categoryName == null || region == null) {
+            LOGGER.warn("Invalid removeZone args from player {}", event.getPlayer().getUsername());
+            return;
+        }
+        String error = ZoneMarkerBridge.removeZone(categoryName, region);
+        if (error != null) {
+            LOGGER.warn("removeZone failed: {}", error);
             return;
         }
         ZoneMarkerBridge.broadcast();

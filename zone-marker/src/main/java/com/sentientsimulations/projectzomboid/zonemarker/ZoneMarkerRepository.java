@@ -2,7 +2,6 @@ package com.sentientsimulations.projectzomboid.zonemarker;
 
 import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneCategoryRecord;
 import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneRecord;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
