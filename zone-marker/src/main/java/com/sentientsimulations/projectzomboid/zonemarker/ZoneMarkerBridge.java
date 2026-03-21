@@ -26,8 +26,6 @@ public final class ZoneMarkerBridge {
         return dbFile.getAbsolutePath();
     }
 
-    // ---- Category operations ----
-
     /**
      * @return null on success, or an error message
      */
@@ -60,8 +58,6 @@ public final class ZoneMarkerBridge {
             return "Database error removing category.";
         }
     }
-
-    // ---- Zone operations ----
 
     /**
      * @return null on success, or an error message
@@ -99,8 +95,6 @@ public final class ZoneMarkerBridge {
             return "Database error removing zone.";
         }
     }
-
-    // ---- Query operations ----
 
     public static boolean categoryExists(String name) {
         try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {

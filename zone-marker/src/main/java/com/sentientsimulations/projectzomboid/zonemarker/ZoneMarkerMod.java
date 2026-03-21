@@ -3,9 +3,9 @@ package com.sentientsimulations.projectzomboid.zonemarker;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.zonemarker.commands.*;
+import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
-import io.pzstorm.storm.event.lua.OnClientCommandEvent;
 import io.pzstorm.storm.event.lua.OnServerStartedEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
 import java.sql.SQLException;
@@ -21,8 +21,6 @@ public class ZoneMarkerMod implements ZomboidMod {
     @Override
     public List<Class<?>> getCommandClasses() {
         return List.of(
-                ZoneCategoryAddCommand.class,
-                ZoneCategoryRemoveCommand.class,
                 ZoneAddCommand.class,
                 ZoneRemoveCommand.class,
                 ZoneListCommand.class);
@@ -37,11 +35,42 @@ public class ZoneMarkerMod implements ZomboidMod {
         }
     }
 
-    @SubscribeEvent
-    public void onClientCommand(OnClientCommandEvent event) {
-        if (!ZoneMarkerBridge.MODULE.equals(event.var1)) return;
-        if ("requestSync".equals(event.var2)) {
-            ZoneMarkerBridge.syncToPlayer(event.player);
+    @OnClientCommand
+    public void onAddCategory(OnClientAddCategoryCommand event) {
+        String name = event.getString("name");
+        Double r = event.getDouble("r");
+        Double g = event.getDouble("g");
+        Double b = event.getDouble("b");
+        Double a = event.getDouble("a");
+        if (name == null || r == null || g == null || b == null || a == null) {
+            LOGGER.warn("Invalid addCategory args from player {}", event.getPlayer().getUsername());
+            return;
         }
+        String error = ZoneMarkerBridge.addCategory(name, r, g, b, a);
+        if (error != null) {
+            LOGGER.warn("addCategory failed: {}", error);
+            return;
+        }
+        ZoneMarkerBridge.broadcast();
+    }
+
+    @OnClientCommand
+    public void onRemoveCategory(OnClientRemoveCategoryCommand event) {
+        String name = event.getString("name");
+        if (name == null) {
+            LOGGER.warn("Invalid removeCategory args from player {}", event.getPlayer().getUsername());
+            return;
+        }
+        String error = ZoneMarkerBridge.removeCategory(name);
+        if (error != null) {
+            LOGGER.warn("removeCategory failed: {}", error);
+            return;
+        }
+        ZoneMarkerBridge.broadcast();
+    }
+
+    @OnClientCommand
+    public void onRequestSync(OnClientRequestSyncCommand event) {
+        ZoneMarkerBridge.syncToPlayer(event.getPlayer());
     }
 }
