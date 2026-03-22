@@ -12,30 +12,76 @@ local MODULE = ZoneMarkerShared.MODULE
 MultiplayerZoneEditorMode_ZoneMarker = MultiplayerZoneEditorMode:derive("MultiplayerZoneEditorMode_ZoneMarker")
 
 function MultiplayerZoneEditorMode_ZoneMarker:createChildren()
-    -- Category combo box
-    local comboY = self.editor.modeCombo:getBottom() + UI_BORDER_SPACING
-    local label = ISLabel:new(UI_BORDER_SPACING, comboY, BUTTON_HGT, "Category:", 1, 1, 1, 1, UIFont.Small, true)
-    self:addChild(label)
+    local rowH = FONT_HGT_SMALL + 8
+    local labelW = 60
+    local entryW = 60
+    local curY = self.editor.modeCombo:getBottom() + UI_BORDER_SPACING
 
-    self.categoryCombo = ISComboBox:new(label:getRight() + 4, comboY, 200, FONT_HGT_SMALL + 4, self, self.onCategoryChanged)
+    -- Category combo box + remove button
+    local catLabel = ISLabel:new(UI_BORDER_SPACING, curY, BUTTON_HGT, "Category:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(catLabel)
+
+    self.categoryCombo = ISComboBox:new(catLabel:getRight() + 4, curY, 200, FONT_HGT_SMALL + 4, self, self.onCategoryChanged)
     self:addChild(self.categoryCombo)
 
-    local btnX = self.categoryCombo:getRight() + UI_BORDER_SPACING
-    local addCatBtn = ISButton:new(btnX, comboY, 20, BUTTON_HGT, "+", self, self.onAddCategory)
-    self:addChild(addCatBtn)
+    self.removeCatBtn = ISButton:new(self.categoryCombo:getRight() + 4, curY, 20, BUTTON_HGT, "-", self, self.onRemoveCategory)
+    self:addChild(self.removeCatBtn)
+    curY = curY + BUTTON_HGT + UI_BORDER_SPACING
 
-    local removeCatBtn = ISButton:new(addCatBtn:getRight() + 4, comboY, 20, BUTTON_HGT, "-", self, self.onRemoveCategory)
-    self:addChild(removeCatBtn)
-    self.removeCatBtn = removeCatBtn
+    -- Inline add category form
+    local addCatLabel = ISLabel:new(UI_BORDER_SPACING, curY, BUTTON_HGT, "New Category:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(addCatLabel)
+    curY = curY + BUTTON_HGT + 4
+
+    local nameLabel = ISLabel:new(UI_BORDER_SPACING, curY, rowH, "Name:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(nameLabel)
+    self.catNameEntry = ISTextEntryBox:new("", labelW + UI_BORDER_SPACING, curY, 160, rowH)
+    self.catNameEntry:initialise()
+    self.catNameEntry:instantiate()
+    self:addChild(self.catNameEntry)
+    curY = curY + rowH + 4
+
+    -- RGBA on one row
+    local colorX = UI_BORDER_SPACING
+    local rLabel = ISLabel:new(colorX, curY, rowH, "R:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(rLabel)
+    self.catREntry = ISTextEntryBox:new("0.5", rLabel:getRight() + 2, curY, entryW, rowH)
+    self.catREntry:initialise()
+    self.catREntry:instantiate()
+    self:addChild(self.catREntry)
+
+    local gLabel = ISLabel:new(self.catREntry:getRight() + 4, curY, rowH, "G:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(gLabel)
+    self.catGEntry = ISTextEntryBox:new("0.5", gLabel:getRight() + 2, curY, entryW, rowH)
+    self.catGEntry:initialise()
+    self.catGEntry:instantiate()
+    self:addChild(self.catGEntry)
+
+    local bLabel = ISLabel:new(self.catGEntry:getRight() + 4, curY, rowH, "B:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(bLabel)
+    self.catBEntry = ISTextEntryBox:new("0.5", bLabel:getRight() + 2, curY, entryW, rowH)
+    self.catBEntry:initialise()
+    self.catBEntry:instantiate()
+    self:addChild(self.catBEntry)
+
+    local aLabel = ISLabel:new(self.catBEntry:getRight() + 4, curY, rowH, "A:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(aLabel)
+    self.catAEntry = ISTextEntryBox:new("0.5", aLabel:getRight() + 2, curY, entryW, rowH)
+    self.catAEntry:initialise()
+    self.catAEntry:instantiate()
+    self:addChild(self.catAEntry)
+
+    self.addCatBtn = ISButton:new(self.catAEntry:getRight() + UI_BORDER_SPACING, curY, 50, rowH, "Add", self, self.onAddCategory)
+    self:addChild(self.addCatBtn)
+    curY = curY + rowH + UI_BORDER_SPACING
 
     -- Zone list
-    local zoneY = comboY + BUTTON_HGT + UI_BORDER_SPACING
-    local zoneLabel = ISLabel:new(UI_BORDER_SPACING, zoneY, BUTTON_HGT, "Zones:", 1, 1, 1, 1, UIFont.Small, true)
+    local zoneLabel = ISLabel:new(UI_BORDER_SPACING, curY, BUTTON_HGT, "Zones:", 1, 1, 1, 1, UIFont.Small, true)
     self:addChild(zoneLabel)
-    zoneY = zoneY + BUTTON_HGT + 4
+    curY = curY + BUTTON_HGT + 4
 
     local listH = (FONT_HGT_SMALL + 4) * 6
-    self.zoneList = ISScrollingListBox:new(UI_BORDER_SPACING, zoneY, 300, listH)
+    self.zoneList = ISScrollingListBox:new(UI_BORDER_SPACING, curY, 300, listH)
     self.zoneList:initialise()
     self.zoneList:instantiate()
     self.zoneList.itemheight = FONT_HGT_SMALL + 4
@@ -43,13 +89,13 @@ function MultiplayerZoneEditorMode_ZoneMarker:createChildren()
     self.zoneList.drawBorder = true
     self.zoneList.backgroundColor = {r = 0, g = 0, b = 0, a = 0.5}
     self:addChild(self.zoneList)
-    zoneY = zoneY + listH + 4
+    curY = curY + listH + 4
 
     -- Zone buttons
-    self.addZoneBtn = ISButton:new(UI_BORDER_SPACING, zoneY, 80, BUTTON_HGT, "+ Add Zone", self, self.onAddZone)
+    self.addZoneBtn = ISButton:new(UI_BORDER_SPACING, curY, 80, BUTTON_HGT, "+ Add Zone", self, self.onAddZone)
     self:addChild(self.addZoneBtn)
 
-    self.removeZoneBtn = ISButton:new(self.addZoneBtn:getRight() + 4, zoneY, 90, BUTTON_HGT, "- Remove Zone", self, self.onRemoveZone)
+    self.removeZoneBtn = ISButton:new(self.addZoneBtn:getRight() + 4, curY, 90, BUTTON_HGT, "- Remove Zone", self, self.onRemoveZone)
     self:addChild(self.removeZoneBtn)
 end
 
@@ -63,7 +109,6 @@ function MultiplayerZoneEditorMode_ZoneMarker:prerender()
 end
 
 function MultiplayerZoneEditorMode_ZoneMarker:render()
-    -- Render all zones from all visible categories on the map
     for _, cat in ipairs(ZoneMarkerCache.categories) do
         local zones = ZoneMarkerCache.zones[cat.name]
         if zones then
@@ -133,7 +178,6 @@ function MultiplayerZoneEditorMode_ZoneMarker:refreshZoneList()
     local zones = catName and ZoneMarkerCache.zones[catName] or {}
     local zoneCount = zones and #zones or 0
 
-    -- Avoid rebuilding if nothing changed
     if catName == self.lastZoneListCategory and zoneCount == self.lastZoneListCount then
         return
     end
@@ -187,14 +231,25 @@ function MultiplayerZoneEditorMode_ZoneMarker:onCategoryChanged()
     self.lastZoneListCount = nil
 end
 
--- Add Category: opens a custom modal for name + color
+-- Add Category: inline form
 function MultiplayerZoneEditorMode_ZoneMarker:onAddCategory()
-    self:closeModal()
-    local modal = ZoneMarkerAddCategoryDialog:new(self)
-    modal:initialise()
-    modal:addToUIManager()
-    modal:setAlwaysOnTop(true)
-    self.modalUI = modal
+    local name = self.catNameEntry:getText()
+    if not name or name == "" then return end
+
+    local r = tonumber(self.catREntry:getText())
+    local g = tonumber(self.catGEntry:getText())
+    local b = tonumber(self.catBEntry:getText())
+    local a = tonumber(self.catAEntry:getText())
+    if not r or not g or not b or not a then return end
+
+    sendClientCommand(getPlayer(), MODULE, "addCategory", {name = name, r = r, g = g, b = b, a = a})
+
+    -- Reset form
+    self.catNameEntry:setText("")
+    self.catREntry:setText("0.5")
+    self.catGEntry:setText("0.5")
+    self.catBEntry:setText("0.5")
+    self.catAEntry:setText("1.0")
 end
 
 -- Remove Category: confirmation dialog
@@ -271,7 +326,7 @@ function MultiplayerZoneEditorMode_ZoneMarker:onConfirmRemoveZone(button)
     end
 end
 
--- Drawing state machine: mouse overrides
+-- Drawing state machine
 function MultiplayerZoneEditorMode_ZoneMarker:onMouseDown(x, y)
     if self.drawState == "waiting" then
         local worldX = self.mapAPI:uiToWorldX(x, y)
@@ -399,149 +454,5 @@ end
 
 function MultiplayerZoneEditorMode_ZoneMarker:new(editor)
     local o = MultiplayerZoneEditorMode.new(self, editor)
-    return o
-end
-
---
--- Add Category Dialog
---
-ZoneMarkerAddCategoryDialog = ISPanel:derive("ZoneMarkerAddCategoryDialog")
-
-function ZoneMarkerAddCategoryDialog:initialise()
-    ISPanel.initialise(self)
-    self:createChildren()
-end
-
-function ZoneMarkerAddCategoryDialog:createChildren()
-    local x = UI_BORDER_SPACING
-    local y = UI_BORDER_SPACING
-    local labelW = 60
-    local entryW = 160
-    local rowH = FONT_HGT_SMALL + 8
-
-    -- Title bar
-    local title = ISLabel:new(x, y, BUTTON_HGT, "Add Category", 1, 1, 1, 1, UIFont.Small, true)
-    self:addChild(title)
-    y = y + BUTTON_HGT + UI_BORDER_SPACING
-
-    -- Name
-    local nameLabel = ISLabel:new(x, y, rowH, "Name:", 1, 1, 1, 1, UIFont.Small, true)
-    self:addChild(nameLabel)
-    self.nameEntry = ISTextEntryBox:new("", labelW + x, y, entryW, rowH)
-    self.nameEntry:initialise()
-    self.nameEntry:instantiate()
-    self:addChild(self.nameEntry)
-    y = y + rowH + 4
-
-    -- R
-    local rLabel = ISLabel:new(x, y, rowH, "R:", 1, 1, 1, 1, UIFont.Small, true)
-    self:addChild(rLabel)
-    self.rEntry = ISTextEntryBox:new("0.5", labelW + x, y, 60, rowH)
-    self.rEntry:initialise()
-    self.rEntry:instantiate()
-    self:addChild(self.rEntry)
-    y = y + rowH + 4
-
-    -- G
-    local gLabel = ISLabel:new(x, y, rowH, "G:", 1, 1, 1, 1, UIFont.Small, true)
-    self:addChild(gLabel)
-    self.gEntry = ISTextEntryBox:new("0.5", labelW + x, y, 60, rowH)
-    self.gEntry:initialise()
-    self.gEntry:instantiate()
-    self:addChild(self.gEntry)
-    y = y + rowH + 4
-
-    -- B
-    local bLabel = ISLabel:new(x, y, rowH, "B:", 1, 1, 1, 1, UIFont.Small, true)
-    self:addChild(bLabel)
-    self.bEntry = ISTextEntryBox:new("0.5", labelW + x, y, 60, rowH)
-    self.bEntry:initialise()
-    self.bEntry:instantiate()
-    self:addChild(self.bEntry)
-    y = y + rowH + 4
-
-    -- A
-    local aLabel = ISLabel:new(x, y, rowH, "A:", 1, 1, 1, 1, UIFont.Small, true)
-    self:addChild(aLabel)
-    self.aEntry = ISTextEntryBox:new("0.5", labelW + x, y, 60, rowH)
-    self.aEntry:initialise()
-    self.aEntry:instantiate()
-    self:addChild(self.aEntry)
-    y = y + rowH + UI_BORDER_SPACING
-
-    -- Error label
-    self.errorLabel = ISLabel:new(x, y, BUTTON_HGT, "", 1, 0, 0, 1, UIFont.Small, true)
-    self:addChild(self.errorLabel)
-    y = y + BUTTON_HGT + 4
-
-    -- Buttons
-    local okBtn = ISButton:new(x, y, 80, BUTTON_HGT, "OK", self, self.onOK)
-    self:addChild(okBtn)
-
-    local cancelBtn = ISButton:new(okBtn:getRight() + UI_BORDER_SPACING, y, 80, BUTTON_HGT, "Cancel", self, self.onCancel)
-    self:addChild(cancelBtn)
-end
-
-function ZoneMarkerAddCategoryDialog:onOK()
-    local name = self.nameEntry:getText()
-    if not name or name == "" then
-        self.errorLabel:setName("Name cannot be empty")
-        return
-    end
-
-    local r = tonumber(self.rEntry:getText())
-    local g = tonumber(self.gEntry:getText())
-    local b = tonumber(self.bEntry:getText())
-    local a = tonumber(self.aEntry:getText())
-
-    if not r or not g or not b or not a then
-        self.errorLabel:setName("R, G, B, A must be numbers")
-        return
-    end
-
-    sendClientCommand(getPlayer(), MODULE, "addCategory", {name = name, r = r, g = g, b = b, a = a})
-    self:close()
-end
-
-function ZoneMarkerAddCategoryDialog:onCancel()
-    self:close()
-end
-
-function ZoneMarkerAddCategoryDialog:onMouseDown(x, y)
-    ISPanel.onMouseDown(self, x, y)
-    return true
-end
-
-function ZoneMarkerAddCategoryDialog:onMouseUp(x, y)
-    ISPanel.onMouseUp(self, x, y)
-    return true
-end
-
-function ZoneMarkerAddCategoryDialog:onMouseMove(dx, dy)
-    ISPanel.onMouseMove(self, dx, dy)
-    return true
-end
-
-function ZoneMarkerAddCategoryDialog:close()
-    self:setVisible(false)
-    self:removeFromUIManager()
-    if self.mode then
-        self.mode.modalUI = nil
-    end
-end
-
-function ZoneMarkerAddCategoryDialog:new(mode)
-    local w = 250
-    local h = 280
-    local screenW = getCore():getScreenWidth()
-    local screenH = getCore():getScreenHeight()
-    local x = (screenW - w) / 2
-    local y = (screenH - h) / 2
-    local o = ISPanel.new(self, x, y, w, h)
-    o:setVisible(true)
-    o.moveWithMouse = true
-    o.mode = mode
-    o.backgroundColor = {r = 0, g = 0, b = 0, a = 0.8}
-    o.borderColor = {r = 0.4, g = 0.4, b = 0.4, a = 1}
     return o
 end
