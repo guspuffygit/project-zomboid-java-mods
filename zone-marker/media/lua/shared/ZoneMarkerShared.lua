@@ -18,11 +18,9 @@
 
 ---@class ZoneMarkerSharedModule
 ---@field MODULE string
----@field MODDATA_KEY string
 ZoneMarkerShared = {}
 
 ZoneMarkerShared.MODULE = "ZoneMarker"
-ZoneMarkerShared.MODDATA_KEY = "ZoneMarker"
 
 ---@param zone? ZoneMarkerZone
 ---@return boolean
