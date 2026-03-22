@@ -34,43 +34,41 @@ local function getOrCreateOption(categoryName)
 end
 
 --
--- Patch WorldMapOptions to include our filter toggles
+-- Register filter options via global hook table
+-- Works on both vanilla clients (monkey-patch fallback) and Storm clients (Storm calls hooks too)
 --
 
-local originalGetVisibleOptions = WorldMapOptions.getVisibleOptions
+WorldMapOptions_visibleOptionsHooks = WorldMapOptions_visibleOptionsHooks or {}
 
-function WorldMapOptions:getVisibleOptions()
-    local result = originalGetVisibleOptions(self)
+table.insert(WorldMapOptions_visibleOptionsHooks, function(result)
     for _, cat in ipairs(ZoneMarkerCache.categories) do
         table.insert(result, getOrCreateOption(cat.name))
+    end
+end)
+
+-- Monkey-patch for vanilla clients (Storm will overwrite with its own version that also calls hooks)
+local originalGetVisibleOptions = WorldMapOptions.getVisibleOptions
+function WorldMapOptions:getVisibleOptions()
+    local result = originalGetVisibleOptions(self)
+    for _, hook in ipairs(WorldMapOptions_visibleOptionsHooks) do
+        hook(result)
     end
     return result
 end
 
---
--- Force options panel to rebuild when category count changes
---
-
 local originalSynchUI = WorldMapOptions.synchUI
-
 function WorldMapOptions:synchUI()
     local visibleOptions = self:getVisibleOptions()
-    local tickBoxCount = self.tickBoxes and #self.tickBoxes or 0
-    local optionCount = 0
-    for _, option in ipairs(visibleOptions) do
-        if option:getType() == "boolean" then
-            optionCount = optionCount + 1
-        end
+    local boolCount = 0
+    for _, opt in ipairs(visibleOptions) do
+        if opt:getType() == "boolean" then boolCount = boolCount + 1 end
     end
-    if tickBoxCount ~= optionCount then
+    if boolCount ~= (self._lastBoolCount or -1) then
         local children = {}
-        for k, v in pairs(self:getChildren()) do
-            table.insert(children, v)
-        end
-        for _, child in ipairs(children) do
-            self:removeChild(child)
-        end
+        for k, v in pairs(self:getChildren()) do table.insert(children, v) end
+        for _, child in ipairs(children) do self:removeChild(child) end
         self:createChildren()
+        self._lastBoolCount = boolCount
     end
     originalSynchUI(self)
 end

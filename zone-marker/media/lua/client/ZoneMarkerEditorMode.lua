@@ -9,6 +9,11 @@ local BUTTON_HGT = FONT_HGT_SMALL + 6
 ---@type string
 local MODULE = ZoneMarkerShared.MODULE
 
+local DEFAULT_R = "1.0"
+local DEFAULT_G = "0"
+local DEFAULT_B = "0"
+local DEFAULT_A = "1.0"
+
 MultiplayerZoneEditorMode_ZoneMarker = MultiplayerZoneEditorMode:derive("MultiplayerZoneEditorMode_ZoneMarker")
 
 function MultiplayerZoneEditorMode_ZoneMarker:createChildren()
@@ -45,28 +50,28 @@ function MultiplayerZoneEditorMode_ZoneMarker:createChildren()
     local colorX = UI_BORDER_SPACING
     local rLabel = ISLabel:new(colorX, curY, rowH, "R:", 1, 1, 1, 1, UIFont.Small, true)
     self:addChild(rLabel)
-    self.catREntry = ISTextEntryBox:new("0.5", rLabel:getRight() + 2, curY, entryW, rowH)
+    self.catREntry = ISTextEntryBox:new(DEFAULT_R, rLabel:getRight() + 2, curY, entryW, rowH)
     self.catREntry:initialise()
     self.catREntry:instantiate()
     self:addChild(self.catREntry)
 
     local gLabel = ISLabel:new(self.catREntry:getRight() + 4, curY, rowH, "G:", 1, 1, 1, 1, UIFont.Small, true)
     self:addChild(gLabel)
-    self.catGEntry = ISTextEntryBox:new("0.5", gLabel:getRight() + 2, curY, entryW, rowH)
+    self.catGEntry = ISTextEntryBox:new(DEFAULT_G, gLabel:getRight() + 2, curY, entryW, rowH)
     self.catGEntry:initialise()
     self.catGEntry:instantiate()
     self:addChild(self.catGEntry)
 
     local bLabel = ISLabel:new(self.catGEntry:getRight() + 4, curY, rowH, "B:", 1, 1, 1, 1, UIFont.Small, true)
     self:addChild(bLabel)
-    self.catBEntry = ISTextEntryBox:new("0.5", bLabel:getRight() + 2, curY, entryW, rowH)
+    self.catBEntry = ISTextEntryBox:new(DEFAULT_B, bLabel:getRight() + 2, curY, entryW, rowH)
     self.catBEntry:initialise()
     self.catBEntry:instantiate()
     self:addChild(self.catBEntry)
 
     local aLabel = ISLabel:new(self.catBEntry:getRight() + 4, curY, rowH, "A:", 1, 1, 1, 1, UIFont.Small, true)
     self:addChild(aLabel)
-    self.catAEntry = ISTextEntryBox:new("0.5", aLabel:getRight() + 2, curY, entryW, rowH)
+    self.catAEntry = ISTextEntryBox:new(DEFAULT_A, aLabel:getRight() + 2, curY, entryW, rowH)
     self.catAEntry:initialise()
     self.catAEntry:instantiate()
     self:addChild(self.catAEntry)
@@ -134,6 +139,9 @@ function MultiplayerZoneEditorMode_ZoneMarker:render()
         self:drawRect(mx - 10, my, 20, 1, 1, 1, 1, 0)
         self:drawRect(mx, my - 10, 1, 20, 1, 1, 1, 0)
     elseif self.drawState == "drawing" and self.drawStart and self.drawEnd then
+        local cat = self:getSelectedCategory()
+        local cr, cg, cb, ca = 1, 1, 1, 1
+        if cat then cr, cg, cb, ca = cat.r, cat.g, cat.b, cat.a end
         local x1 = self.mapAPI:worldToUIX(self.drawStart.x, self.drawStart.y)
         local y1 = self.mapAPI:worldToUIY(self.drawStart.x, self.drawStart.y)
         local x2 = self.mapAPI:worldToUIX(self.drawEnd.x, self.drawEnd.y)
@@ -142,8 +150,8 @@ function MultiplayerZoneEditorMode_ZoneMarker:render()
         local ry = PZMath.min(y1, y2)
         local rw = PZMath.abs(x2 - x1)
         local rh = PZMath.abs(y2 - y1)
-        self:drawRectBorder(rx, ry, rw, rh, 1, 1, 1, 1)
-        self.mapUI.javaObject:DrawTextureScaledColor(nil, PZMath.floor(rx), PZMath.floor(ry), rw, rh, 1, 1, 1, 0.2)
+        self:drawRectBorder(rx, ry, rw, rh, 1, cr, cg, cb)
+        self.mapUI.javaObject:DrawTextureScaledColor(nil, PZMath.floor(rx), PZMath.floor(ry), rw, rh, cr, cg, cb, ca * 0.4)
     end
 end
 
@@ -225,6 +233,15 @@ function MultiplayerZoneEditorMode_ZoneMarker:getSelectedCategoryName()
     return self.categoryCombo:getOptionData(self.categoryCombo:getSelected())
 end
 
+function MultiplayerZoneEditorMode_ZoneMarker:getSelectedCategory()
+    local name = self:getSelectedCategoryName()
+    if not name then return nil end
+    for _, cat in ipairs(ZoneMarkerCache.categories) do
+        if cat.name == name then return cat end
+    end
+    return nil
+end
+
 function MultiplayerZoneEditorMode_ZoneMarker:onCategoryChanged()
     self:cancelDrawing()
     self.lastZoneListCategory = nil
@@ -246,10 +263,10 @@ function MultiplayerZoneEditorMode_ZoneMarker:onAddCategory()
 
     -- Reset form
     self.catNameEntry:setText("")
-    self.catREntry:setText("0.5")
-    self.catGEntry:setText("0.5")
-    self.catBEntry:setText("0.5")
-    self.catAEntry:setText("1.0")
+    self.catREntry:setText(DEFAULT_R)
+    self.catGEntry:setText(DEFAULT_G)
+    self.catBEntry:setText(DEFAULT_B)
+    self.catAEntry:setText(DEFAULT_A)
 end
 
 -- Remove Category: confirmation dialog
