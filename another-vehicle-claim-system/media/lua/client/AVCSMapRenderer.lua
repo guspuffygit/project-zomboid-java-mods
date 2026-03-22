@@ -103,8 +103,9 @@ table.insert(WorldMapOptions_visibleOptionsHooks, function(result)
     table.insert(result, avcsFilterOption)
 end)
 
--- Monkey-patch for vanilla clients (if zone-marker already patched this, the hooks table is shared)
-if not WorldMapOptions._avcsPatchApplied then
+-- Monkey-patch getVisibleOptions/synchUI to iterate the shared hooks table.
+-- Multiple mods add hooks to the same table; only the first mod to load does the patch.
+if not WorldMapOptions._visibleOptionsHooksPatched then
     local originalGetVisibleOptions = WorldMapOptions.getVisibleOptions
     function WorldMapOptions:getVisibleOptions()
         local result = originalGetVisibleOptions(self)
@@ -131,7 +132,7 @@ if not WorldMapOptions._avcsPatchApplied then
         originalSynchUI(self)
     end
 
-    WorldMapOptions._avcsPatchApplied = true
+    WorldMapOptions._visibleOptionsHooksPatched = true
 end
 
 --

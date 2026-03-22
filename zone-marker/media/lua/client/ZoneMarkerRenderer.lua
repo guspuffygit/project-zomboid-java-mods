@@ -46,31 +46,36 @@ table.insert(WorldMapOptions_visibleOptionsHooks, function(result)
     end
 end)
 
--- Monkey-patch for vanilla clients (Storm will overwrite with its own version that also calls hooks)
-local originalGetVisibleOptions = WorldMapOptions.getVisibleOptions
-function WorldMapOptions:getVisibleOptions()
-    local result = originalGetVisibleOptions(self)
-    for _, hook in ipairs(WorldMapOptions_visibleOptionsHooks) do
-        hook(result)
+-- Monkey-patch getVisibleOptions/synchUI to iterate the shared hooks table.
+-- Multiple mods add hooks to the same table; only the first mod to load does the patch.
+if not WorldMapOptions._visibleOptionsHooksPatched then
+    local originalGetVisibleOptions = WorldMapOptions.getVisibleOptions
+    function WorldMapOptions:getVisibleOptions()
+        local result = originalGetVisibleOptions(self)
+        for _, hook in ipairs(WorldMapOptions_visibleOptionsHooks) do
+            hook(result)
+        end
+        return result
     end
-    return result
-end
 
-local originalSynchUI = WorldMapOptions.synchUI
-function WorldMapOptions:synchUI()
-    local visibleOptions = self:getVisibleOptions()
-    local boolCount = 0
-    for _, opt in ipairs(visibleOptions) do
-        if opt:getType() == "boolean" then boolCount = boolCount + 1 end
+    local originalSynchUI = WorldMapOptions.synchUI
+    function WorldMapOptions:synchUI()
+        local visibleOptions = self:getVisibleOptions()
+        local boolCount = 0
+        for _, opt in ipairs(visibleOptions) do
+            if opt:getType() == "boolean" then boolCount = boolCount + 1 end
+        end
+        if boolCount ~= (self._lastBoolCount or -1) then
+            local children = {}
+            for k, v in pairs(self:getChildren()) do table.insert(children, v) end
+            for _, child in ipairs(children) do self:removeChild(child) end
+            self:createChildren()
+            self._lastBoolCount = boolCount
+        end
+        originalSynchUI(self)
     end
-    if boolCount ~= (self._lastBoolCount or -1) then
-        local children = {}
-        for k, v in pairs(self:getChildren()) do table.insert(children, v) end
-        for _, child in ipairs(children) do self:removeChild(child) end
-        self:createChildren()
-        self._lastBoolCount = boolCount
-    end
-    originalSynchUI(self)
+
+    WorldMapOptions._visibleOptionsHooksPatched = true
 end
 
 --
