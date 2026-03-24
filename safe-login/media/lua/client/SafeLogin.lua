@@ -8,7 +8,16 @@ local spawnX = 0
 local spawnY = 0
 local protectedPlayer = nil
 
+local function isAdmin()
+    return getAccessLevel() == "admin" or getAccessLevel() == "Admin"
+end
+
 function SafeLogin.activate(player)
+    if isAdmin() then
+        print("[SafeLogin] Player is admin — skipping protection.")
+        return
+    end
+
     protectionActive = true
     spawnTimeMs = getTimestampMs()
     spawnX = player:getX()
