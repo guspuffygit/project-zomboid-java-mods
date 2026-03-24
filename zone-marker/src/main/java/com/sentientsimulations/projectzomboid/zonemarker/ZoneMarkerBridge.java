@@ -22,7 +22,9 @@ public final class ZoneMarkerBridge {
 
     static String getDbPath() {
         File dbFile = ZomboidFileSystem.instance.getFileInCurrentSave(DB_FILENAME);
-        return dbFile.getAbsolutePath();
+        String path = dbFile.getAbsolutePath();
+        LOGGER.info("[ZoneMarker] DB path: {}", path);
+        return path;
     }
 
     /**
@@ -129,21 +131,27 @@ public final class ZoneMarkerBridge {
 
     /** Broadcast full zone data to all connected clients. */
     public static void broadcast() {
+        LOGGER.info("[ZoneMarker] broadcast() called");
         try {
             KahluaTable args = buildSyncTable();
+            LOGGER.info("[ZoneMarker] Broadcasting sync table to all clients");
             GameServer.sendServerCommand(MODULE, "sync", args);
+            LOGGER.info("[ZoneMarker] broadcast() complete");
         } catch (SQLException e) {
-            LOGGER.error("Failed to broadcast zone data", e);
+            LOGGER.error("[ZoneMarker] Failed to broadcast zone data", e);
         }
     }
 
     /** Send full zone data to a single player (for requestSync). */
     static void syncToPlayer(IsoPlayer player) {
+        LOGGER.info("[ZoneMarker] syncToPlayer() called for {}", player.getUsername());
         try {
             KahluaTable args = buildSyncTable();
+            LOGGER.info("[ZoneMarker] Sending sync table to player {}", player.getUsername());
             GameServer.sendServerCommand(player, MODULE, "sync", args);
+            LOGGER.info("[ZoneMarker] syncToPlayer() complete");
         } catch (SQLException e) {
-            LOGGER.error("Failed to sync zone data to player", e);
+            LOGGER.error("[ZoneMarker] Failed to sync zone data to player", e);
         }
     }
 
@@ -154,9 +162,11 @@ public final class ZoneMarkerBridge {
      *   zones = { [catName] = [{xStart, yStart, xEnd, yEnd, region}, ...] } }</pre>
      */
     private static KahluaTable buildSyncTable() throws SQLException {
+        LOGGER.info("[ZoneMarker] buildSyncTable() called");
         try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
             ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
             List<ZoneCategoryRecord> categories = repo.loadAllCategories();
+            LOGGER.info("[ZoneMarker] buildSyncTable: loaded {} categories", categories.size());
 
             KahluaTable args = LuaManager.platform.newTable();
             KahluaTable catsTable = LuaManager.platform.newTable();

@@ -14,8 +14,11 @@ import java.util.List;
 public class ZoneMarkerMod implements ZomboidMod {
     @Override
     public void registerEventHandlers() {
-        LOGGER.debug("Registering event handler for {}", ZoneMarkerMod.class.getCanonicalName());
+        LOGGER.info(
+                "[ZoneMarker] Registering event handlers for {}",
+                ZoneMarkerMod.class.getCanonicalName());
         StormEventDispatcher.registerEventHandler(this);
+        LOGGER.info("[ZoneMarker] Event handlers registered successfully");
     }
 
     @Override
@@ -25,91 +28,124 @@ public class ZoneMarkerMod implements ZomboidMod {
 
     @SubscribeEvent
     public void onServerStarted(OnServerStartedEvent event) {
+        LOGGER.info(
+                "[ZoneMarker] onServerStarted fired, initializing DB at {}",
+                ZoneMarkerBridge.getDbPath());
         try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(ZoneMarkerBridge.getDbPath())) {
-            LOGGER.info("ZoneMarker database initialized");
+            LOGGER.info("[ZoneMarker] Database initialized successfully");
         } catch (SQLException e) {
-            LOGGER.error("Failed to initialize ZoneMarker database", e);
+            LOGGER.error("[ZoneMarker] Failed to initialize database", e);
         }
     }
 
     @OnClientCommand
     public void onAddCategory(OnClientAddCategoryCommand event) {
+        LOGGER.info(
+                "[ZoneMarker] onAddCategory handler called by player {}",
+                event.getPlayer().getUsername());
         String name = event.getName();
         Double r = event.getR();
         Double g = event.getG();
         Double b = event.getB();
         Double a = event.getA();
+        LOGGER.info(
+                "[ZoneMarker] addCategory args: name={}, r={}, g={}, b={}, a={}", name, r, g, b, a);
         if (name == null || r == null || g == null || b == null || a == null) {
-            LOGGER.warn("Invalid addCategory args from player {}", event.getPlayer().getUsername());
+            LOGGER.warn("[ZoneMarker] Invalid addCategory args - one or more nulls");
             return;
         }
         String error = ZoneMarkerBridge.addCategory(name, r, g, b, a);
         if (error != null) {
-            LOGGER.warn("addCategory failed: {}", error);
+            LOGGER.warn("[ZoneMarker] addCategory failed: {}", error);
             return;
         }
+        LOGGER.info("[ZoneMarker] addCategory succeeded, broadcasting");
         ZoneMarkerBridge.broadcast();
     }
 
     @OnClientCommand
     public void onRemoveCategory(OnClientRemoveCategoryCommand event) {
+        LOGGER.info(
+                "[ZoneMarker] onRemoveCategory handler called by player {}",
+                event.getPlayer().getUsername());
         String name = event.getName();
+        LOGGER.info("[ZoneMarker] removeCategory args: name={}", name);
         if (name == null) {
-            LOGGER.warn(
-                    "Invalid removeCategory args from player {}", event.getPlayer().getUsername());
+            LOGGER.warn("[ZoneMarker] Invalid removeCategory args - name is null");
             return;
         }
         String error = ZoneMarkerBridge.removeCategory(name);
         if (error != null) {
-            LOGGER.warn("removeCategory failed: {}", error);
+            LOGGER.warn("[ZoneMarker] removeCategory failed: {}", error);
             return;
         }
+        LOGGER.info("[ZoneMarker] removeCategory succeeded, broadcasting");
         ZoneMarkerBridge.broadcast();
     }
 
     @OnClientCommand
     public void onAddZone(OnClientAddZoneCommand event) {
+        LOGGER.info(
+                "[ZoneMarker] onAddZone handler called by player {}",
+                event.getPlayer().getUsername());
         String categoryName = event.getCategoryName();
         Double xStart = event.getXStart();
         Double yStart = event.getYStart();
         Double xEnd = event.getXEnd();
         Double yEnd = event.getYEnd();
         String region = event.getRegion();
+        LOGGER.info(
+                "[ZoneMarker] addZone args: cat={}, region={}, x1={}, y1={}, x2={}, y2={}",
+                categoryName,
+                region,
+                xStart,
+                yStart,
+                xEnd,
+                yEnd);
         if (categoryName == null
                 || xStart == null
                 || yStart == null
                 || xEnd == null
                 || yEnd == null
                 || region == null) {
-            LOGGER.warn("Invalid addZone args from player {}", event.getPlayer().getUsername());
+            LOGGER.warn("[ZoneMarker] Invalid addZone args - one or more nulls");
             return;
         }
         String error = ZoneMarkerBridge.addZone(categoryName, xStart, yStart, xEnd, yEnd, region);
         if (error != null) {
-            LOGGER.warn("addZone failed: {}", error);
+            LOGGER.warn("[ZoneMarker] addZone failed: {}", error);
             return;
         }
+        LOGGER.info("[ZoneMarker] addZone succeeded, broadcasting");
         ZoneMarkerBridge.broadcast();
     }
 
     @OnClientCommand
     public void onRemoveZone(OnClientRemoveZoneCommand event) {
+        LOGGER.info(
+                "[ZoneMarker] onRemoveZone handler called by player {}",
+                event.getPlayer().getUsername());
         String categoryName = event.getCategoryName();
         String region = event.getRegion();
+        LOGGER.info("[ZoneMarker] removeZone args: cat={}, region={}", categoryName, region);
         if (categoryName == null || region == null) {
-            LOGGER.warn("Invalid removeZone args from player {}", event.getPlayer().getUsername());
+            LOGGER.warn("[ZoneMarker] Invalid removeZone args - one or more nulls");
             return;
         }
         String error = ZoneMarkerBridge.removeZone(categoryName, region);
         if (error != null) {
-            LOGGER.warn("removeZone failed: {}", error);
+            LOGGER.warn("[ZoneMarker] removeZone failed: {}", error);
             return;
         }
+        LOGGER.info("[ZoneMarker] removeZone succeeded, broadcasting");
         ZoneMarkerBridge.broadcast();
     }
 
     @OnClientCommand
     public void onRequestSync(OnClientRequestSyncCommand event) {
+        LOGGER.info(
+                "[ZoneMarker] onRequestSync handler called by player {}",
+                event.getPlayer().getUsername());
         ZoneMarkerBridge.syncToPlayer(event.getPlayer());
     }
 }
