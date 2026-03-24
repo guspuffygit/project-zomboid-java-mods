@@ -1,0 +1,19 @@
+
+modInfo {
+	name = 'Another Vehicle Claim System'
+	workshopId = '3677939958'
+	workshopIdProd = '3672982692'
+	description = '''\
+		Another Vehicle Claim System ported to b42.
+
+		Shows AVCS claimed cars on the global map and mini map. Toggleable on the map view.
+
+		No Storm Mod loader required.
+
+		Tested and compatible with 42.15.2
+
+		3/12/2026 - Fixed a bug that would prevent mechanic XP gain when removing a vehicle part
+		3/16/2026 - Fixed a bug that would allow trailers without trunks to be looted. Allow opening trunk now controls access to allow another player to loot the inside or outside of a car. Someone can be a passenger without being able to loot the car.
+		3/22/2026 - Removed Storm dependency for map rendering. Map view now works with vanilla client via pure Lua.
+	'''.stripIndent()
+}
