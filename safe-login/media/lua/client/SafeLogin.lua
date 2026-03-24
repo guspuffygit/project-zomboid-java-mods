@@ -12,6 +12,10 @@ local function isAdmin()
     return getAccessLevel() == "admin" or getAccessLevel() == "Admin"
 end
 
+local function halo(player, msg)
+    player:setHaloNote(msg, 100, 200, 100, 50)
+end
+
 function SafeLogin.activate(player)
     if isAdmin() then
         print("[SafeLogin] Player is admin — skipping protection.")
@@ -35,6 +39,8 @@ end
 function SafeLogin.deactivate()
     if not protectionActive then return end
 
+    halo(protectedPlayer, "You are no longer protected.")
+
     protectedPlayer:setGodMod(false, true)
     protectedPlayer:setInvisible(false, true)
     protectedPlayer:setGhostMode(false, true)
@@ -55,9 +61,13 @@ function SafeLogin.onTick()
         return
     end
 
-    if getTimestampMs() - spawnTimeMs >= SAFE_DURATION_MS then
+    local elapsedMs = getTimestampMs() - spawnTimeMs
+    if elapsedMs >= SAFE_DURATION_MS then
         print("[SafeLogin] 10 seconds elapsed — removing protection.")
         SafeLogin.deactivate()
+    else
+        local remainingSec = math.ceil((SAFE_DURATION_MS - elapsedMs) / 1000)
+        halo(protectedPlayer, "You are invisible and invincible for " .. remainingSec .. "s. Move to cancel.")
     end
 end
 
