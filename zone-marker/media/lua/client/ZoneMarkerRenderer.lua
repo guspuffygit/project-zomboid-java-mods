@@ -1,5 +1,4 @@
 require "ISUI/Maps/ISWorldMap"
-require "ZoneMarkerShared"
 require "ZoneMarkerClient"
 
 --

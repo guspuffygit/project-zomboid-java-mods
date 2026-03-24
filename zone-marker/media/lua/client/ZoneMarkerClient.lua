@@ -1,9 +1,20 @@
 if isServer() then return end
 
-require "ZoneMarkerShared"
+---@class ZoneMarkerZone
+---@field xStart number
+---@field xEnd number
+---@field yStart number
+---@field yEnd number
+---@field region string
 
----@type string
-local MODULE = ZoneMarkerShared.MODULE
+---@class ZoneMarkerCategory
+---@field name string
+---@field r number Red (0-1)
+---@field g number Green (0-1)
+---@field b number Blue (0-1)
+---@field a number Alpha (0-1)
+
+local MODULE = "ZoneMarker"
 
 --
 -- Zone cache (populated from server via sendServerCommand)

@@ -7,7 +7,6 @@ require "ISUI/ISTextEntryBox"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISLabel"
 require "ZoneMarkerClient"
-require "ZoneMarkerShared"
 
 ---@class ZoneMarkerUI : ISCollapsableWindow
 ---@field catList ISScrollingListBox Category list widget
@@ -33,8 +32,7 @@ require "ZoneMarkerShared"
 ---@field instance ZoneMarkerUI|nil Singleton instance (class-level)
 ZoneMarkerUI = ISCollapsableWindow:derive("ZoneMarkerUI")
 
----@type string
-local MODULE = ZoneMarkerShared.MODULE
+local MODULE = "ZoneMarker"
 ---@type integer
 local PAD = 10
 ---@type integer

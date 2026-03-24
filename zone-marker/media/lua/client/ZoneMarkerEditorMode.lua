@@ -1,13 +1,11 @@
 require "ISUI/AdminPanel/ZoneEditor/MultiplayerZoneEditorMode"
-require "ZoneMarkerShared"
 require "ZoneMarkerClient"
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local UI_BORDER_SPACING = 10
 local BUTTON_HGT = FONT_HGT_SMALL + 6
 
----@type string
-local MODULE = ZoneMarkerShared.MODULE
+local MODULE = "ZoneMarker"
 
 local DEFAULT_R = "1.0"
 local DEFAULT_G = "0"
