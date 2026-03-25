@@ -1,14 +1,14 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
-public class DeathLogWriter {
+public class SafehouseLogWriter {
 
     private static final String SEPARATOR =
             "================================================================================";
 
     private static final ch.qos.logback.classic.Logger logger =
-            ExtraLoggerFactory.createLogger("deaths");
+            ExtraLoggerFactory.createLogger("safehouses");
 
-    public static void writeDeathEntry(String header, String body) {
+    public static void writeEntry(String header, String body) {
         logger.info("{}\n{}\n{}\n{}", SEPARATOR, header, SEPARATOR, body);
     }
 }
