@@ -11,5 +11,6 @@ public class ExtraLoggingMod implements ZomboidMod {
     public void registerEventHandlers() {
         LOGGER.info("Registering Extra Logging event handlers");
         StormEventDispatcher.registerEventHandler(DeathEventHandler.class);
+        StormEventDispatcher.registerEventHandler(SafehouseEventHandler.class);
     }
 }

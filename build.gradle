@@ -264,7 +264,7 @@ subprojects { subproj ->
 	}
 
 	dependencies {
-		implementation 'com.sentientsimulations:project-zomboid-storm:1.3.3-SNAPSHOT'
+		implementation 'com.sentientsimulations:project-zomboid-storm:1.4.1-SNAPSHOT'
 
         compileOnly fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
 
