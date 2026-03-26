@@ -6,6 +6,7 @@ import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 import zombie.characters.BodyDamage.BodyDamage;
@@ -159,9 +160,13 @@ public class DeathEventHandler {
     private static void appendInventory(StringBuilder sb, IsoPlayer player) {
         ItemContainer inventory = player.getInventory();
         ArrayList<InventoryItem> items = inventory.getItems();
-        StringJoiner joiner = new StringJoiner(", ");
+        Map<String, Integer> itemCounts = new LinkedHashMap<>();
         for (InventoryItem item : items) {
-            joiner.add(item.getFullType());
+            itemCounts.merge(item.getFullType(), 1, Integer::sum);
+        }
+        StringJoiner joiner = new StringJoiner(", ");
+        for (Map.Entry<String, Integer> entry : itemCounts.entrySet()) {
+            joiner.add(entry.getKey() + " x" + entry.getValue());
         }
         sb.append("\n--- Inventory ---\n");
         sb.append("{ ").append(joiner).append(" }\n");

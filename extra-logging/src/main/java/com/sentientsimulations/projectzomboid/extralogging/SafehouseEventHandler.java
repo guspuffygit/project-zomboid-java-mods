@@ -1,7 +1,5 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
-import static io.pzstorm.storm.logging.StormLogger.LOGGER;
-
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.zomboid.SafehouseClaimedEvent;
 import io.pzstorm.storm.event.zomboid.SafehouseInviteRespondedEvent;
@@ -10,143 +8,72 @@ import io.pzstorm.storm.event.zomboid.SafehouseMemberRemovedEvent;
 import io.pzstorm.storm.event.zomboid.SafehouseOwnerChangedEvent;
 import io.pzstorm.storm.event.zomboid.SafehouseReleasedEvent;
 import io.pzstorm.storm.event.zomboid.SafezoneClaimedEvent;
-import java.time.Instant;
 
 public class SafehouseEventHandler {
+
+    private static final ch.qos.logback.classic.Logger logger =
+            ExtraLoggerFactory.createLogger("safehouses");
 
     @SubscribeEvent
     public static void onSafehouseClaimed(SafehouseClaimedEvent event) {
         try {
-            String header = formatHeader("take safehouse");
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Username", event.username);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Zone", formatZone(event.x, event.y, event.w, event.h));
-            field(sb, "Title", event.title);
-            SafehouseLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged safehouse claim by: {}", event.username);
+            logger.info("SafehouseClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}", event.steamId, event.username, event.x, event.y, event.w, event.h, event.title);
         } catch (Exception e) {
-            LOGGER.error("Failed to log safehouse claim for: {}", event.username, e);
+            logger.error("Failed to log onSafehouseClaimed", e);
         }
     }
 
     @SubscribeEvent
     public static void onSafehouseReleased(SafehouseReleasedEvent event) {
         try {
-            String header = formatHeader("release safehouse");
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Owner", event.owner);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Zone", formatZone(event.x, event.y, event.w, event.h));
-            field(sb, "Title", event.title);
-            field(sb, "Members", "[" + event.members + "]");
-            SafehouseLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged safehouse release by: {}", event.owner);
+            logger.info("SafehouseReleased: steamId={}, owner={}, zone=({},{},{},{}), title={}, members=[{}]", event.steamId, event.owner, event.x, event.y, event.w, event.h, event.title, event.members);
         } catch (Exception e) {
-            LOGGER.error("Failed to log safehouse release for: {}", event.owner, e);
+            logger.error("Failed to log onSafehouseReleased", e);
         }
     }
 
     @SubscribeEvent
     public static void onSafehouseOwnerChanged(SafehouseOwnerChangedEvent event) {
         try {
-            String header = formatHeader("change safehouse owner");
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Previous Owner", event.previousOwner);
-            field(sb, "New Owner", event.newOwner);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Zone", formatZone(event.x, event.y, event.w, event.h));
-            field(sb, "Title", event.title);
-            SafehouseLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info(
-                    "Logged safehouse owner change: {} -> {}", event.previousOwner, event.newOwner);
+            logger.info("SafehouseOwnerChanged: steamId={}, previousOwner={}, newOwner={}, zone=({},{},{},{}), title={}", event.steamId, event.previousOwner, event.newOwner, event.x, event.y, event.w, event.h, event.title);
         } catch (Exception e) {
-            LOGGER.error("Failed to log safehouse owner change", e);
+            logger.error("Failed to log onSafehouseOwnerChanged", e);
         }
     }
 
     @SubscribeEvent
     public static void onSafehouseMemberRemoved(SafehouseMemberRemovedEvent event) {
         try {
-            String header = formatHeader("remove player from safehouse");
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Removed", event.removedPlayer);
-            field(sb, "Owner", event.owner);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Zone", formatZone(event.x, event.y, event.w, event.h));
-            field(sb, "Title", event.title);
-            SafehouseLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged safehouse member removal: {}", event.removedPlayer);
+            logger.info("SafehouseMemberRemoved: steamId={}, owner={}, removed={}, zone=({},{},{},{}), title={}", event.steamId, event.owner, event.removedPlayer, event.x, event.y, event.w, event.h, event.title);
         } catch (Exception e) {
-            LOGGER.error("Failed to log safehouse member removal for: {}", event.removedPlayer, e);
+            logger.error("Failed to log onSafehouseMemberRemoved", e);
         }
     }
 
     @SubscribeEvent
     public static void onSafehouseInviteSent(SafehouseInviteSentEvent event) {
         try {
-            String header = formatHeader("send safehouse invite");
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Owner", event.owner);
-            field(sb, "Invited", event.invited);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Zone", formatZone(event.x, event.y, event.w, event.h));
-            field(sb, "Title", event.title);
-            SafehouseLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged safehouse invite: {} -> {}", event.owner, event.invited);
+            logger.info("SafehouseInviteSent: steamId={}, owner={}, invited={}, zone=({},{},{},{}), title={}", event.steamId, event.owner, event.invited, event.x, event.y, event.w, event.h, event.title);
         } catch (Exception e) {
-            LOGGER.error("Failed to log safehouse invite", e);
+            logger.error("Failed to log onSafehouseInviteSent", e);
         }
     }
 
     @SubscribeEvent
     public static void onSafehouseInviteResponded(SafehouseInviteRespondedEvent event) {
         try {
-            String action = event.accepted ? "accept safehouse invite" : "decline safehouse invite";
-            String header = formatHeader(action);
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Player", event.invitedPlayer);
-            field(sb, "Owner", event.owner);
-            field(sb, "Accepted", String.valueOf(event.accepted));
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Zone", formatZone(event.x, event.y, event.w, event.h));
-            field(sb, "Title", event.title);
-            SafehouseLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info(
-                    "Logged safehouse invite response: {} {} invite from {}",
-                    event.invitedPlayer,
-                    event.accepted ? "accepted" : "declined",
-                    event.owner);
+            logger.info("SafehouseInviteResponded: steamId={}, player={}, owner={}, accepted={}, zone=({},{},{},{}), title={}", event.steamId, event.invitedPlayer, event.owner, event.accepted, event.x, event.y, event.w, event.h, event.title);
         } catch (Exception e) {
-            LOGGER.error("Failed to log safehouse invite response", e);
+            logger.error("Failed to log onSafehouseInviteResponded", e);
         }
     }
 
     @SubscribeEvent
     public static void onSafezoneClaimed(SafezoneClaimedEvent event) {
         try {
-            String header = formatHeader("create safezone");
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Username", event.username);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Zone", formatZone(event.x, event.y, event.w, event.h));
-            field(sb, "Title", event.title);
-            SafehouseLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged safezone creation by: {}", event.username);
+            logger.info("SafezoneClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}", event.steamId, event.username, event.x, event.y, event.w, event.h, event.title);
         } catch (Exception e) {
-            LOGGER.error("Failed to log safezone creation for: {}", event.username, e);
+            logger.error("Failed to log onSafezoneClaimed", e);
         }
-    }
-
-    private static String formatHeader(String action) {
-        return String.format("[%s] %s", Instant.now(), action);
-    }
-
-    private static String formatZone(int x, int y, int w, int h) {
-        return String.format("%d,%d,%d,%d", x, y, w, h);
-    }
-
-    private static void field(StringBuilder sb, String label, String value) {
-        sb.append(String.format("%-16s%s%n", label + ":", value));
     }
 }

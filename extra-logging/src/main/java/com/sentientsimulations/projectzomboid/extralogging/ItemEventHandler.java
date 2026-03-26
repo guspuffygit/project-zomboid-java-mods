@@ -1,81 +1,73 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
-import static io.pzstorm.storm.logging.StormLogger.LOGGER;
-
 import io.pzstorm.storm.event.core.SubscribeEvent;
-import io.pzstorm.storm.event.zomboid.HeldItemsDroppedEvent;
-import io.pzstorm.storm.event.zomboid.ItemPlacedOnMapEvent;
-import io.pzstorm.storm.event.zomboid.ItemTransferredToFloorEvent;
-import java.time.Instant;
+import io.pzstorm.storm.event.packet.*;
 
 public class ItemEventHandler {
 
+    private static final ch.qos.logback.classic.Logger logger =
+            ExtraLoggerFactory.createLogger("items");
+
     @SubscribeEvent
-    public static void onItemTransferredToFloor(ItemTransferredToFloorEvent event) {
+    public static void onAddInventoryItemToContainer(AddInventoryItemToContainerPacketEvent event) {
         try {
-            String header = formatHeader("drop item from inventory");
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Username", event.username);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Item", event.itemFullType);
-            field(sb, "Item Name", event.itemName);
-            field(sb, "Location", formatLocation(event.x, event.y, event.z));
-            ItemLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged item drop by: {} [{}]", event.username, event.itemFullType);
+            logger.info("{}: steamId={}, user={}, pos=({},{},{}), container={}, items={}", event.getName(), event.steamId, event.username, event.getX(), event.getY(), 0, event.getContainerId(), event.getItems() != null ? event.getItems().size() : 0);
         } catch (Exception e) {
-            LOGGER.error("Failed to log item drop for: {}", event.username, e);
+            logger.error("Failed to log onAddInventoryItemToContainer", e);
         }
     }
 
     @SubscribeEvent
-    public static void onItemPlacedOnMap(ItemPlacedOnMapEvent event) {
+    public static void onAddItemToMap(AddItemToMapPacketEvent event) {
         try {
-            String action =
-                    event.isWorldInventoryItem ? "place item on ground" : "place object on map";
-            String header = formatHeader(action);
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Username", event.username);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            field(sb, "Item", event.itemType);
-            field(sb, "Location", formatLocation(event.x, event.y, event.z));
-            ItemLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged item placement by: {} [{}]", event.username, event.itemType);
+            logger.info("{}: steamId={}, user={}, object={}", event.getName(), event.steamId, event.username, event.getIsoObject());
         } catch (Exception e) {
-            LOGGER.error("Failed to log item placement for: {}", event.username, e);
+            logger.error("Failed to log onAddItemToMap", e);
         }
     }
 
     @SubscribeEvent
-    public static void onHeldItemsDropped(HeldItemsDroppedEvent event) {
+    public static void onBuildAction(BuildActionPacketEvent event) {
         try {
-            String action = event.isThrow ? "throw held items" : "drop held items";
-            String header = formatHeader(action);
-            StringBuilder sb = new StringBuilder();
-            field(sb, "Username", event.username);
-            field(sb, "Steam ID", String.valueOf(event.steamId));
-            if (event.primaryItemType != null) {
-                field(sb, "Primary", event.primaryItemType);
-            }
-            if (event.secondaryItemType != null) {
-                field(sb, "Secondary", event.secondaryItemType);
-            }
-            field(sb, "Location", formatLocation(event.x, event.y, event.z));
-            ItemLogWriter.writeEntry(header, sb.toString());
-            LOGGER.info("Logged held item drop by: {}", event.username);
+            logger.info("{}: steamId={}, user={}, pos=({},{},{}), sprite={}, type={}, north={}", event.getName(), event.steamId, event.username, event.getX(), event.getY(), event.getZ(), event.getSpriteName(), event.getObjectType(), event.isNorth());
         } catch (Exception e) {
-            LOGGER.error("Failed to log held item drop for: {}", event.username, e);
+            logger.error("Failed to log onBuildAction", e);
         }
     }
 
-    private static String formatHeader(String action) {
-        return String.format("[%s] %s", Instant.now(), action);
+    @SubscribeEvent
+    public static void onNetTimedAction(NetTimedActionPacketEvent event) {
+        try {
+            logger.info("{}: steamId={}, user={}, actionType={}, actionName={}, usingTimeout={}", event.getName(), event.steamId, event.username, event.getActionType(), event.getActionName(), event.getIsUsingTimeout());
+        } catch (Exception e) {
+            logger.error("Failed to log onNetTimedAction", e);
+        }
     }
 
-    private static String formatLocation(int x, int y, int z) {
-        return String.format("%d,%d,%d", x, y, z);
+    @SubscribeEvent
+    public static void onPlayerDropHeldItems(PlayerDropHeldItemsPacketEvent event) {
+        try {
+            logger.info("{}: steamId={}, user={}, pos=({},{},{}), heavy={}, throw={}", event.getName(), event.steamId, event.username, event.getX(), event.getY(), event.getZ(), event.isHeavy(), event.isThrow());
+        } catch (Exception e) {
+            logger.error("Failed to log onPlayerDropHeldItems", e);
+        }
     }
 
-    private static void field(StringBuilder sb, String label, String value) {
-        sb.append(String.format("%-16s%s%n", label + ":", value));
+    @SubscribeEvent
+    public static void onRemoveItemFromSquare(RemoveItemFromSquarePacketEvent event) {
+        try {
+            logger.info("{}: steamId={}, user={}, pos=({},{},{}), index={}", event.getName(), event.steamId, event.username, event.getX(), event.getY(), event.getZ(), event.getIndex());
+        } catch (Exception e) {
+            logger.error("Failed to log onRemoveItemFromSquare", e);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSledgehammerDestroy(SledgehammerDestroyPacketEvent event) {
+        try {
+            logger.info("{}: steamId={}, user={}, pos=({},{},{}), index={}", event.getName(), event.steamId, event.username, event.getX(), event.getY(), event.getZ(), event.getIndex());
+        } catch (Exception e) {
+            logger.error("Failed to log onSledgehammerDestroy", e);
+        }
     }
 }
