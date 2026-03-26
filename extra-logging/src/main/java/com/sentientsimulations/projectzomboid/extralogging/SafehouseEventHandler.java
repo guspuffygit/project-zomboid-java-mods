@@ -17,7 +17,15 @@ public class SafehouseEventHandler {
     @SubscribeEvent
     public static void onSafehouseClaimed(SafehouseClaimedEvent event) {
         try {
-            logger.info("SafehouseClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}", event.steamId, event.username, event.x, event.y, event.w, event.h, event.title);
+            logger.info(
+                    "SafehouseClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}",
+                    event.steamId,
+                    event.username,
+                    event.x,
+                    event.y,
+                    event.w,
+                    event.h,
+                    event.title);
         } catch (Exception e) {
             logger.error("Failed to log onSafehouseClaimed", e);
         }
@@ -26,7 +34,16 @@ public class SafehouseEventHandler {
     @SubscribeEvent
     public static void onSafehouseReleased(SafehouseReleasedEvent event) {
         try {
-            logger.info("SafehouseReleased: steamId={}, owner={}, zone=({},{},{},{}), title={}, members=[{}]", event.steamId, event.owner, event.x, event.y, event.w, event.h, event.title, event.members);
+            logger.info(
+                    "SafehouseReleased: steamId={}, owner={}, zone=({},{},{},{}), title={}, members=[{}]",
+                    event.steamId,
+                    event.owner,
+                    event.x,
+                    event.y,
+                    event.w,
+                    event.h,
+                    event.title,
+                    event.members);
         } catch (Exception e) {
             logger.error("Failed to log onSafehouseReleased", e);
         }
@@ -35,7 +52,16 @@ public class SafehouseEventHandler {
     @SubscribeEvent
     public static void onSafehouseOwnerChanged(SafehouseOwnerChangedEvent event) {
         try {
-            logger.info("SafehouseOwnerChanged: steamId={}, previousOwner={}, newOwner={}, zone=({},{},{},{}), title={}", event.steamId, event.previousOwner, event.newOwner, event.x, event.y, event.w, event.h, event.title);
+            logger.info(
+                    "SafehouseOwnerChanged: steamId={}, previousOwner={}, newOwner={}, zone=({},{},{},{}), title={}",
+                    event.steamId,
+                    event.previousOwner,
+                    event.newOwner,
+                    event.x,
+                    event.y,
+                    event.w,
+                    event.h,
+                    event.title);
         } catch (Exception e) {
             logger.error("Failed to log onSafehouseOwnerChanged", e);
         }
@@ -44,7 +70,16 @@ public class SafehouseEventHandler {
     @SubscribeEvent
     public static void onSafehouseMemberRemoved(SafehouseMemberRemovedEvent event) {
         try {
-            logger.info("SafehouseMemberRemoved: steamId={}, owner={}, removed={}, zone=({},{},{},{}), title={}", event.steamId, event.owner, event.removedPlayer, event.x, event.y, event.w, event.h, event.title);
+            logger.info(
+                    "SafehouseMemberRemoved: steamId={}, owner={}, removed={}, zone=({},{},{},{}), title={}",
+                    event.steamId,
+                    event.owner,
+                    event.removedPlayer,
+                    event.x,
+                    event.y,
+                    event.w,
+                    event.h,
+                    event.title);
         } catch (Exception e) {
             logger.error("Failed to log onSafehouseMemberRemoved", e);
         }
@@ -53,7 +88,16 @@ public class SafehouseEventHandler {
     @SubscribeEvent
     public static void onSafehouseInviteSent(SafehouseInviteSentEvent event) {
         try {
-            logger.info("SafehouseInviteSent: steamId={}, owner={}, invited={}, zone=({},{},{},{}), title={}", event.steamId, event.owner, event.invited, event.x, event.y, event.w, event.h, event.title);
+            logger.info(
+                    "SafehouseInviteSent: steamId={}, owner={}, invited={}, zone=({},{},{},{}), title={}",
+                    event.steamId,
+                    event.owner,
+                    event.invited,
+                    event.x,
+                    event.y,
+                    event.w,
+                    event.h,
+                    event.title);
         } catch (Exception e) {
             logger.error("Failed to log onSafehouseInviteSent", e);
         }
@@ -62,7 +106,17 @@ public class SafehouseEventHandler {
     @SubscribeEvent
     public static void onSafehouseInviteResponded(SafehouseInviteRespondedEvent event) {
         try {
-            logger.info("SafehouseInviteResponded: steamId={}, player={}, owner={}, accepted={}, zone=({},{},{},{}), title={}", event.steamId, event.invitedPlayer, event.owner, event.accepted, event.x, event.y, event.w, event.h, event.title);
+            logger.info(
+                    "SafehouseInviteResponded: steamId={}, player={}, owner={}, accepted={}, zone=({},{},{},{}), title={}",
+                    event.steamId,
+                    event.invitedPlayer,
+                    event.owner,
+                    event.accepted,
+                    event.x,
+                    event.y,
+                    event.w,
+                    event.h,
+                    event.title);
         } catch (Exception e) {
             logger.error("Failed to log onSafehouseInviteResponded", e);
         }
@@ -71,7 +125,15 @@ public class SafehouseEventHandler {
     @SubscribeEvent
     public static void onSafezoneClaimed(SafezoneClaimedEvent event) {
         try {
-            logger.info("SafezoneClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}", event.steamId, event.username, event.x, event.y, event.w, event.h, event.title);
+            logger.info(
+                    "SafezoneClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}",
+                    event.steamId,
+                    event.username,
+                    event.x,
+                    event.y,
+                    event.w,
+                    event.h,
+                    event.title);
         } catch (Exception e) {
             logger.error("Failed to log onSafezoneClaimed", e);
         }

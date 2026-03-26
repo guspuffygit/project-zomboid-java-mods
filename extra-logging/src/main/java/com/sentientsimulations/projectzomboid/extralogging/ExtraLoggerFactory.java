@@ -31,7 +31,7 @@ public class ExtraLoggerFactory {
 
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setContext(context);
-        encoder.setPattern("%msg%n");
+        encoder.setPattern("%date{yyyy-MM-dd HH:mm:ss.SSS} %msg%n");
         encoder.start();
 
         RollingFileAppender<ILoggingEvent> rollingAppender = new RollingFileAppender<>();

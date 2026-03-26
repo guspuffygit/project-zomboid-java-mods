@@ -1,0 +1,190 @@
+VERSION = 1,
+
+option LogExtender.PlayerConnected
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = PlayerConnected
+}
+
+option LogExtender.PlayerLevelup
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = PlayerLevelup
+}
+
+option LogExtender.PlayerTick
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = PlayerTick
+}
+
+option LogExtender.VehicleEnter
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = VehicleEnter
+}
+
+option LogExtender.VehicleExit
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = VehicleExit
+}
+
+option LogExtender.VehicleAttach
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = VehicleAttach
+}
+
+option LogExtender.VehicleDetach
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = VehicleDetach
+}
+
+option LogExtender.VehicleAdminTools
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = VehicleAdminTools
+}
+
+option LogExtender.TimedActions
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = TimedActions
+}
+
+option LogExtender.TakeSafeHouse
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = TakeSafeHouse
+}
+
+option LogExtender.ChangeSafeHouseOwner
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = ChangeSafeHouseOwner
+}
+
+option LogExtender.ReleaseSafeHouse
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = ReleaseSafeHouse
+}
+
+option LogExtender.RemovePlayerFromSafehouse
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = RemovePlayerFromSafehouse
+}
+
+option LogExtender.SendSafeHouseInvite
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = SendSafeHouseInvite
+}
+
+option LogExtender.JoinToSafehouse
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = JoinToSafehouse
+}
+
+option LogExtender.SafehouseAdminTools
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = SafehouseAdminTools
+}
+
+option LogExtender.HitPVP
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = HitPVP
+}
+
+option LogExtender.AdminManageItem
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = AdminManageItem
+}
+
+option LogExtender.AdminTeleport
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = AdminTeleport
+}
+
+option LogExtender.AlternativeMap
+{
+  type = boolean,
+  default = false,
+
+  page = LogExtender,
+  translation = AlternativeMap
+}
+
+option LogExtender.BrushToolLogs
+{
+  type = boolean,
+  default = true,
+
+  page = LogExtender,
+  translation = BrushToolLogs
+}

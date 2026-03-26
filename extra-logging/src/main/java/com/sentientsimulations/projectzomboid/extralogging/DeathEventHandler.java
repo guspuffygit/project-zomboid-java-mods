@@ -4,7 +4,6 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,7 +40,7 @@ public class DeathEventHandler {
     private static String formatHeader(IsoPlayer player) {
         String forename = player.getDescriptor().getForename();
         String surname = player.getDescriptor().getSurname();
-        return String.format("[%s] Death of %s %s", Instant.now(), forename, surname);
+        return String.format("Death of %s %s", forename, surname);
     }
 
     private static String formatBody(IsoPlayer player) {
