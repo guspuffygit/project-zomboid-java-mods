@@ -2,6 +2,7 @@
 modInfo {
 	name = 'Safe Login'
 	workshopId = '3691404212'
+	workshopIdStage = '3694330363'
 	workshopIdProd = '3691517016'
 	description = '''\
 		Protects players for up to 10 seconds after spawning with invisibility and god mode.

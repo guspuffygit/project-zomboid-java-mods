@@ -1,6 +1,7 @@
 modInfo {
 	name = 'Zone Marker'
 	workshopId = '3686692295'
+	workshopIdStage = '3694329365'
 	workshopIdProd = '3686768770'
 	description = '''\
 		|Allows server admins to define and manage colored zone overlays on the world map.

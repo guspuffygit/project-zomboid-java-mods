@@ -2,6 +2,7 @@
 modInfo {
 	name = 'Another Vehicle Claim System'
 	workshopId = '3677939958'
+	workshopIdStage = '3694328666'
 	workshopIdProd = '3672982692'
 	description = '''\
 		Another Vehicle Claim System ported to b42.

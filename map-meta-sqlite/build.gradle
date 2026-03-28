@@ -14,3 +14,6 @@ modInfo {
 	workshopId = '3686714710'
 	workshopIdProd = '3686199425'
 }
+
+uploadWorkshop.enabled = false
+deployMod.enabled = false
