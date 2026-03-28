@@ -13,6 +13,7 @@ interface ModInfo {
 
 	Property<String> getWorkshopTitle()
 	Property<String> getWorkshopId()
+	Property<String> getWorkshopIdStage()
 	Property<String> getWorkshopIdProd()
 	Property<String> getWorkshopTags()
 }
@@ -39,7 +40,22 @@ tasks.register('uploadAll') {
 	dependsOn subprojects.uploadWorkshop
 }
 
-def isProd = rootProject.hasProperty('prod')
+def env = rootProject.hasProperty('env') ? rootProject.property('env') : 'dev'
+
+def getWorkshopVisibility = {
+	switch (env) {
+		case 'prod':  return '0'
+		default: return '2'
+	}
+}
+
+def getEnvSuffix = {
+	switch (env) {
+		case 'prod':  return ''
+		case 'stage': return '-stage'
+		default: return '-dev'
+	}
+}
 
 subprojects { subproj ->
 	apply plugin: 'java'
@@ -51,15 +67,27 @@ subprojects { subproj ->
 
 	afterEvaluate {
 		def info = extensions.getByType(ModInfo)
-		if (isProd) {
-			if (info.workshopIdProd.isPresent()) {
-				info.workshopId.set(info.workshopIdProd.get())
-			}
-		} else {
-			info.name.set("[DEV] ${info.name.get()}")
-			if (info.workshopTitle.isPresent()) {
-				info.workshopTitle.set("[DEV] ${info.workshopTitle.get()}")
-			}
+		switch (env) {
+			case 'prod':
+				if (info.workshopIdProd.isPresent()) {
+					info.workshopId.set(info.workshopIdProd.get())
+				}
+				break
+			case 'stage':
+				info.name.set("[STAGE] ${info.name.get()}")
+				if (info.workshopTitle.isPresent()) {
+					info.workshopTitle.set("[STAGE] ${info.workshopTitle.get()}")
+				}
+				if (info.workshopIdStage.isPresent()) {
+					info.workshopId.set(info.workshopIdStage.get())
+				}
+				break
+			default:
+				info.name.set("[DEV] ${info.name.get()}")
+				if (info.workshopTitle.isPresent()) {
+					info.workshopTitle.set("[DEV] ${info.workshopTitle.get()}")
+				}
+				break
 		}
 	}
 
@@ -74,7 +102,7 @@ subprojects { subproj ->
 		def outputFile = layout.buildDirectory.file("mod.info")
 
 		inputs.property("name", info.name)
-		inputs.property("id", info.id.orElse("${subproj.name}-b42"))
+		inputs.property("id", info.id.orElse("${subproj.name}-b42${getEnvSuffix()}"))
 		inputs.property("description", info.description.orElse(""))
 
 		outputs.file(outputFile)
@@ -88,9 +116,9 @@ subprojects { subproj ->
 				"url=https://github.com/guspuffygit/project-zomboid-java-mods",
                 "poster=${info.poster.getOrElse("poster.png")}",
 				"description=${formattedDescription}",
-				"id=${info.id.getOrElse("${subproj.name}-b42")}",
+				"id=${info.id.getOrElse("${subproj.name}-b42${getEnvSuffix()}")}",
 				"modversion=${info.modVersion.getOrElse("1.0")}",
-				'require=\\storm-core-b42',
+				"require=\\storm-core-b42${getEnvSuffix()}",
             ].join('\n')
 		}
 	}
@@ -105,7 +133,7 @@ subprojects { subproj ->
 		inputs.property('title', info.workshopTitle.orElse(info.name))
 		inputs.property('description', info.description.orElse(''))
 		inputs.property('tags', info.workshopTags.orElse('Build 42'))
-		inputs.property('visibility', isProd ? '0' : '3')
+		inputs.property('visibility', getWorkshopVisibility())
 
 		doLast {
 			def file = outputFile.get().asFile
@@ -119,7 +147,7 @@ subprojects { subproj ->
 					"title=${info.workshopTitle.getOrElse(info.name.get())}",
 					"description=${formattedDescription}",
 					"tags=${info.workshopTags.getOrElse('Build 42')}",
-					"visibility=${isProd ? '0' : '3'}",
+					"visibility=${getWorkshopVisibility()}",
 			].join('\n')
 		}
 	}
@@ -128,9 +156,9 @@ subprojects { subproj ->
 		dependsOn jar, 'writeModInfo', 'generateWorkshopFile'
 
 		def workshopRoot = getLocalProperty('zomboidDir').map {
-			"${it}/Workshop/${subproj.name}-b42"
+			"${it}/Workshop/${subproj.name}-b42${getEnvSuffix()}"
 		}
-		def modRoot = "Contents/mods/${subproj.name}-b42"
+		def modRoot = "Contents/mods/${subproj.name}-b42${getEnvSuffix()}"
 
 		from(jar) {
 			into "${modRoot}/42"
@@ -175,7 +203,7 @@ subprojects { subproj ->
 	tasks.register('writeWorkshopVdf') {
 		def info = project.extensions.getByType(ModInfo)
 		def workshopDir = getLocalProperty('zomboidDir').map {
-			"${it}/Workshop/${subproj.name}-b42"
+			"${it}/Workshop/${subproj.name}-b42${getEnvSuffix()}"
 		}
 		def outputFile = layout.buildDirectory.file('workshop.vdf')
 
@@ -183,7 +211,7 @@ subprojects { subproj ->
 		inputs.property('publishedfileid', info.workshopId.orElse(''))
 		inputs.property('contentfolder', workshopDir.map { "${it}/Contents" })
 		inputs.property('previewfile', workshopDir.map { "${it}/preview.png" })
-		inputs.property('visibility', isProd ? '0' : '3')
+		inputs.property('visibility', getWorkshopVisibility())
 		inputs.property('title', info.workshopTitle.orElse(info.name))
 		inputs.property('description', info.description.orElse(''))
 		inputs.property('changenote', 'Deployment')
@@ -264,7 +292,7 @@ subprojects { subproj ->
 	}
 
 	dependencies {
-		implementation 'com.sentientsimulations:project-zomboid-storm:1.3.3-SNAPSHOT'
+		implementation 'com.sentientsimulations:project-zomboid-storm:1.4.1-SNAPSHOT'
 
         compileOnly fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
 
