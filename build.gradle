@@ -45,7 +45,7 @@ def env = rootProject.hasProperty('env') ? rootProject.property('env') : 'dev'
 def getWorkshopVisibility = {
 	switch (env) {
 		case 'prod':  return '0'
-		default: return '2'
+		default: return '3'
 	}
 }
 
