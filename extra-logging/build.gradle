@@ -1,6 +1,7 @@
 modInfo {
 	name = 'Extra Logging'
 	workshopId = '3692064057'
+	workshopIdStage = '3694333045'
 	workshopIdProd = '3692065551'
 	description = '''\
 		|Adds additional server-side logging capabilities for Project Zomboid.
