@@ -1,6 +1,8 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
 import io.pzstorm.storm.event.packet.*;
+import io.pzstorm.storm.lua.StormKahluaTable;
+import se.krka.kahlua.vm.KahluaTableIterator;
 
 public class ItemEventHandler {
 
@@ -34,24 +36,6 @@ public class ItemEventHandler {
                     event.getIsoObject());
         } catch (Exception e) {
             logger.error("Failed to log onAddItemToMap", e);
-        }
-    }
-
-    public static void onBuildAction(BuildActionPacketEvent event) {
-        try {
-            logger.info(
-                    "{}: steamId={}, user={}, pos=({},{},{}), sprite={}, type={}, north={}",
-                    event.getName(),
-                    event.steamId,
-                    event.username,
-                    event.getX(),
-                    event.getY(),
-                    event.getZ(),
-                    event.getSpriteName(),
-                    event.getObjectType(),
-                    event.isNorth());
-        } catch (Exception e) {
-            logger.error("Failed to log onBuildAction", e);
         }
     }
 
@@ -116,6 +100,33 @@ public class ItemEventHandler {
                     event.getIndex());
         } catch (Exception e) {
             logger.error("Failed to log onSledgehammerDestroy", e);
+        }
+    }
+
+    public static void onBuildAction(BuildActionPacketEvent event) {
+        try {
+            StormKahluaTable item = event.getItem();
+            String itemName = item != null ? item.getString("name") : null;
+
+            logger.info(
+                    "{}: steamId={}, user={}, pos=({},{},{}), type={}, name={}",
+                    event.getName(),
+                    event.steamId,
+                    event.username,
+                    event.getX(),
+                    event.getY(),
+                    event.getZ(),
+                    event.getObjectType(),
+                    itemName);
+
+            if (item != null) {
+                KahluaTableIterator it = item.iterator();
+                while (it.advance()) {
+                    logger.debug("  item key={}, value={}", it.getKey(), it.getValue());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to log onBuildAction", e);
         }
     }
 }
