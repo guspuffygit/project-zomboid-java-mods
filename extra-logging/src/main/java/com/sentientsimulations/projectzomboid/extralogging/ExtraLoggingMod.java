@@ -18,8 +18,9 @@ public class ExtraLoggingMod implements ZomboidMod {
         if (StormEnv.isStormServer()) {
             LOGGER.debug("Registering event handler for {}", DeathLogWriter.class.getName());
             StormEventDispatcher.registerEventHandler(DeathLogWriter.class);
-            LOGGER.debug("Registering event handler for {}", ItemEventHandler.class.getName());
-            StormEventDispatcher.registerEventHandler(ItemEventHandler.class);
+            //            LOGGER.debug("Registering event handler for {}",
+            // ItemEventHandler.class.getName());
+            //            StormEventDispatcher.registerEventHandler(ItemEventHandler.class);
             LOGGER.debug("Registering event handler for {}", SafehouseEventHandler.class.getName());
             StormEventDispatcher.registerEventHandler(SafehouseEventHandler.class);
         }
@@ -32,9 +33,9 @@ public class ExtraLoggingMod implements ZomboidMod {
         }
 
         List<StormClassTransformer> transformers = new ArrayList<>();
-        transformers.add(new AddItemToMapPatch());
-        transformers.add(new ItemTransactionPatch());
-        transformers.add(new PlayerDropHeldItemsPatch());
+        //        transformers.add(new AddItemToMapPatch());
+        //        transformers.add(new ItemTransactionPatch());
+        //        transformers.add(new PlayerDropHeldItemsPatch());
         transformers.add(new ServerWorldDatabasePatch());
         transformers.add(new GameServerPatch());
 
