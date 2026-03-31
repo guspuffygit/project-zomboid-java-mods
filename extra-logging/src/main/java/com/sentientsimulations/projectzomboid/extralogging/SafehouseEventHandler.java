@@ -1,7 +1,5 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
-import com.sentientsimulations.projectzomboid.extralogging.events.*;
-import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.packet.*;
 
 public class SafehouseEventHandler {
@@ -9,7 +7,6 @@ public class SafehouseEventHandler {
     private static final ch.qos.logback.classic.Logger logger =
             ExtraLoggerFactory.createLogger("safehouses");
 
-    @SubscribeEvent
     public static void onSafehouseClaim(SafehouseClaimPacketEvent event) {
         try {
             logger.info(
@@ -26,7 +23,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafehouseRelease(SafehouseReleasePacketEvent event) {
         try {
             logger.info(
@@ -46,7 +42,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafehouseChangeOwner(SafehouseChangeOwnerPacketEvent event) {
         try {
             logger.info(
@@ -66,7 +61,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafehouseChangeMember(SafehouseChangeMemberPacketEvent event) {
         try {
             logger.info(
@@ -87,7 +81,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafehouseInvite(SafehouseInvitePacketEvent event) {
         try {
             logger.info(
@@ -107,7 +100,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafehouseAccept(SafehouseAcceptPacketEvent event) {
         try {
             logger.info(
@@ -128,7 +120,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafehouseChangeRespawn(SafehouseChangeRespawnPacketEvent event) {
         try {
             logger.info(
@@ -150,7 +141,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafehouseChangeTitle(SafehouseChangeTitlePacketEvent event) {
         try {
             logger.info(
@@ -170,7 +160,6 @@ public class SafehouseEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSafezoneClaim(SafezoneClaimPacketEvent event) {
         try {
             logger.info(

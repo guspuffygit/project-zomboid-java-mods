@@ -2,7 +2,6 @@ package com.sentientsimulations.projectzomboid.extralogging;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
-import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,7 +21,6 @@ import zombie.scripting.objects.CharacterTrait;
 
 public class DeathEventHandler {
 
-    @SubscribeEvent
     public static void onCharacterDeath(OnCharacterDeathEvent event) {
         if (!(event.character instanceof IsoPlayer player)) {
             return;

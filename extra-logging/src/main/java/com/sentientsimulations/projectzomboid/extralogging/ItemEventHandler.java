@@ -1,6 +1,5 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
-import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.packet.*;
 
 public class ItemEventHandler {
@@ -8,7 +7,6 @@ public class ItemEventHandler {
     private static final ch.qos.logback.classic.Logger logger =
             ExtraLoggerFactory.createLogger("items");
 
-    @SubscribeEvent
     public static void onAddInventoryItemToContainer(AddInventoryItemToContainerPacketEvent event) {
         try {
             logger.info(
@@ -26,7 +24,6 @@ public class ItemEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onAddItemToMap(AddItemToMapPacketEvent event) {
         try {
             logger.info(
@@ -40,7 +37,6 @@ public class ItemEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onBuildAction(BuildActionPacketEvent event) {
         try {
             logger.info(
@@ -59,7 +55,6 @@ public class ItemEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onNetTimedAction(NetTimedActionPacketEvent event) {
         try {
             logger.info(
@@ -75,7 +70,6 @@ public class ItemEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onPlayerDropHeldItems(PlayerDropHeldItemsPacketEvent event) {
         try {
             logger.info(
@@ -93,7 +87,6 @@ public class ItemEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onRemoveItemFromSquare(RemoveItemFromSquarePacketEvent event) {
         try {
             logger.info(
@@ -110,7 +103,6 @@ public class ItemEventHandler {
         }
     }
 
-    @SubscribeEvent
     public static void onSledgehammerDestroy(SledgehammerDestroyPacketEvent event) {
         try {
             logger.info(
