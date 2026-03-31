@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.extralogging;
 
 import com.sentientsimulations.projectzomboid.extralogging.events.*;
 import io.pzstorm.storm.event.core.SubscribeEvent;
+import io.pzstorm.storm.event.packet.*;
 
 public class SafehouseEventHandler {
 
@@ -9,127 +10,137 @@ public class SafehouseEventHandler {
             ExtraLoggerFactory.createLogger("safehouses");
 
     @SubscribeEvent
-    public static void onSafehouseClaimed(SafehouseClaimedEvent event) {
+    public static void onSafehouseClaim(SafehouseClaimPacketEvent event) {
         try {
             logger.info(
-                    "SafehouseClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}",
+                    "SafehouseClaim: steamId={}, user={}, player={}, square=(x{},y{},z{}), title={}",
                     event.steamId,
                     event.username,
-                    event.x,
-                    event.y,
-                    event.w,
-                    event.h,
-                    event.title);
+                    event.getPlayer().getUsername(),
+                    event.getSquare().getX(),
+                    event.getSquare().getY(),
+                    event.getSquare().getZ(),
+                    event.getTitle());
         } catch (Exception e) {
-            logger.error("Failed to log onSafehouseClaimed", e);
+            logger.error("Failed to log SafehouseClaim", e);
         }
     }
 
     @SubscribeEvent
-    public static void onSafehouseReleased(SafehouseReleasedEvent event) {
+    public static void onSafehouseRelease(SafehouseReleasePacketEvent event) {
         try {
             logger.info(
-                    "SafehouseReleased: steamId={}, owner={}, zone=({},{},{},{}), title={}, members=[{}]",
-                    event.steamId,
-                    event.owner,
-                    event.x,
-                    event.y,
-                    event.w,
-                    event.h,
-                    event.title,
-                    event.members);
-        } catch (Exception e) {
-            logger.error("Failed to log onSafehouseReleased", e);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onSafehouseOwnerChanged(SafehouseOwnerChangedEvent event) {
-        try {
-            logger.info(
-                    "SafehouseOwnerChanged: steamId={}, previousOwner={}, newOwner={}, zone=({},{},{},{}), title={}",
-                    event.steamId,
-                    event.previousOwner,
-                    event.newOwner,
-                    event.x,
-                    event.y,
-                    event.w,
-                    event.h,
-                    event.title);
-        } catch (Exception e) {
-            logger.error("Failed to log onSafehouseOwnerChanged", e);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onSafehouseMemberRemoved(SafehouseMemberRemovedEvent event) {
-        try {
-            logger.info(
-                    "SafehouseMemberRemoved: steamId={}, owner={}, removed={}, zone=({},{},{},{}), title={}",
-                    event.steamId,
-                    event.owner,
-                    event.removedPlayer,
-                    event.x,
-                    event.y,
-                    event.w,
-                    event.h,
-                    event.title);
-        } catch (Exception e) {
-            logger.error("Failed to log onSafehouseMemberRemoved", e);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onSafehouseInviteSent(SafehouseInviteSentEvent event) {
-        try {
-            logger.info(
-                    "SafehouseInviteSent: steamId={}, owner={}, invited={}, zone=({},{},{},{}), title={}",
-                    event.steamId,
-                    event.owner,
-                    event.invited,
-                    event.x,
-                    event.y,
-                    event.w,
-                    event.h,
-                    event.title);
-        } catch (Exception e) {
-            logger.error("Failed to log onSafehouseInviteSent", e);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onSafehouseInviteResponded(SafehouseInviteRespondedEvent event) {
-        try {
-            logger.info(
-                    "SafehouseInviteResponded: steamId={}, player={}, owner={}, accepted={}, zone=({},{},{},{}), title={}",
-                    event.steamId,
-                    event.invitedPlayer,
-                    event.owner,
-                    event.accepted,
-                    event.x,
-                    event.y,
-                    event.w,
-                    event.h,
-                    event.title);
-        } catch (Exception e) {
-            logger.error("Failed to log onSafehouseInviteResponded", e);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onSafezoneClaimed(SafezoneClaimedEvent event) {
-        try {
-            logger.info(
-                    "SafezoneClaimed: steamId={}, user={}, zone=({},{},{},{}), title={}",
+                    "SafehouseRelease: steamId={}, user={}, owner={}, zone=({},{},{},{}), title={}, created={}, members=[{}]",
                     event.steamId,
                     event.username,
-                    event.x,
-                    event.y,
-                    event.w,
-                    event.h,
-                    event.title);
+                    event.getSafehouse().getOwner(),
+                    event.getSafehouse().getX(),
+                    event.getSafehouse().getY(),
+                    event.getSafehouse().getX2(),
+                    event.getSafehouse().getY2(),
+                    event.getSafehouse().getTitle(),
+                    event.getSafehouse().getDatetimeCreatedStr(),
+                    event.getSafehouse().getPlayers());
         } catch (Exception e) {
-            logger.error("Failed to log onSafezoneClaimed", e);
+            logger.error("Failed to log SafehouseRelease", e);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSafehouseChangeOwner(SafehouseChangeOwnerPacketEvent event) {
+        try {
+            logger.info(
+                    "SafehouseChangeOwner: steamId={}, user={}, previousOwner={}, newOwner={}, zone=({},{},{},{}), title={}, created={}",
+                    event.steamId,
+                    event.username,
+                    event.getPreviousOwner(),
+                    event.getSafehouse().getOwner(),
+                    event.getSafehouse().getX(),
+                    event.getSafehouse().getY(),
+                    event.getSafehouse().getX2(),
+                    event.getSafehouse().getY2(),
+                    event.getSafehouse().getTitle(),
+                    event.getSafehouse().getDatetimeCreatedStr());
+        } catch (Exception e) {
+            logger.error("Failed to log SafehouseChangeOwner", e);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSafehouseChangeMember(SafehouseChangeMemberPacketEvent event) {
+        try {
+            logger.info(
+                    "SafehouseChangeMember: steamId={}, user={}, owner={}, removedPlayer={}, wasMember={} zone=({},{},{},{}), title={}, created={}",
+                    event.steamId,
+                    event.username,
+                    event.getSafehouse().getOwner(),
+                    event.getPlayer(),
+                    event.wasMember(),
+                    event.getSafehouse().getX(),
+                    event.getSafehouse().getY(),
+                    event.getSafehouse().getX2(),
+                    event.getSafehouse().getY2(),
+                    event.getSafehouse().getTitle(),
+                    event.getSafehouse().getDatetimeCreatedStr());
+        } catch (Exception e) {
+            logger.error("Failed to log SafehouseChangeMember", e);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSafehouseInvite(SafehouseInvitePacketEvent event) {
+        try {
+            logger.info(
+                    "SafehouseInvite: steamId={}, user={}, owner={}, invitedPlayer={}, zone=({},{},{},{}), title={}, created={}",
+                    event.steamId,
+                    event.username,
+                    event.getSafehouse().getOwner(),
+                    event.getInvited(),
+                    event.getSafehouse().getX(),
+                    event.getSafehouse().getY(),
+                    event.getSafehouse().getX2(),
+                    event.getSafehouse().getY2(),
+                    event.getSafehouse().getTitle(),
+                    event.getSafehouse().getDatetimeCreatedStr());
+        } catch (Exception e) {
+            logger.error("Failed to log SafehouseInvite", e);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSafehouseAccept(SafehouseAcceptPacketEvent event) {
+        try {
+            logger.info(
+                    "SafehouseAccept: steamId={}, user={}, owner={}, invitedPlayer={} accepted={}, zone=({},{},{},{}), title={}, created={}",
+                    event.steamId,
+                    event.username,
+                    event.getSafehouse().getOwner(),
+                    event.getInvited(),
+                    event.isAccepted(),
+                    event.getSafehouse().getX(),
+                    event.getSafehouse().getY(),
+                    event.getSafehouse().getX2(),
+                    event.getSafehouse().getY2(),
+                    event.getSafehouse().getTitle(),
+                    event.getSafehouse().getDatetimeCreatedStr());
+        } catch (Exception e) {
+            logger.error("Failed to log SafehouseAccept", e);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSafezoneClaim(SafezoneClaimPacketEvent event) {
+        try {
+            logger.info(
+                    "SafezoneClaim: steamId={}, user={}, player={}, square=(x{},y{}), title={}",
+                    event.steamId,
+                    event.username,
+                    event.getPlayer().getUsername(),
+                    event.getX(),
+                    event.getY(),
+                    event.getTitle());
+        } catch (Exception e) {
+            logger.error("Failed to log SafezoneClaim", e);
         }
     }
 }

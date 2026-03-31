@@ -35,13 +35,6 @@ public class ExtraLoggingMod implements ZomboidMod {
         transformers.add(new AddItemToMapPatch());
         transformers.add(new ItemTransactionPatch());
         transformers.add(new PlayerDropHeldItemsPatch());
-        transformers.add(new SafehouseAcceptPatch());
-        transformers.add(new SafehouseChangeMemberPatch());
-        transformers.add(new SafehouseChangeOwnerPatch());
-        transformers.add(new SafehouseClaimPatch());
-        transformers.add(new SafehouseInvitePatch());
-        transformers.add(new SafehouseReleasePatch());
-        transformers.add(new SafezoneClaimPatch());
         transformers.add(new ServerWorldDatabasePatch());
         transformers.add(new GameServerPatch());
 
