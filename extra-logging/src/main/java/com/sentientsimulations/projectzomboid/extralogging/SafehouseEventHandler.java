@@ -1,13 +1,7 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
+import com.sentientsimulations.projectzomboid.extralogging.events.*;
 import io.pzstorm.storm.event.core.SubscribeEvent;
-import io.pzstorm.storm.event.zomboid.SafehouseClaimedEvent;
-import io.pzstorm.storm.event.zomboid.SafehouseInviteRespondedEvent;
-import io.pzstorm.storm.event.zomboid.SafehouseInviteSentEvent;
-import io.pzstorm.storm.event.zomboid.SafehouseMemberRemovedEvent;
-import io.pzstorm.storm.event.zomboid.SafehouseOwnerChangedEvent;
-import io.pzstorm.storm.event.zomboid.SafehouseReleasedEvent;
-import io.pzstorm.storm.event.zomboid.SafezoneClaimedEvent;
 
 public class SafehouseEventHandler {
 

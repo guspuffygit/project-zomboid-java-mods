@@ -3,6 +3,8 @@ plugins {
 	id 'io.freefair.lombok' version '9.2.0' apply false
 }
 
+String stormVersion = '1.6.0-SNAPSHOT'
+
 interface ModInfo {
 	Property<String> getName()
 	Property<String> getPoster()
@@ -292,7 +294,7 @@ subprojects { subproj ->
 	}
 
 	dependencies {
-		implementation 'com.sentientsimulations:project-zomboid-storm:1.4.2-SNAPSHOT'
+		implementation "com.sentientsimulations:project-zomboid-storm:${stormVersion}"
 
         compileOnly fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
 
