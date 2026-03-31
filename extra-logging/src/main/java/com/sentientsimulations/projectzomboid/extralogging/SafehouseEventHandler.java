@@ -129,6 +129,48 @@ public class SafehouseEventHandler {
     }
 
     @SubscribeEvent
+    public static void onSafehouseChangeRespawn(SafehouseChangeRespawnPacketEvent event) {
+        try {
+            logger.info(
+                    "SafehouseChangeRespawn: steamId={}, user={}, owner={}, player={}, addingRespawn={}, wasRespawning={}, zone=({},{},{},{}), title={}, created={}",
+                    event.steamId,
+                    event.username,
+                    event.getSafehouse().getOwner(),
+                    event.getPlayer(),
+                    event.isAddingRespawn(),
+                    event.wasRespawning(),
+                    event.getSafehouse().getX(),
+                    event.getSafehouse().getY(),
+                    event.getSafehouse().getX2(),
+                    event.getSafehouse().getY2(),
+                    event.getSafehouse().getTitle(),
+                    event.getSafehouse().getDatetimeCreatedStr());
+        } catch (Exception e) {
+            logger.error("Failed to log SafehouseChangeRespawn", e);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSafehouseChangeTitle(SafehouseChangeTitlePacketEvent event) {
+        try {
+            logger.info(
+                    "SafehouseChangeTitle: steamId={}, user={}, owner={}, previousTitle={}, newTitle={}, zone=({},{},{},{}), created={}",
+                    event.steamId,
+                    event.username,
+                    event.getSafehouse().getOwner(),
+                    event.getPreviousTitle(),
+                    event.getTitle(),
+                    event.getSafehouse().getX(),
+                    event.getSafehouse().getY(),
+                    event.getSafehouse().getX2(),
+                    event.getSafehouse().getY2(),
+                    event.getSafehouse().getDatetimeCreatedStr());
+        } catch (Exception e) {
+            logger.error("Failed to log SafehouseChangeTitle", e);
+        }
+    }
+
+    @SubscribeEvent
     public static void onSafezoneClaim(SafezoneClaimPacketEvent event) {
         try {
             logger.info(
