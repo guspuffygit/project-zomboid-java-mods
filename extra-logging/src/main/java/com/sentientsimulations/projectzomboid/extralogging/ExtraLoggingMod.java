@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.extralogging;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.extralogging.events.PlayerDiedEvent;
 import com.sentientsimulations.projectzomboid.extralogging.patch.*;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
@@ -36,6 +37,7 @@ public class ExtraLoggingMod implements ZomboidMod {
         //        transformers.add(new PlayerDropHeldItemsPatch());
         transformers.add(new ServerWorldDatabasePatch());
         transformers.add(new GameServerPatch());
+        transformers.add(new IsoPlayerPatch());
 
         return transformers;
     }
@@ -45,6 +47,11 @@ public class ExtraLoggingMod implements ZomboidMod {
     @SubscribeEvent
     public void onCharacterDeath(OnCharacterDeathEvent event) {
         DeathEventHandler.onCharacterDeath(event);
+    }
+
+    @SubscribeEvent
+    public void onPlayerDied(PlayerDiedEvent event) {
+        DeathEventHandler.onPlayerDied(event);
     }
 
     // Item events

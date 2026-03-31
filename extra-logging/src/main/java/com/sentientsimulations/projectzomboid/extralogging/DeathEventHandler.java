@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.extralogging;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.extralogging.events.PlayerDiedEvent;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -32,6 +33,18 @@ public class DeathEventHandler {
             LOGGER.info("Logged death of player: {}", player.getUsername());
         } catch (Exception e) {
             LOGGER.error("Failed to log death for player: {}", player.getUsername(), e);
+        }
+    }
+
+    public static void onPlayerDied(PlayerDiedEvent event) {
+        IsoPlayer player = event.player;
+        try {
+            String header = formatHeader(player);
+            String body = formatBody(player);
+            DeathLogWriter.writeDeathEntry(header, body);
+            LOGGER.info("Logged death (onDied) of player: {}", player.getUsername());
+        } catch (Exception e) {
+            LOGGER.error("Failed to log death (onDied) for player: {}", player.getUsername(), e);
         }
     }
 
