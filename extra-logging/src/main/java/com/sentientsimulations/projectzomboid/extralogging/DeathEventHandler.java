@@ -2,9 +2,12 @@ package com.sentientsimulations.projectzomboid.extralogging;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sentientsimulations.projectzomboid.extralogging.models.DeathLog;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import zombie.characters.BodyDamage.BodyDamage;
@@ -17,9 +20,98 @@ import zombie.characters.skills.PerkFactory;
 import zombie.characters.traits.CharacterTraits;
 import zombie.inventory.InventoryItem;
 import zombie.inventory.ItemContainer;
+import zombie.inventory.types.InventoryContainer;
 import zombie.scripting.objects.CharacterTrait;
 
 public class DeathEventHandler {
+
+    private static final String SEPARATOR =
+            "================================================================================";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final ch.qos.logback.classic.Logger logger =
+            ExtraLoggerFactory.createLogger("deaths");
+    private static final ch.qos.logback.classic.Logger jsonLogger =
+            ExtraLoggerFactory.createLogger("deaths", "json");
+
+    private static void writeDeathEntry(String header, String body) {
+        logger.info("{}\n{}\n{}\n{}", SEPARATOR, header, SEPARATOR, body);
+    }
+
+    private static void writeDeathEntryJson(OnCharacterDeathEvent event) {
+        try {
+            IsoPlayer player = (IsoPlayer) event.character;
+            DeathLog log = new DeathLog();
+
+            // Identity
+            log.setUsername(player.getUsername());
+            log.setSteamId(player.getSteamID());
+            log.setForename(player.getDescriptor().getForename());
+            log.setSurname(player.getDescriptor().getSurname());
+            log.setInfected(player.getBodyDamage().isInfected());
+
+            // Death cause
+            IsoGameCharacter attacker = player.getAttackedBy();
+            if (attacker instanceof IsoPlayer killerPlayer) {
+                log.setDeathCause("PVP");
+                log.setKillerUsername(killerPlayer.getUsername());
+            } else if (attacker instanceof IsoZombie) {
+                log.setDeathCause("Zombie");
+            } else if (player.isOnFire()) {
+                log.setDeathCause("Fire");
+            } else if (attacker != null) {
+                log.setDeathCause(attacker.getClass().getSimpleName());
+            } else {
+                log.setDeathCause("Unknown");
+            }
+
+            log.setX(player.getX());
+            log.setY(player.getY());
+            log.setZ(player.getZ());
+
+            log.setZombieKills(player.getZombieKills());
+            log.setHoursSurvived(player.getHoursSurvived());
+
+            BodyDamage bd = player.getBodyDamage();
+            log.setPartsBleeding(bd.getNumPartsBleeding());
+            log.setPartsBitten(bd.getNumPartsBitten());
+            log.setPartsScratched(bd.getNumPartsScratched());
+
+            Stats stats = player.getStats();
+            Map<String, Float> statsMap = new LinkedHashMap<>();
+            for (CharacterStat stat : CharacterStat.REGISTRY.values()) {
+                statsMap.put(stat.getId(), stats.get(stat));
+            }
+            log.setStats(statsMap);
+
+            CharacterTraits characterTraits = player.getCharacterTraits();
+            Map<CharacterTrait, Boolean> traitsMap = characterTraits.getTraits();
+            List<String> traitNames = new ArrayList<>();
+            for (Map.Entry<CharacterTrait, Boolean> entry : traitsMap.entrySet()) {
+                if (Boolean.TRUE.equals(entry.getValue())) {
+                    traitNames.add(entry.getKey().getName());
+                }
+            }
+            log.setTraits(traitNames);
+
+            Map<String, Integer> skillsMap = new LinkedHashMap<>();
+            for (PerkFactory.Perk perk : PerkFactory.PerkList) {
+                int level = player.getPerkLevel(perk);
+                if (level > 0) {
+                    skillsMap.put(perk.getName(), level);
+                }
+            }
+            log.setSkills(skillsMap);
+
+            Map<String, Integer> itemCounts = new LinkedHashMap<>();
+            countItems(player.getInventory(), itemCounts);
+            log.setInventory(itemCounts);
+
+            jsonLogger.info(OBJECT_MAPPER.writeValueAsString(log));
+        } catch (Exception e) {
+            LOGGER.error("Unable to write death entry json", e);
+        }
+    }
 
     public static void onCharacterDeath(OnCharacterDeathEvent event) {
         if (!(event.character instanceof IsoPlayer player)) {
@@ -28,7 +120,8 @@ public class DeathEventHandler {
         try {
             String header = formatHeader(player);
             String body = formatBody(player);
-            DeathLogWriter.writeDeathEntry(header, body);
+            writeDeathEntry(header, body);
+            writeDeathEntryJson(event);
             LOGGER.info("Logged death of player: {}", player.getUsername());
         } catch (Exception e) {
             LOGGER.error("Failed to log death for player: {}", player.getUsername(), e);
@@ -155,18 +248,23 @@ public class DeathEventHandler {
     }
 
     private static void appendInventory(StringBuilder sb, IsoPlayer player) {
-        ItemContainer inventory = player.getInventory();
-        ArrayList<InventoryItem> items = inventory.getItems();
         Map<String, Integer> itemCounts = new LinkedHashMap<>();
-        for (InventoryItem item : items) {
-            itemCounts.merge(item.getFullType(), 1, Integer::sum);
-        }
+        countItems(player.getInventory(), itemCounts);
         StringJoiner joiner = new StringJoiner(", ");
         for (Map.Entry<String, Integer> entry : itemCounts.entrySet()) {
             joiner.add(entry.getKey() + " x" + entry.getValue());
         }
         sb.append("\n--- Inventory ---\n");
         sb.append("{ ").append(joiner).append(" }\n");
+    }
+
+    private static void countItems(ItemContainer container, Map<String, Integer> itemCounts) {
+        for (InventoryItem item : container.getItems()) {
+            itemCounts.merge(item.getFullType(), 1, Integer::sum);
+            if (item instanceof InventoryContainer inventoryContainer) {
+                countItems(inventoryContainer.getInventory(), itemCounts);
+            }
+        }
     }
 
     private static void field(StringBuilder sb, String label, String value) {

@@ -25,13 +25,17 @@ public class ExtraLoggerFactory {
         LOG_DIR = System.getProperty("EXTRA_LOGGING_DIR", logHome + "/extra-logging");
     }
 
-    public static ch.qos.logback.classic.Logger createLogger(String name) {
+    public static ch.qos.logback.classic.Logger createLogger(String name, String extension) {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        String logFile = LOG_DIR + "/" + name + ".log";
+        String logFile = "%s/%s.%s".formatted(LOG_DIR, name, extension);
 
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setContext(context);
-        encoder.setPattern("%date{yyyy-MM-dd HH:mm:ss.SSS} %msg%n");
+        if (extension.equals("json")) {
+            encoder.setPattern("%msg%n");
+        } else {
+            encoder.setPattern("%date{yyyy-MM-dd HH:mm:ss.SSS} %msg%n");
+        }
         encoder.start();
 
         RollingFileAppender<ILoggingEvent> rollingAppender = new RollingFileAppender<>();
@@ -68,12 +72,17 @@ public class ExtraLoggerFactory {
         asyncAppender.setIncludeCallerData(false);
         asyncAppender.start();
 
-        ch.qos.logback.classic.Logger logger = context.getLogger("extra-logging." + name);
+        ch.qos.logback.classic.Logger logger =
+                context.getLogger("extra-logging." + name + "." + extension);
         logger.setLevel(Level.INFO);
         logger.setAdditive(false);
         logger.addAppender(asyncAppender);
 
         LOGGER.info("Extra logger [{}] initialized, writing to: {}", name, logFile);
         return logger;
+    }
+
+    public static ch.qos.logback.classic.Logger createLogger(String name) {
+        return createLogger(name, "log");
     }
 }
