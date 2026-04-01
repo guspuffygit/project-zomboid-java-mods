@@ -3,6 +3,7 @@ package com.sentientsimulations.projectzomboid.extralogging;
 import io.pzstorm.storm.event.packet.*;
 import io.pzstorm.storm.lua.StormKahluaTable;
 import se.krka.kahlua.vm.KahluaTableIterator;
+import zombie.inventory.types.Food;
 
 public class ItemEventHandler {
 
@@ -41,14 +42,35 @@ public class ItemEventHandler {
 
     public static void onNetTimedAction(NetTimedActionPacketEvent event) {
         try {
+            String extraLog = "";
+            if (event.getActionType().equals("ISMoveablesAction")) {
+                String spriteName = event.getAction().getString("origSpriteName");
+                String mode = event.getAction().getString("mode");
+                extraLog += ", spriteName=%s, mode=%s".formatted(spriteName, mode);
+            } else if (event.getActionType().equals("ISDropWorldItemAction")) {
+                Object item = event.getAction().rawget("item");
+                extraLog += ", item=%s".formatted(item);
+            } else if (event.getActionType().equals("ISEatFoodAction")) {
+                Double percentage = event.getAction().getDouble("percentage");
+                extraLog += ", percentage=%s".formatted(percentage);
+
+                Object foodObject = event.getAction().rawget("item");
+                if (foodObject instanceof Food food) {
+                    extraLog += ", foodName=%s".formatted(food.getName());
+                }
+            }
+
             logger.info(
-                    "{}: steamId={}, user={}, actionType={}, actionName={}, usingTimeout={}",
+                    "{}: steamId={}, user={}, pos=({},{},{}), actionType={}, usingTimeout={}{}",
                     event.getName(),
                     event.steamId,
                     event.username,
+                    event.getPlayerId().getX(),
+                    event.getPlayerId().getY(),
+                    event.getPlayerId().getZ(),
                     event.getActionType(),
-                    event.getActionName(),
-                    event.getIsUsingTimeout());
+                    event.getIsUsingTimeout(),
+                    extraLog);
         } catch (Exception e) {
             logger.error("Failed to log onNetTimedAction", e);
         }
