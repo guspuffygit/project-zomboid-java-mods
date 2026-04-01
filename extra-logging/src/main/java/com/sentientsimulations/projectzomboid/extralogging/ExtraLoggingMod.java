@@ -130,4 +130,11 @@ public class ExtraLoggingMod implements ZomboidMod {
     public void onSafezoneClaim(SafezoneClaimPacketEvent event) {
         SafehouseEventHandler.onSafezoneClaim(event);
     }
+
+    // Vehicle Events
+
+    @SubscribeEvent
+    public void onPlayerHitVehicle(PlayerHitVehiclePacketEvent event) {
+        VehicleEventHandler.onPlayerHitVehicle(event);
+    }
 }
