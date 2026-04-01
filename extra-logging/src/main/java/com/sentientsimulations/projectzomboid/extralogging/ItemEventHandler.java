@@ -3,7 +3,9 @@ package com.sentientsimulations.projectzomboid.extralogging;
 import io.pzstorm.storm.event.packet.*;
 import io.pzstorm.storm.lua.StormKahluaTable;
 import se.krka.kahlua.vm.KahluaTableIterator;
+import zombie.inventory.InventoryItem;
 import zombie.inventory.types.Food;
+import zombie.scripting.entity.components.crafting.CraftRecipe;
 
 public class ItemEventHandler {
 
@@ -43,25 +45,55 @@ public class ItemEventHandler {
     public static void onNetTimedAction(NetTimedActionPacketEvent event) {
         try {
             String extraLog = "";
-            if (event.getActionType().equals("ISMoveablesAction")) {
-                String spriteName = event.getAction().getString("origSpriteName");
-                String mode = event.getAction().getString("mode");
-                extraLog += ", spriteName=%s, mode=%s".formatted(spriteName, mode);
-            } else if (event.getActionType().equals("ISDropWorldItemAction")) {
-                Object item = event.getAction().rawget("item");
-                extraLog += ", item=%s".formatted(item);
-            } else if (event.getActionType().equals("ISEatFoodAction")) {
-                Double percentage = event.getAction().getDouble("percentage");
-                extraLog += ", percentage=%s".formatted(percentage);
+            try {
+                if (event.getActionType().equals("ISMoveablesAction")) {
+                    String spriteName = event.getAction().getString("origSpriteName");
+                    String mode = event.getAction().getString("mode");
+                    extraLog += ", spriteName=%s, mode=%s".formatted(spriteName, mode);
+                } else if (event.getActionType().equals("ISDropWorldItemAction")) {
+                    Object item = event.getAction().rawget("item");
+                    if (item instanceof InventoryItem inventoryItem) {
+                        extraLog +=
+                                ", %s=%s"
+                                        .formatted(
+                                                inventoryItem.getClass().getSimpleName(),
+                                                inventoryItem.getFullType());
+                    } else {
+                        extraLog += ", item=%s".formatted(item);
+                    }
+                } else if (event.getActionType().equals("ISEatFoodAction")) {
+                    Double percentage = event.getAction().getDouble("percentage");
+                    extraLog += ", percentage=%s".formatted(percentage);
 
-                Object foodObject = event.getAction().rawget("item");
-                if (foodObject instanceof Food food) {
-                    extraLog += ", foodName=%s".formatted(food.getName());
+                    Object foodObject = event.getAction().rawget("item");
+                    if (foodObject instanceof Food food) {
+                        extraLog += ", foodName=%s".formatted(food.getName());
+                    }
+                } else if (event.getActionType().equals("ISHandcraftAction")) {
+                    Object craftRecipeObject = event.getAction().rawget("craftRecipe");
+                    if (craftRecipeObject instanceof CraftRecipe craftRecipe) {
+                        extraLog += ", craftItem=%s".formatted(craftRecipe.getName());
+                    }
+                } else if (event.getActionType().equals("ISEquipWeaponAction")
+                        || event.getActionType().equals("ISUnequipAction")
+                        || event.getActionType().equals("ISWearClothing")) {
+                    Object itemObject = event.getAction().rawget("item");
+                    if (itemObject instanceof InventoryItem inventoryItem) {
+                        extraLog +=
+                                ", %s=%s"
+                                        .formatted(
+                                                inventoryItem.getClass().getSimpleName(),
+                                                inventoryItem.getFullType());
+                    }
+                } else if (event.getActionType().equals("ISBuildIsoEntity")) {
+
                 }
+            } catch (Exception e) {
+                logger.error("Unable to add extraLog information to {}", event.getActionType(), e);
             }
 
             logger.info(
-                    "{}: steamId={}, user={}, pos=({},{},{}), actionType={}, usingTimeout={}{}",
+                    "{}: steamId={}, user={}, pos=({},{},{}), actionType={}{}",
                     event.getName(),
                     event.steamId,
                     event.username,
@@ -69,7 +101,6 @@ public class ItemEventHandler {
                     event.getPlayerId().getY(),
                     event.getPlayerId().getZ(),
                     event.getActionType(),
-                    event.getIsUsingTimeout(),
                     extraLog);
         } catch (Exception e) {
             logger.error("Failed to log onNetTimedAction", e);
@@ -129,9 +160,14 @@ public class ItemEventHandler {
         try {
             StormKahluaTable item = event.getItem();
             String itemName = item != null ? item.getString("name") : null;
+            Object craftRecipeObject = item.rawget("craftRecipe");
+            String translationName = "";
+            if (craftRecipeObject instanceof CraftRecipe craftRecipe) {
+                translationName = craftRecipe.getTranslationName();
+            }
 
             logger.info(
-                    "{}: steamId={}, user={}, pos=({},{},{}), type={}, name={}",
+                    "{}: steamId={}, user={}, pos=({},{},{}), type={}, name={}, translationName={}",
                     event.getName(),
                     event.steamId,
                     event.username,
@@ -139,7 +175,8 @@ public class ItemEventHandler {
                     event.getY(),
                     event.getZ(),
                     event.getObjectType(),
-                    itemName);
+                    itemName,
+                    translationName);
 
             if (item != null) {
                 KahluaTableIterator it = item.iterator();
