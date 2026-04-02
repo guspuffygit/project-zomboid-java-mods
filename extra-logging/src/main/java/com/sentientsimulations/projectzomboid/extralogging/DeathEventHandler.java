@@ -103,6 +103,15 @@ public class DeathEventHandler {
             }
             log.setSkills(skillsMap);
 
+            Map<String, Float> skillXpMap = new LinkedHashMap<>();
+            for (PerkFactory.Perk perk : PerkFactory.PerkList) {
+                float xp = player.getXp().getXP(perk);
+                if (xp > 0) {
+                    skillXpMap.put(perk.getName(), xp);
+                }
+            }
+            log.setSkillXp(skillXpMap);
+
             Map<String, Integer> itemCounts = new LinkedHashMap<>();
             countItems(player.getInventory(), itemCounts);
             log.setInventory(itemCounts);

@@ -30,5 +30,6 @@ public class DeathLog {
     private Map<String, Float> stats;
     private List<String> traits;
     private Map<String, Integer> skills;
+    private Map<String, Float> skillXp;
     private Map<String, Integer> inventory;
 }
