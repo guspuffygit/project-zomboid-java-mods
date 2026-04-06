@@ -1,0 +1,11 @@
+{
+  "UI_GameLoad_PlaceInQueue": "You occupy position %1 in the connection queue",
+  "UI_GameLoad_PlayerPopulation": "Player population %1/%2",
+  "UI_GameLoad_zombieKilledTodayN": "%1 zombies killed on this server today.",
+  "UI_GameLoad_zombifiedPlayersTodayN": "%1 survivors turned into shambling corpses on this server today.",
+  "UI_GameLoad_burnedZombiesTodayN": "%1 zombie corpses burned on this server today.",
+  "UI_GameLoad_time": "Current time: %1:%2",
+  "UI_GameLoad_temperature": "Temperature: %1 ºC",
+  "UI_GameLoad_humidity": "Humidity: %1 %",
+  "UI_GameLoad_windSpeed": "Wind: %1, %2 knots, %3 kph"
+}
