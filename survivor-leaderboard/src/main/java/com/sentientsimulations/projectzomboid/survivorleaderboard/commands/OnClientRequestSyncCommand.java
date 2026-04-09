@@ -1,4 +1,4 @@
-package com.sentientsimulations.projectzomboid.zonemarker.commands;
+package com.sentientsimulations.projectzomboid.survivorleaderboard.commands;
 
 import io.pzstorm.storm.event.core.ClientCommand;
 import io.pzstorm.storm.event.core.ClientCommandEvent;

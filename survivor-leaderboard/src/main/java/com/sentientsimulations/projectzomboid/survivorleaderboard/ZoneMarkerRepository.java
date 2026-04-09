@@ -1,7 +1,7 @@
-package com.sentientsimulations.projectzomboid.zonemarker;
+package com.sentientsimulations.projectzomboid.survivorleaderboard;
 
-import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneCategoryRecord;
-import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneRecord;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneCategoryRecord;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneRecord;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

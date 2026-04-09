@@ -1,9 +1,9 @@
-package com.sentientsimulations.projectzomboid.zonemarker;
+package com.sentientsimulations.projectzomboid.survivorleaderboard;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
-import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneCategoryRecord;
-import com.sentientsimulations.projectzomboid.zonemarker.records.ZoneRecord;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneCategoryRecord;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneRecord;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.List;

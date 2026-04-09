@@ -1,7 +1,8 @@
-package com.sentientsimulations.projectzomboid.zonemarker;
+package com.sentientsimulations.projectzomboid.survivorleaderboard;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.*;
 import com.sentientsimulations.projectzomboid.zonemarker.commands.*;
 import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.StormEventDispatcher;

@@ -1,4 +1,4 @@
-package com.sentientsimulations.projectzomboid.zonemarker;
+package com.sentientsimulations.projectzomboid.survivorleaderboard;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

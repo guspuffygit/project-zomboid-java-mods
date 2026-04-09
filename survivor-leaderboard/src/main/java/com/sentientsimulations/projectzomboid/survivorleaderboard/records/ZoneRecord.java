@@ -1,4 +1,4 @@
-package com.sentientsimulations.projectzomboid.zonemarker.records;
+package com.sentientsimulations.projectzomboid.survivorleaderboard.records;
 
 public record ZoneRecord(
         long id,
