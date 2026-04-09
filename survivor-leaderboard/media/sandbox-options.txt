@@ -1,0 +1,11 @@
+VERSION = 1,
+
+option Lifeboard.Cooldown
+{
+    type = integer,
+    min = 1,
+    default = 60,
+    max = 43200,
+    page = Lifeboard,
+    translation = Lifeboard_Cooldown,
+}

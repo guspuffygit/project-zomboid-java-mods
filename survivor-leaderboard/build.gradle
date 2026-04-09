@@ -1,0 +1,13 @@
+modInfo {
+	name = 'Survivor Leaderboard'
+	workshopId = ''
+	workshopIdStage = ''
+	workshopIdProd = '3686333544'
+	description = '''\
+		|Leaderboard for survivors
+		|
+		|Updated for 42.16.3
+		|
+		|Requires Storm mod loader.
+	'''.stripMargin('|')
+}

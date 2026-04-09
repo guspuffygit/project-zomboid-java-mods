@@ -1,0 +1,9 @@
+{
+  "IGUI_Lifeboard_Title": "Lifeboard",
+  "IGUI_Lifeboard_Ranking": "Place",
+  "IGUI_Lifeboard_DisplayName": "Player",
+  "IGUI_Lifeboard_Days": "Days",
+  "IGUI_Lifeboard_BoardEmpty": "Board is empty!",
+  "IGUI_Lifeboard_DeleteEntry": "Delete Entry",
+  "IGUI_Lifeboard_DeleteAllEntries": "Delete All Entries"
+}

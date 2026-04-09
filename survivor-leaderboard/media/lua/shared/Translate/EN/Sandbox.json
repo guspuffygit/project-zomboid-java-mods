@@ -1,0 +1,5 @@
+{
+  "Sandbox_Lifeboard": "Survivor Leaderboard",
+  "Sandbox_Lifeboard_Cooldown": "Update Frequency",
+  "Sandbox_Lifeboard_Cooldown_tooltip": "The amount of in-game minutes before the leaderboard gets updated."
+}
