@@ -139,42 +139,49 @@ public final class SurvivorLeaderboardBridge {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
             SurvivorLeaderboardRepository repo =
                     new SurvivorLeaderboardRepository(db.getConnection());
-            List<Long> steamIds = repo.loadDistinctSteamIds();
-            LOGGER.info(
-                    "[Lifeboard] Pruning banned survivors, checking {} distinct Steam IDs",
-                    steamIds.size());
-
-            int totalRemoved = 0;
-            for (Long steamId : steamIds) {
-                String bannedSteamId;
-                try {
-                    bannedSteamId =
-                            ServerWorldDatabase.instance.isSteamIdBanned(Long.toString(steamId));
-                } catch (Exception e) {
-                    LOGGER.error(
-                            "[Lifeboard] Error checking ban status for steamId={}", steamId, e);
-                    continue;
-                }
-                if (bannedSteamId != null) {
-                    int removed = repo.deleteBySteamId(steamId);
-                    totalRemoved += removed;
-                    LOGGER.info(
-                            "[Lifeboard] Pruned {} banned entries for steamId={}",
-                            removed,
-                            steamId);
-                }
-            }
-            if (totalRemoved > 0) {
-                LOGGER.info(
-                        "[Lifeboard] Ban prune complete, removed {} total entries", totalRemoved);
-            } else {
-                LOGGER.info("[Lifeboard] Ban prune complete, no banned entries found");
-            }
-            return totalRemoved;
+            return pruneBannedSurvivors(repo);
         } catch (SQLException e) {
             LOGGER.error("[Lifeboard] Failed to prune banned survivors", e);
             return 0;
         }
+    }
+
+    /**
+     * Package-private overload used by the public entry point and by tests. Iterates distinct Steam
+     * IDs from the given repository, queries {@link ServerWorldDatabase} for ban status, and
+     * deletes all rows for each banned Steam ID.
+     *
+     * @return number of rows removed
+     */
+    static int pruneBannedSurvivors(SurvivorLeaderboardRepository repo) throws SQLException {
+        List<Long> steamIds = repo.loadDistinctSteamIds();
+        LOGGER.info(
+                "[Lifeboard] Pruning banned survivors, checking {} distinct Steam IDs",
+                steamIds.size());
+
+        int totalRemoved = 0;
+        for (Long steamId : steamIds) {
+            String bannedSteamId;
+            try {
+                bannedSteamId =
+                        ServerWorldDatabase.instance.isSteamIdBanned(Long.toString(steamId));
+            } catch (Exception e) {
+                LOGGER.error("[Lifeboard] Error checking ban status for steamId={}", steamId, e);
+                continue;
+            }
+            if (bannedSteamId != null) {
+                int removed = repo.deleteBySteamId(steamId);
+                totalRemoved += removed;
+                LOGGER.info(
+                        "[Lifeboard] Pruned {} banned entries for steamId={}", removed, steamId);
+            }
+        }
+        if (totalRemoved > 0) {
+            LOGGER.info("[Lifeboard] Ban prune complete, removed {} total entries", totalRemoved);
+        } else {
+            LOGGER.info("[Lifeboard] Ban prune complete, no banned entries found");
+        }
+        return totalRemoved;
     }
 
     public static List<SurvivorRecord> listSurvivors() {
