@@ -18,11 +18,16 @@ public class SurvivorLeaderboardRepository {
 
     private static final String DELETE_BY_USERNAME = "DELETE FROM survivors WHERE username = ?";
 
+    private static final String DELETE_BY_STEAM_ID = "DELETE FROM survivors WHERE steam_id = ?";
+
     private static final String DELETE_ALL = "DELETE FROM survivors";
 
     private static final String SELECT_ALL_ORDERED =
             "SELECT id, steam_id, username, day_count FROM survivors"
                     + " ORDER BY day_count DESC, username ASC";
+
+    private static final String SELECT_DISTINCT_STEAM_IDS =
+            "SELECT DISTINCT steam_id FROM survivors";
 
     private final Connection connection;
 
@@ -63,6 +68,28 @@ public class SurvivorLeaderboardRepository {
             ps.setString(1, username);
             return ps.executeUpdate();
         }
+    }
+
+    /**
+     * @return number of rows deleted (may be &gt; 1 if the same Steam account has multiple
+     *     characters)
+     */
+    public int deleteBySteamId(long steamId) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DELETE_BY_STEAM_ID)) {
+            ps.setLong(1, steamId);
+            return ps.executeUpdate();
+        }
+    }
+
+    public List<Long> loadDistinctSteamIds() throws SQLException {
+        List<Long> results = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(SELECT_DISTINCT_STEAM_IDS);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                results.add(rs.getLong("steam_id"));
+            }
+        }
+        return results;
     }
 
     /**

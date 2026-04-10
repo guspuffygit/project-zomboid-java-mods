@@ -11,11 +11,15 @@ import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnServerStartedEvent;
+import io.pzstorm.storm.event.lua.OnTickEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
 import java.sql.SQLException;
 import java.util.List;
 
 public class SurvivorLeaderboardMod implements ZomboidMod {
+
+    private boolean hasPruned = false;
+
     @Override
     public void registerEventHandlers() {
         LOGGER.info(
@@ -41,6 +45,16 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
         } catch (SQLException e) {
             LOGGER.error("[Lifeboard] Failed to initialize database", e);
         }
+    }
+
+    /** Prune banned survivors on the first tick, once ServerWorldDatabase is fully ready. */
+    @SubscribeEvent
+    public void onTick(OnTickEvent event) {
+        if (hasPruned) {
+            return;
+        }
+        hasPruned = true;
+        SurvivorLeaderboardBridge.pruneBannedSurvivors();
     }
 
     @OnClientCommand
