@@ -6,13 +6,9 @@ import org.jspecify.annotations.Nullable;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.characters.IsoPlayer;
 
-@ClientCommand(module = "SurvivorLeaderboard", command = "removeCategory")
-public class OnClientRemoveCategoryCommand extends ClientCommandEvent {
-    public OnClientRemoveCategoryCommand(IsoPlayer player, @Nullable KahluaTable args) {
+@ClientCommand(module = "Lifeboard", command = "DeleteAllEntries")
+public class OnClientDeleteAllEntriesCommand extends ClientCommandEvent {
+    public OnClientDeleteAllEntriesCommand(IsoPlayer player, @Nullable KahluaTable args) {
         super(player, args);
-    }
-
-    public String getName() {
-        return getString("name");
     }
 }

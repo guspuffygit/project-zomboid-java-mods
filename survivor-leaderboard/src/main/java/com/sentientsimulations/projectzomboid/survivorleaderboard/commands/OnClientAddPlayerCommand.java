@@ -6,7 +6,7 @@ import org.jspecify.annotations.Nullable;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.characters.IsoPlayer;
 
-@ClientCommand(module = "SurvivorLeaderboard", command = "AddPlayer")
+@ClientCommand(module = "Lifeboard", command = "AddPlayer")
 public class OnClientAddPlayerCommand extends ClientCommandEvent {
     public OnClientAddPlayerCommand(IsoPlayer player, @Nullable KahluaTable args) {
         super(player, args);
