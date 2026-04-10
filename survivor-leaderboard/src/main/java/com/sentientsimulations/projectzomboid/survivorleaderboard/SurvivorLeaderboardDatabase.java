@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class ZoneMarkerDatabase implements AutoCloseable {
+public class SurvivorLeaderboardDatabase implements AutoCloseable {
 
     private static final String CREATE_CATEGORIES =
             """
@@ -33,7 +33,7 @@ public class ZoneMarkerDatabase implements AutoCloseable {
 
     private final Connection connection;
 
-    public ZoneMarkerDatabase(String dbPath) throws SQLException {
+    public SurvivorLeaderboardDatabase(String dbPath) throws SQLException {
         this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");

@@ -6,9 +6,9 @@ import org.jspecify.annotations.Nullable;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.characters.IsoPlayer;
 
-@ClientCommand(module = "ZoneMarker", command = "requestSync")
-public class OnClientRequestSyncCommand extends ClientCommandEvent {
-    public OnClientRequestSyncCommand(IsoPlayer player, @Nullable KahluaTable args) {
+@ClientCommand(module = "SurvivorLeaderboard", command = "Refresh")
+public class OnClientRefreshCommand extends ClientCommandEvent {
+    public OnClientRefreshCommand(IsoPlayer player, @Nullable KahluaTable args) {
         super(player, args);
     }
 }

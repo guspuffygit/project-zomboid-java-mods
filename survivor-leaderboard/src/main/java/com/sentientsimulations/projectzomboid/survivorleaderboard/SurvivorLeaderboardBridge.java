@@ -13,12 +13,12 @@ import zombie.ZomboidFileSystem;
 import zombie.characters.IsoPlayer;
 import zombie.network.GameServer;
 
-public final class ZoneMarkerBridge {
+public final class SurvivorLeaderboardBridge {
 
     static final String MODULE = "ZoneMarker";
     private static final String DB_FILENAME = "zone_marker.db";
 
-    private ZoneMarkerBridge() {}
+    private SurvivorLeaderboardBridge() {}
 
     static String getDbPath() {
         File dbFile = ZomboidFileSystem.instance.getFileInCurrentSave(DB_FILENAME);
@@ -31,8 +31,8 @@ public final class ZoneMarkerBridge {
      * @return null on success, or an error message
      */
     public static String addCategory(String name, double r, double g, double b, double a) {
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             if (repo.categoryExists(name)) {
                 return "Category '" + name + "' already exists.";
             }
@@ -48,8 +48,8 @@ public final class ZoneMarkerBridge {
      * @return null on success, or an error message
      */
     public static String removeCategory(String name) {
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             if (!repo.deleteCategoryByName(name)) {
                 return "Category '" + name + "' not found.";
             }
@@ -70,8 +70,8 @@ public final class ZoneMarkerBridge {
             double xEnd,
             double yEnd,
             String region) {
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             repo.insertZone(categoryName, xStart, yStart, xEnd, yEnd, region);
             return null;
         } catch (SQLException e) {
@@ -84,8 +84,8 @@ public final class ZoneMarkerBridge {
      * @return null on success, or an error message
      */
     public static String removeZone(String categoryName, String region) {
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             int removed = repo.deleteZonesByRegion(categoryName, region);
             if (removed == 0) {
                 return "Zone '" + region + "' not found in " + categoryName + ".";
@@ -98,8 +98,8 @@ public final class ZoneMarkerBridge {
     }
 
     public static boolean categoryExists(String name) {
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             return repo.categoryExists(name);
         } catch (SQLException e) {
             LOGGER.error("Failed to check category '{}'", name, e);
@@ -108,8 +108,8 @@ public final class ZoneMarkerBridge {
     }
 
     public static List<ZoneCategoryRecord> listCategories() {
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             return repo.loadAllCategories();
         } catch (SQLException e) {
             LOGGER.error("Failed to list categories", e);
@@ -118,8 +118,8 @@ public final class ZoneMarkerBridge {
     }
 
     public static List<ZoneRecord> listZonesInCategory(String categoryName) {
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             return repo.loadZonesByCategoryName(categoryName);
         } catch (SQLException e) {
             LOGGER.error("Failed to list zones in '{}'", categoryName, e);
@@ -163,8 +163,8 @@ public final class ZoneMarkerBridge {
      */
     private static KahluaTable buildSyncTable() throws SQLException {
         LOGGER.info("[ZoneMarker] buildSyncTable() called");
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(getDbPath())) {
-            ZoneMarkerRepository repo = new ZoneMarkerRepository(db.getConnection());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
             List<ZoneCategoryRecord> categories = repo.loadAllCategories();
             LOGGER.info("[ZoneMarker] buildSyncTable: loaded {} categories", categories.size());
 

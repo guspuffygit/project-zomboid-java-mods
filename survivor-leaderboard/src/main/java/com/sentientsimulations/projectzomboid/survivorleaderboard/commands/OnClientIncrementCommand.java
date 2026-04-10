@@ -6,9 +6,9 @@ import org.jspecify.annotations.Nullable;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.characters.IsoPlayer;
 
-@ClientCommand(module = "ZoneMarker", command = "addCategory")
-public class OnClientAddCategoryCommand extends ClientCommandEvent {
-    public OnClientAddCategoryCommand(IsoPlayer player, @Nullable KahluaTable args) {
+@ClientCommand(module = "SurvivorLeaderboard", command = "Increment")
+public class OnClientIncrementCommand extends ClientCommandEvent {
+    public OnClientIncrementCommand(IsoPlayer player, @Nullable KahluaTable args) {
         super(player, args);
     }
 

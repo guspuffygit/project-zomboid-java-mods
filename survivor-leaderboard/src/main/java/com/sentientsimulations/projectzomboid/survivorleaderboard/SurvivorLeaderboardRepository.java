@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ZoneMarkerRepository {
+public class SurvivorLeaderboardRepository {
 
     private static final String INSERT_CATEGORY =
             "INSERT INTO categories (name, r, g, b, a) VALUES (?, ?, ?, ?, ?)";
@@ -42,7 +42,7 @@ public class ZoneMarkerRepository {
 
     private final Connection connection;
 
-    public ZoneMarkerRepository(Connection connection) {
+    public SurvivorLeaderboardRepository(Connection connection) {
         this.connection = connection;
     }
 

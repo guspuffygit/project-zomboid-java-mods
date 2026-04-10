@@ -12,12 +12,12 @@ import io.pzstorm.storm.mod.ZomboidMod;
 import java.sql.SQLException;
 import java.util.List;
 
-public class ZoneMarkerMod implements ZomboidMod {
+public class SurvivorLeaderboardMod implements ZomboidMod {
     @Override
     public void registerEventHandlers() {
         LOGGER.info(
                 "[ZoneMarker] Registering event handlers for {}",
-                ZoneMarkerMod.class.getCanonicalName());
+                SurvivorLeaderboardMod.class.getCanonicalName());
         StormEventDispatcher.registerEventHandler(this);
         LOGGER.info("[ZoneMarker] Event handlers registered successfully");
     }
@@ -31,8 +31,8 @@ public class ZoneMarkerMod implements ZomboidMod {
     public void onServerStarted(OnServerStartedEvent event) {
         LOGGER.info(
                 "[ZoneMarker] onServerStarted fired, initializing DB at {}",
-                ZoneMarkerBridge.getDbPath());
-        try (ZoneMarkerDatabase db = new ZoneMarkerDatabase(ZoneMarkerBridge.getDbPath())) {
+                SurvivorLeaderboardBridge.getDbPath());
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(SurvivorLeaderboardBridge.getDbPath())) {
             LOGGER.info("[ZoneMarker] Database initialized successfully");
         } catch (SQLException e) {
             LOGGER.error("[ZoneMarker] Failed to initialize database", e);
@@ -40,7 +40,7 @@ public class ZoneMarkerMod implements ZomboidMod {
     }
 
     @OnClientCommand
-    public void onAddCategory(OnClientAddCategoryCommand event) {
+    public void onAddCategory(OnClientIncrementCommand event) {
         LOGGER.info(
                 "[ZoneMarker] onAddCategory handler called by player {}",
                 event.getPlayer().getUsername());
@@ -55,13 +55,13 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid addCategory args - one or more nulls");
             return;
         }
-        String error = ZoneMarkerBridge.addCategory(name, r, g, b, a);
+        String error = SurvivorLeaderboardBridge.addCategory(name, r, g, b, a);
         if (error != null) {
             LOGGER.warn("[ZoneMarker] addCategory failed: {}", error);
             return;
         }
         LOGGER.info("[ZoneMarker] addCategory succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        SurvivorLeaderboardBridge.broadcast();
     }
 
     @OnClientCommand
@@ -75,17 +75,17 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid removeCategory args - name is null");
             return;
         }
-        String error = ZoneMarkerBridge.removeCategory(name);
+        String error = SurvivorLeaderboardBridge.removeCategory(name);
         if (error != null) {
             LOGGER.warn("[ZoneMarker] removeCategory failed: {}", error);
             return;
         }
         LOGGER.info("[ZoneMarker] removeCategory succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        SurvivorLeaderboardBridge.broadcast();
     }
 
     @OnClientCommand
-    public void onAddZone(OnClientAddZoneCommand event) {
+    public void onAddZone(OnClientRefreshCommand event) {
         LOGGER.info(
                 "[ZoneMarker] onAddZone handler called by player {}",
                 event.getPlayer().getUsername());
@@ -112,13 +112,13 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid addZone args - one or more nulls");
             return;
         }
-        String error = ZoneMarkerBridge.addZone(categoryName, xStart, yStart, xEnd, yEnd, region);
+        String error = SurvivorLeaderboardBridge.addZone(categoryName, xStart, yStart, xEnd, yEnd, region);
         if (error != null) {
             LOGGER.warn("[ZoneMarker] addZone failed: {}", error);
             return;
         }
         LOGGER.info("[ZoneMarker] addZone succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        SurvivorLeaderboardBridge.broadcast();
     }
 
     @OnClientCommand
@@ -133,20 +133,20 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid removeZone args - one or more nulls");
             return;
         }
-        String error = ZoneMarkerBridge.removeZone(categoryName, region);
+        String error = SurvivorLeaderboardBridge.removeZone(categoryName, region);
         if (error != null) {
             LOGGER.warn("[ZoneMarker] removeZone failed: {}", error);
             return;
         }
         LOGGER.info("[ZoneMarker] removeZone succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        SurvivorLeaderboardBridge.broadcast();
     }
 
     @OnClientCommand
-    public void onRequestSync(OnClientRequestSyncCommand event) {
+    public void onRequestSync(OnClientAddPlayerCommand event) {
         LOGGER.info(
                 "[ZoneMarker] onRequestSync handler called by player {}",
                 event.getPlayer().getUsername());
-        ZoneMarkerBridge.syncToPlayer(event.getPlayer());
+        SurvivorLeaderboardBridge.syncToPlayer(event.getPlayer());
     }
 }
