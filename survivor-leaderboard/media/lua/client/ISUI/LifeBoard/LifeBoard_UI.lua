@@ -212,12 +212,22 @@ local function onServerCommand(module, command, arguments)
     if command ~= "UpdateBoard" then return end
     if not isClient() then return end
 
-    if ModData.exists("LifeBoard.board") then
-        ModData.remove("LifeBoard.board")
+    -- The server now sends the full board as args.board = [{displayName, dayCount}, ...]
+    -- Rebuild LifeBoard.board in place so any captured references stay valid.
+    for k in pairs(LifeBoard.board) do LifeBoard.board[k] = nil end
+
+    if arguments and arguments.board then
+        for i, entry in pairs(arguments.board) do
+            LifeBoard.board[i] = {
+                displayName = entry.displayName,
+                dayCount = entry.dayCount,
+            }
+        end
     end
 
-    LifeBoard.board = ModData.getOrCreate("LifeBoard.board")
-    ModData.request("LifeBoard.board")
+    if lifeboardWindow then
+        lifeboardWindow:populateList()
+    end
 end
 
 Events.OnServerCommand.Add(onServerCommand)

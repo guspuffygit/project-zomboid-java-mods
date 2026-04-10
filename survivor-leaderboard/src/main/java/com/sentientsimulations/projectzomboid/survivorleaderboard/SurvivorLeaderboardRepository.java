@@ -1,7 +1,6 @@
 package com.sentientsimulations.projectzomboid.survivorleaderboard;
 
-import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneCategoryRecord;
-import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneRecord;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorRecord;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,34 +10,19 @@ import java.util.List;
 
 public class SurvivorLeaderboardRepository {
 
-    private static final String INSERT_CATEGORY =
-            "INSERT INTO categories (name, r, g, b, a) VALUES (?, ?, ?, ?, ?)";
+    private static final String INSERT_SURVIVOR =
+            "INSERT OR IGNORE INTO survivors (steam_id, username, day_count) VALUES (?, ?, 0)";
 
-    private static final String DELETE_CATEGORY_BY_NAME = "DELETE FROM categories WHERE name = ?";
+    private static final String UPDATE_DAY_COUNT =
+            "UPDATE survivors SET day_count = ? WHERE steam_id = ? AND username = ?";
 
-    private static final String SELECT_CATEGORY_EXISTS = "SELECT 1 FROM categories WHERE name = ?";
+    private static final String DELETE_BY_USERNAME = "DELETE FROM survivors WHERE username = ?";
 
-    private static final String SELECT_ALL_CATEGORIES =
-            "SELECT id, name, r, g, b, a FROM categories ORDER BY id";
+    private static final String DELETE_ALL = "DELETE FROM survivors";
 
-    private static final String INSERT_ZONE =
-            """
-            INSERT INTO zones (category_id, x_start, y_start, x_end, y_end, region)
-            SELECT id, ?, ?, ?, ?, ? FROM categories WHERE name = ?""";
-
-    private static final String DELETE_ZONES_BY_REGION =
-            """
-            DELETE FROM zones
-            WHERE category_id = (SELECT id FROM categories WHERE name = ?)
-              AND region = ?""";
-
-    private static final String SELECT_ZONES_BY_CATEGORY =
-            """
-            SELECT z.id, z.category_id, z.x_start, z.y_start, z.x_end, z.y_end, z.region
-            FROM zones z
-            JOIN categories c ON z.category_id = c.id
-            WHERE c.name = ?
-            ORDER BY z.id""";
+    private static final String SELECT_ALL_ORDERED =
+            "SELECT id, steam_id, username, day_count FROM survivors"
+                    + " ORDER BY day_count DESC, username ASC";
 
     private final Connection connection;
 
@@ -47,110 +31,60 @@ public class SurvivorLeaderboardRepository {
     }
 
     /**
-     * @return the generated category id, or -1 if the name already exists
+     * Insert a survivor with day_count = 0 if no row exists for (steamId, username).
+     *
+     * @return true if a new row was inserted
      */
-    public long insertCategory(String name, double r, double g, double b, double a)
-            throws SQLException {
-        try (PreparedStatement ps =
-                connection.prepareStatement(INSERT_CATEGORY, new String[] {"id"})) {
-            ps.setString(1, name);
-            ps.setDouble(2, r);
-            ps.setDouble(3, g);
-            ps.setDouble(4, b);
-            ps.setDouble(5, a);
-            ps.executeUpdate();
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) {
-                    return keys.getLong(1);
-                }
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * @return true if a category was deleted
-     */
-    public boolean deleteCategoryByName(String name) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(DELETE_CATEGORY_BY_NAME)) {
-            ps.setString(1, name);
+    public boolean insertSurvivor(long steamId, String username) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(INSERT_SURVIVOR)) {
+            ps.setLong(1, steamId);
+            ps.setString(2, username);
             return ps.executeUpdate() > 0;
         }
     }
 
-    public boolean categoryExists(String name) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(SELECT_CATEGORY_EXISTS)) {
-            ps.setString(1, name);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    public List<ZoneCategoryRecord> loadAllCategories() throws SQLException {
-        List<ZoneCategoryRecord> results = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(SELECT_ALL_CATEGORIES);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                results.add(
-                        new ZoneCategoryRecord(
-                                rs.getLong("id"),
-                                rs.getString("name"),
-                                rs.getDouble("r"),
-                                rs.getDouble("g"),
-                                rs.getDouble("b"),
-                                rs.getDouble("a")));
-            }
-        }
-        return results;
-    }
-
-    public void insertZone(
-            String categoryName,
-            double xStart,
-            double yStart,
-            double xEnd,
-            double yEnd,
-            String region)
-            throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(INSERT_ZONE)) {
-            ps.setDouble(1, xStart);
-            ps.setDouble(2, yStart);
-            ps.setDouble(3, xEnd);
-            ps.setDouble(4, yEnd);
-            ps.setString(5, region);
-            ps.setString(6, categoryName);
-            ps.executeUpdate();
+    /**
+     * @return true if a row was updated
+     */
+    public boolean updateDayCount(long steamId, String username, int dayCount) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(UPDATE_DAY_COUNT)) {
+            ps.setInt(1, dayCount);
+            ps.setLong(2, steamId);
+            ps.setString(3, username);
+            return ps.executeUpdate() > 0;
         }
     }
 
     /**
-     * @return number of zones removed
+     * @return number of rows deleted
      */
-    public int deleteZonesByRegion(String categoryName, String region) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(DELETE_ZONES_BY_REGION)) {
-            ps.setString(1, categoryName);
-            ps.setString(2, region);
+    public int deleteByUsername(String username) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DELETE_BY_USERNAME)) {
+            ps.setString(1, username);
             return ps.executeUpdate();
         }
     }
 
-    public List<ZoneRecord> loadZonesByCategoryName(String categoryName) throws SQLException {
-        List<ZoneRecord> results = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(SELECT_ZONES_BY_CATEGORY)) {
-            ps.setString(1, categoryName);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    results.add(
-                            new ZoneRecord(
-                                    rs.getLong("id"),
-                                    rs.getLong("category_id"),
-                                    rs.getDouble("x_start"),
-                                    rs.getDouble("y_start"),
-                                    rs.getDouble("x_end"),
-                                    rs.getDouble("y_end"),
-                                    rs.getString("region")));
-                }
+    /**
+     * @return number of rows deleted
+     */
+    public int deleteAll() throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DELETE_ALL)) {
+            return ps.executeUpdate();
+        }
+    }
+
+    public List<SurvivorRecord> loadAllOrdered() throws SQLException {
+        List<SurvivorRecord> results = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(SELECT_ALL_ORDERED);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                results.add(
+                        new SurvivorRecord(
+                                rs.getLong("id"),
+                                rs.getLong("steam_id"),
+                                rs.getString("username"),
+                                rs.getInt("day_count")));
             }
         }
         return results;

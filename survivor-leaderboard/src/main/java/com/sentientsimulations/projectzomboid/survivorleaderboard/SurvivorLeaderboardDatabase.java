@@ -7,28 +7,14 @@ import java.sql.Statement;
 
 public class SurvivorLeaderboardDatabase implements AutoCloseable {
 
-    private static final String CREATE_CATEGORIES =
+    private static final String CREATE_SURVIVORS =
             """
-            CREATE TABLE IF NOT EXISTS categories (
-                id   INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                r    REAL NOT NULL,
-                g    REAL NOT NULL,
-                b    REAL NOT NULL,
-                a    REAL NOT NULL DEFAULT 1.0
-            )""";
-
-    private static final String CREATE_ZONES =
-            """
-            CREATE TABLE IF NOT EXISTS zones (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                category_id INTEGER NOT NULL,
-                x_start     REAL NOT NULL,
-                y_start     REAL NOT NULL,
-                x_end       REAL NOT NULL,
-                y_end       REAL NOT NULL,
-                region      TEXT NOT NULL,
-                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+            CREATE TABLE IF NOT EXISTS survivors (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                steam_id   INTEGER NOT NULL,
+                username   TEXT NOT NULL,
+                day_count  INTEGER NOT NULL DEFAULT 0,
+                UNIQUE (steam_id, username)
             )""";
 
     private final Connection connection;
@@ -44,8 +30,7 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
 
     private void createTables() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
-            stmt.execute(CREATE_CATEGORIES);
-            stmt.execute(CREATE_ZONES);
+            stmt.execute(CREATE_SURVIVORS);
         }
     }
 

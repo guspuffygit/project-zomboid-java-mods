@@ -2,8 +2,7 @@ package com.sentientsimulations.projectzomboid.survivorleaderboard;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
-import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneCategoryRecord;
-import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZoneRecord;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorRecord;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
@@ -15,191 +14,174 @@ import zombie.network.GameServer;
 
 public final class SurvivorLeaderboardBridge {
 
-    static final String MODULE = "ZoneMarker";
-    private static final String DB_FILENAME = "zone_marker.db";
+    static final String MODULE = "Lifeboard";
+    private static final String DB_FILENAME = "survivor_leaderboard.db";
 
     private SurvivorLeaderboardBridge() {}
 
     static String getDbPath() {
         File dbFile = ZomboidFileSystem.instance.getFileInCurrentSave(DB_FILENAME);
         String path = dbFile.getAbsolutePath();
-        LOGGER.info("[ZoneMarker] DB path: {}", path);
+        LOGGER.info("[Lifeboard] DB path: {}", path);
         return path;
     }
 
     /**
+     * Insert the player into the leaderboard if not already present, then broadcast. Keyed on
+     * (steamId, username) so a single Steam account may have multiple characters on the same
+     * server.
+     *
      * @return null on success, or an error message
      */
-    public static String addCategory(String name, double r, double g, double b, double a) {
+    public static String addPlayer(IsoPlayer player) {
+        long steamId = player.getSteamID();
+        String username = player.getUsername();
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            if (repo.categoryExists(name)) {
-                return "Category '" + name + "' already exists.";
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            boolean inserted = repo.insertSurvivor(steamId, username);
+            if (inserted) {
+                LOGGER.info("[Lifeboard] Added survivor steamId={} username={}", steamId, username);
+            } else {
+                LOGGER.info(
+                        "[Lifeboard] Survivor already present steamId={} username={}",
+                        steamId,
+                        username);
             }
-            repo.insertCategory(name, r, g, b, a);
+            broadcast(repo);
             return null;
         } catch (SQLException e) {
-            LOGGER.error("Failed to add category '{}'", name, e);
-            return "Database error adding category.";
+            LOGGER.error(
+                    "[Lifeboard] Failed to add survivor steamId={} username={}",
+                    steamId,
+                    username,
+                    e);
+            return "Database error adding player.";
         }
     }
 
-    /**
-     * @return null on success, or an error message
-     */
-    public static String removeCategory(String name) {
+    /** Rebroadcast the current board to everyone without touching the DB. */
+    public static String refresh(IsoPlayer player) {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            if (!repo.deleteCategoryByName(name)) {
-                return "Category '" + name + "' not found.";
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            broadcast(repo);
+            return null;
+        } catch (SQLException e) {
+            LOGGER.error("[Lifeboard] Failed to refresh board", e);
+            return "Database error refreshing board.";
+        }
+    }
+
+    /** Set the player's current day count and broadcast. */
+    public static String incrementDays(IsoPlayer player, int daysSurvived) {
+        long steamId = player.getSteamID();
+        String username = player.getUsername();
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            boolean updated = repo.updateDayCount(steamId, username, daysSurvived);
+            if (!updated) {
+                // Not on the board yet — add and then set.
+                repo.insertSurvivor(steamId, username);
+                repo.updateDayCount(steamId, username, daysSurvived);
             }
+            broadcast(repo);
             return null;
         } catch (SQLException e) {
-            LOGGER.error("Failed to remove category '{}'", name, e);
-            return "Database error removing category.";
+            LOGGER.error(
+                    "[Lifeboard] Failed to update days for steamId={} username={}",
+                    steamId,
+                    username,
+                    e);
+            return "Database error updating days.";
         }
     }
 
-    /**
-     * @return null on success, or an error message
-     */
-    public static String addZone(
-            String categoryName,
-            double xStart,
-            double yStart,
-            double xEnd,
-            double yEnd,
-            String region) {
+    /** Delete every entry whose username matches, then broadcast. */
+    public static String deleteEntry(String username) {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            repo.insertZone(categoryName, xStart, yStart, xEnd, yEnd, region);
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            int removed = repo.deleteByUsername(username);
+            LOGGER.info("[Lifeboard] Deleted {} entries for username={}", removed, username);
+            broadcast(repo);
             return null;
         } catch (SQLException e) {
-            LOGGER.error("Failed to add zone '{}' to '{}'", region, categoryName, e);
-            return "Database error adding zone.";
+            LOGGER.error("[Lifeboard] Failed to delete entry for username={}", username, e);
+            return "Database error deleting entry.";
         }
     }
 
-    /**
-     * @return null on success, or an error message
-     */
-    public static String removeZone(String categoryName, String region) {
+    /** Clear the whole board and broadcast the empty result. */
+    public static String deleteAllEntries() {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            int removed = repo.deleteZonesByRegion(categoryName, region);
-            if (removed == 0) {
-                return "Zone '" + region + "' not found in " + categoryName + ".";
-            }
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            int removed = repo.deleteAll();
+            LOGGER.info("[Lifeboard] Deleted {} entries (all)", removed);
+            broadcast(repo);
             return null;
         } catch (SQLException e) {
-            LOGGER.error("Failed to remove zone '{}' from '{}'", region, categoryName, e);
-            return "Database error removing zone.";
+            LOGGER.error("[Lifeboard] Failed to delete all entries", e);
+            return "Database error deleting all entries.";
         }
     }
 
-    public static boolean categoryExists(String name) {
+    public static List<SurvivorRecord> listSurvivors() {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            return repo.categoryExists(name);
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            return repo.loadAllOrdered();
         } catch (SQLException e) {
-            LOGGER.error("Failed to check category '{}'", name, e);
-            return false;
-        }
-    }
-
-    public static List<ZoneCategoryRecord> listCategories() {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            return repo.loadAllCategories();
-        } catch (SQLException e) {
-            LOGGER.error("Failed to list categories", e);
-            return List.of();
-        }
-    }
-
-    public static List<ZoneRecord> listZonesInCategory(String categoryName) {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            return repo.loadZonesByCategoryName(categoryName);
-        } catch (SQLException e) {
-            LOGGER.error("Failed to list zones in '{}'", categoryName, e);
+            LOGGER.error("[Lifeboard] Failed to list survivors", e);
             return List.of();
         }
     }
 
     // ---- Network ----
 
-    /** Broadcast full zone data to all connected clients. */
-    public static void broadcast() {
-        LOGGER.info("[ZoneMarker] broadcast() called");
-        try {
-            KahluaTable args = buildSyncTable();
-            LOGGER.info("[ZoneMarker] Broadcasting sync table to all clients");
-            GameServer.sendServerCommand(MODULE, "sync", args);
-            LOGGER.info("[ZoneMarker] broadcast() complete");
-        } catch (SQLException e) {
-            LOGGER.error("[ZoneMarker] Failed to broadcast zone data", e);
-        }
+    /** Broadcast the full leaderboard to every connected client. */
+    private static void broadcast(SurvivorLeaderboardRepository repo) throws SQLException {
+        KahluaTable args = buildBoardTable(repo);
+        GameServer.sendServerCommand(MODULE, "UpdateBoard", args);
+        LOGGER.info("[Lifeboard] Broadcast UpdateBoard to all clients");
     }
 
-    /** Send full zone data to a single player (for requestSync). */
-    static void syncToPlayer(IsoPlayer player) {
-        LOGGER.info("[ZoneMarker] syncToPlayer() called for {}", player.getUsername());
-        try {
-            KahluaTable args = buildSyncTable();
-            LOGGER.info("[ZoneMarker] Sending sync table to player {}", player.getUsername());
-            GameServer.sendServerCommand(player, MODULE, "sync", args);
-            LOGGER.info("[ZoneMarker] syncToPlayer() complete");
+    /** Send the full leaderboard to a single player. */
+    public static void syncToPlayer(IsoPlayer player) {
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            KahluaTable args = buildBoardTable(repo);
+            GameServer.sendServerCommand(player, MODULE, "UpdateBoard", args);
+            LOGGER.info("[Lifeboard] Sent UpdateBoard to {}", player.getUsername());
         } catch (SQLException e) {
-            LOGGER.error("[ZoneMarker] Failed to sync zone data to player", e);
+            LOGGER.error("[Lifeboard] Failed to sync board to player", e);
         }
     }
 
     /**
-     * Build a KahluaTable matching the existing client wire format:
+     * Wire format consumed by LifeBoard_UI.lua's {@code OnServerCommand}:
      *
-     * <pre>{ categories = [{name, r, g, b, a}, ...],
-     *   zones = { [catName] = [{xStart, yStart, xEnd, yEnd, region}, ...] } }</pre>
+     * <pre>{ board = [ {displayName, dayCount}, ... ] }</pre>
+     *
+     * Numbers are written as {@link Double} because Kahlua stores all Lua numbers that way.
      */
-    private static KahluaTable buildSyncTable() throws SQLException {
-        LOGGER.info("[ZoneMarker] buildSyncTable() called");
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo = new SurvivorLeaderboardRepository(db.getConnection());
-            List<ZoneCategoryRecord> categories = repo.loadAllCategories();
-            LOGGER.info("[ZoneMarker] buildSyncTable: loaded {} categories", categories.size());
+    private static KahluaTable buildBoardTable(SurvivorLeaderboardRepository repo)
+            throws SQLException {
+        List<SurvivorRecord> survivors = repo.loadAllOrdered();
+        KahluaTable args = LuaManager.platform.newTable();
+        KahluaTable boardTable = LuaManager.platform.newTable();
 
-            KahluaTable args = LuaManager.platform.newTable();
-            KahluaTable catsTable = LuaManager.platform.newTable();
-            KahluaTable zonesTable = LuaManager.platform.newTable();
-
-            int idx = 1;
-            for (ZoneCategoryRecord cat : categories) {
-                KahluaTable catEntry = LuaManager.platform.newTable();
-                catEntry.rawset("name", cat.name());
-                catEntry.rawset("r", cat.r());
-                catEntry.rawset("g", cat.g());
-                catEntry.rawset("b", cat.b());
-                catEntry.rawset("a", cat.a());
-                catsTable.rawset(idx++, catEntry);
-
-                List<ZoneRecord> zones = repo.loadZonesByCategoryName(cat.name());
-                KahluaTable zoneArray = LuaManager.platform.newTable();
-                int zIdx = 1;
-                for (ZoneRecord z : zones) {
-                    KahluaTable zoneEntry = LuaManager.platform.newTable();
-                    zoneEntry.rawset("xStart", z.xStart());
-                    zoneEntry.rawset("yStart", z.yStart());
-                    zoneEntry.rawset("xEnd", z.xEnd());
-                    zoneEntry.rawset("yEnd", z.yEnd());
-                    zoneEntry.rawset("region", z.region());
-                    zoneArray.rawset(zIdx++, zoneEntry);
-                }
-                zonesTable.rawset(cat.name(), zoneArray);
-            }
-
-            args.rawset("categories", catsTable);
-            args.rawset("zones", zonesTable);
-            return args;
+        int idx = 1;
+        for (SurvivorRecord s : survivors) {
+            KahluaTable entry = LuaManager.platform.newTable();
+            entry.rawset("displayName", s.username());
+            entry.rawset("dayCount", (double) s.dayCount());
+            boardTable.rawset(idx++, entry);
         }
+        args.rawset("board", boardTable);
+        return args;
     }
 }
