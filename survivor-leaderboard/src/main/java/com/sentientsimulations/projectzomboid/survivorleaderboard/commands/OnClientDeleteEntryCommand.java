@@ -20,8 +20,4 @@ public class OnClientDeleteEntryCommand extends ClientCommandEvent {
     public Double getDayCount() {
         return getTable("player").getDouble("dayCount");
     }
-
-    public StormKahluaTable getPlayerEntry() {
-        return getTable("player");
-    }
 }
