@@ -12,6 +12,7 @@ import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnServerStartedEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
+import io.pzstorm.storm.event.zomboid.OnBanSteamIDEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
 import java.sql.SQLException;
 import java.util.List;
@@ -44,6 +45,24 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
             LOGGER.info("[Lifeboard] Database initialized successfully");
         } catch (SQLException e) {
             LOGGER.error("[Lifeboard] Failed to initialize database", e);
+        }
+    }
+
+    /** Remove leaderboard entries for a Steam ID immediately when it is banned. */
+    @SubscribeEvent
+    public void onBanSteamID(OnBanSteamIDEvent event) {
+        if (!event.isBan()) {
+            return;
+        }
+        LOGGER.info("[Lifeboard] SteamID {} banned, removing from leaderboard", event.getSteamID());
+        try {
+            long steamId = Long.parseLong(event.getSteamID());
+            String error = SurvivorLeaderboardBridge.deleteBySteamId(steamId);
+            if (error != null) {
+                LOGGER.warn("[Lifeboard] Failed to remove banned SteamID: {}", error);
+            }
+        } catch (NumberFormatException e) {
+            LOGGER.error("[Lifeboard] Invalid SteamID format: {}", event.getSteamID(), e);
         }
     }
 

@@ -114,6 +114,21 @@ public final class SurvivorLeaderboardBridge {
         }
     }
 
+    /** Delete every entry whose Steam ID matches, then broadcast. */
+    public static String deleteBySteamId(long steamId) {
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            int removed = repo.deleteBySteamId(steamId);
+            LOGGER.info("[Lifeboard] Deleted {} entries for steamId={}", removed, steamId);
+            broadcast(repo);
+            return null;
+        } catch (SQLException e) {
+            LOGGER.error("[Lifeboard] Failed to delete entries for steamId={}", steamId, e);
+            return "Database error deleting entries by Steam ID.";
+        }
+    }
+
     /** Clear the whole board and broadcast the empty result. */
     public static String deleteAllEntries() {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
