@@ -99,21 +99,6 @@ public final class SurvivorLeaderboardBridge {
         }
     }
 
-    /** Delete every entry whose username matches, then broadcast. */
-    public static String deleteEntry(String username) {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            int removed = repo.deleteByUsername(username);
-            LOGGER.info("[Lifeboard] Deleted {} entries for username={}", removed, username);
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to delete entry for username={}", username, e);
-            return "Database error deleting entry.";
-        }
-    }
-
     /** Delete every entry whose Steam ID matches, then broadcast. */
     public static String deleteBySteamId(long steamId) {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
@@ -126,21 +111,6 @@ public final class SurvivorLeaderboardBridge {
         } catch (SQLException e) {
             LOGGER.error("[Lifeboard] Failed to delete entries for steamId={}", steamId, e);
             return "Database error deleting entries by Steam ID.";
-        }
-    }
-
-    /** Clear the whole board and broadcast the empty result. */
-    public static String deleteAllEntries() {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            int removed = repo.deleteAll();
-            LOGGER.info("[Lifeboard] Deleted {} entries (all)", removed);
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to delete all entries", e);
-            return "Database error deleting all entries.";
         }
     }
 

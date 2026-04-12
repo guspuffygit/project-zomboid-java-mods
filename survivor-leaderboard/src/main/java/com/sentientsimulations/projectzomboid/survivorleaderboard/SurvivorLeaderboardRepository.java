@@ -16,11 +16,7 @@ public class SurvivorLeaderboardRepository {
     private static final String UPDATE_DAY_COUNT =
             "UPDATE survivors SET day_count = ? WHERE steam_id = ? AND username = ?";
 
-    private static final String DELETE_BY_USERNAME = "DELETE FROM survivors WHERE username = ?";
-
     private static final String DELETE_BY_STEAM_ID = "DELETE FROM survivors WHERE steam_id = ?";
-
-    private static final String DELETE_ALL = "DELETE FROM survivors";
 
     private static final String SELECT_ALL_ORDERED =
             "SELECT id, steam_id, username, day_count FROM survivors"
@@ -61,16 +57,6 @@ public class SurvivorLeaderboardRepository {
     }
 
     /**
-     * @return number of rows deleted
-     */
-    public int deleteByUsername(String username) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(DELETE_BY_USERNAME)) {
-            ps.setString(1, username);
-            return ps.executeUpdate();
-        }
-    }
-
-    /**
      * @return number of rows deleted (may be &gt; 1 if the same Steam account has multiple
      *     characters)
      */
@@ -90,15 +76,6 @@ public class SurvivorLeaderboardRepository {
             }
         }
         return results;
-    }
-
-    /**
-     * @return number of rows deleted
-     */
-    public int deleteAll() throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(DELETE_ALL)) {
-            return ps.executeUpdate();
-        }
     }
 
     public List<SurvivorRecord> loadAllOrdered() throws SQLException {

@@ -3,8 +3,6 @@ package com.sentientsimulations.projectzomboid.survivorleaderboard;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.OnClientAddPlayerCommand;
-import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.OnClientDeleteAllEntriesCommand;
-import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.OnClientDeleteEntryCommand;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.OnClientIncrementCommand;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.OnClientRefreshCommand;
 import io.pzstorm.storm.event.core.OnClientCommand;
@@ -112,32 +110,6 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
                 SurvivorLeaderboardBridge.incrementDays(event.getPlayer(), daysSurvived.intValue());
         if (error != null) {
             LOGGER.warn("[Lifeboard] increment failed: {}", error);
-        }
-    }
-
-    @OnClientCommand
-    public void onDeleteEntry(OnClientDeleteEntryCommand event) {
-        String username = event.getDisplayName();
-        LOGGER.info(
-                "[Lifeboard] onDeleteEntry from {} targeting displayName={}",
-                event.getPlayer().getUsername(),
-                username);
-        if (username == null) {
-            LOGGER.warn("[Lifeboard] deleteEntry missing player.displayName arg");
-            return;
-        }
-        String error = SurvivorLeaderboardBridge.deleteEntry(username);
-        if (error != null) {
-            LOGGER.warn("[Lifeboard] deleteEntry failed: {}", error);
-        }
-    }
-
-    @OnClientCommand
-    public void onDeleteAllEntries(OnClientDeleteAllEntriesCommand event) {
-        LOGGER.info("[Lifeboard] onDeleteAllEntries from {}", event.getPlayer().getUsername());
-        String error = SurvivorLeaderboardBridge.deleteAllEntries();
-        if (error != null) {
-            LOGGER.warn("[Lifeboard] deleteAllEntries failed: {}", error);
         }
     }
 }

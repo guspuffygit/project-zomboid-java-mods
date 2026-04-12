@@ -34,7 +34,6 @@ function ISLifeboardUI:initialise()
     self.playerList:addColumn(getText("IGUI_Lifeboard_Ranking"), 0)
     self.playerList:addColumn(getText("IGUI_Lifeboard_DisplayName"), 42)
     self.playerList:addColumn(getText("IGUI_Lifeboard_Days"), 200)
-    self.playerList.onRightMouseUp = ISLifeboardUI.onRightMousePlayerList
     self:addChild(self.playerList)
 
     self.no = ISButton:new(self.playerList.x + self.playerList.width - btnWid, self.playerList.y + self.playerList.height + 5, btnWid, btnHgt, getText("UI_btn_close"), self, ISLifeboardUI.onClick)
@@ -45,28 +44,6 @@ function ISLifeboardUI:initialise()
     self.no:instantiate()
     self.no.borderColor = {r=0.4, g=0.4, b=0.4, a=0.9}
     self:addChild(self.no)
-end
-
-function ISLifeboardUI:onRightMousePlayerList(x, y)
-    local row = self:rowAt(x, y)
-    if row < 1 or row > #self.items then return end
-    self.selected = row
-    local lifeboard = self.parent
-    lifeboard:doPlayerListContextMenu(self.items[row].item, self:getX() + x, self:getY() + y)
-end
-
-function ISLifeboardUI:doPlayerListContextMenu(selectedEntry, x,y)
-    if not isAdmin() then return end
-    local playerObj = getPlayer()
-    local playerNum = self.admin:getPlayerNum()
-    local context = ISContextMenu.get(playerNum, x + self:getAbsoluteX(), y + self:getAbsoluteY())
-    context:addOption(getText("IGUI_Lifeboard_DeleteEntry"), self, ISLifeboardUI.onCommand, playerObj, selectedEntry, "DeleteEntry")
-    context:addOption(getText("IGUI_Lifeboard_DeleteAllEntries"), self, ISLifeboardUI.onCommand, playerObj, selectedEntry, "DeleteAllEntries")
-end
-
-function ISLifeboardUI:onCommand(playerObj, selectedEntry, command)
-    local args = { player = selectedEntry }
-    sendClientCommand(playerObj, "Lifeboard", command, args)
 end
 
 function ISLifeboardUI:populateList()
