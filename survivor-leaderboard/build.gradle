@@ -1,7 +1,7 @@
 modInfo {
 	name = 'Survivor Leaderboard'
-	workshopId = ''
-	workshopIdStage = ''
+	workshopId = '3705341237'
+	workshopIdStage = '3705342130'
 	workshopIdProd = '3686333544'
 	description = '''\
 		|Leaderboard for survivors
