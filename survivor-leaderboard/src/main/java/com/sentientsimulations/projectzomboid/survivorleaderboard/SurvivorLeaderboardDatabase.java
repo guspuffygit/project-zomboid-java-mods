@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.survivorleaderboard;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -14,6 +15,7 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
                 steam_id   INTEGER NOT NULL,
                 username   TEXT NOT NULL,
                 day_count  INTEGER NOT NULL DEFAULT 0,
+                kill_count INTEGER NOT NULL DEFAULT 0,
                 UNIQUE (steam_id, username)
             )""";
 
@@ -26,12 +28,34 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
             stmt.execute("PRAGMA foreign_keys=ON");
         }
         createTables();
+        migrateSchema();
     }
 
     private void createTables() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(CREATE_SURVIVORS);
         }
+    }
+
+    private void migrateSchema() throws SQLException {
+        if (!hasColumn("survivors", "kill_count")) {
+            try (Statement stmt = connection.createStatement()) {
+                stmt.execute(
+                        "ALTER TABLE survivors ADD COLUMN kill_count INTEGER NOT NULL DEFAULT 0");
+            }
+        }
+    }
+
+    private boolean hasColumn(String table, String column) throws SQLException {
+        try (Statement stmt = connection.createStatement();
+                ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + table + ")")) {
+            while (rs.next()) {
+                if (column.equals(rs.getString("name"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public Connection getConnection() {

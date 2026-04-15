@@ -16,27 +16,51 @@ ISLifeboardUI.messages = {}
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 
+local LIST_WIDTH = 260
+local LIST_GAP = 20
+local SIDE_MARGIN = 10
+local WINDOW_WIDTH = SIDE_MARGIN + LIST_WIDTH + LIST_GAP + LIST_WIDTH + SIDE_MARGIN
+
 function ISLifeboardUI:initialise()
     ISPanel.initialise(self)
     local btnWid = 80
     local btnHgt = FONT_HGT_SMALL + 2
 
-    local y = 10 + FONT_HGT_SMALL + 24
-    self.playerList = ISScrollingListBox:new(10, y, self.width - 20, self.height - (5 + btnHgt + 5) - y)
-    self.playerList:initialise()
-    self.playerList:instantiate()
-    self.playerList.itemheight = FONT_HGT_SMALL + 2 * 2
-    self.playerList.selected = 0
-    self.playerList.joypadParent = self
-    self.playerList.font = UIFont.NewSmall
-    self.playerList.doDrawItem = self.drawPlayers
-    self.playerList.drawBorder = true
-    self.playerList:addColumn(getText("IGUI_Lifeboard_Ranking"), 0)
-    self.playerList:addColumn(getText("IGUI_Lifeboard_DisplayName"), 42)
-    self.playerList:addColumn(getText("IGUI_Lifeboard_Days"), 200)
-    self:addChild(self.playerList)
+    local headerY = 10
+    local sectionTitleY = headerY + FONT_HGT_SMALL + 6
+    local listY = sectionTitleY + FONT_HGT_SMALL + 6
+    local listHeight = self.height - (5 + btnHgt + 5) - listY
 
-    self.no = ISButton:new(self.playerList.x + self.playerList.width - btnWid, self.playerList.y + self.playerList.height + 5, btnWid, btnHgt, getText("UI_btn_close"), self, ISLifeboardUI.onClick)
+    self.daysList = ISScrollingListBox:new(SIDE_MARGIN, listY, LIST_WIDTH, listHeight)
+    self.daysList:initialise()
+    self.daysList:instantiate()
+    self.daysList.itemheight = FONT_HGT_SMALL + 2 * 2
+    self.daysList.selected = 0
+    self.daysList.joypadParent = self
+    self.daysList.font = UIFont.NewSmall
+    self.daysList.doDrawItem = self.drawDaysEntry
+    self.daysList.drawBorder = true
+    self.daysList:addColumn(getText("IGUI_Lifeboard_Ranking"), 0)
+    self.daysList:addColumn(getText("IGUI_Lifeboard_DisplayName"), 42)
+    self.daysList:addColumn(getText("IGUI_Lifeboard_Days"), LIST_WIDTH - 60)
+    self:addChild(self.daysList)
+
+    local killsX = SIDE_MARGIN + LIST_WIDTH + LIST_GAP
+    self.killsList = ISScrollingListBox:new(killsX, listY, LIST_WIDTH, listHeight)
+    self.killsList:initialise()
+    self.killsList:instantiate()
+    self.killsList.itemheight = FONT_HGT_SMALL + 2 * 2
+    self.killsList.selected = 0
+    self.killsList.joypadParent = self
+    self.killsList.font = UIFont.NewSmall
+    self.killsList.doDrawItem = self.drawKillsEntry
+    self.killsList.drawBorder = true
+    self.killsList:addColumn(getText("IGUI_Lifeboard_Ranking"), 0)
+    self.killsList:addColumn(getText("IGUI_Lifeboard_DisplayName"), 42)
+    self.killsList:addColumn(getText("IGUI_Killboard_Kills"), LIST_WIDTH - 60)
+    self:addChild(self.killsList)
+
+    self.no = ISButton:new(self.width - SIDE_MARGIN - btnWid, listY + listHeight + 5, btnWid, btnHgt, getText("UI_btn_close"), self, ISLifeboardUI.onClick)
     self.no.internal = "CLOSE"
     self.no.anchorTop = false
     self.no.anchorBottom = true
@@ -48,47 +72,80 @@ end
 
 function ISLifeboardUI:populateList()
     if not lifeboardWindow then return end
-    self.playerList:clear()
-    table.sort(LifeBoard.board, function(a, b) return a.dayCount > b.dayCount end)
+    self.daysList:clear()
+    self.killsList:clear()
 
-    if getTableLength(LifeBoard.board) == 0 then
+    local daysSorted = {}
+    local killsSorted = {}
+    for _, player in pairs(LifeBoard.board) do
+        daysSorted[#daysSorted + 1] = player
+        killsSorted[#killsSorted + 1] = player
+    end
+    table.sort(daysSorted, function(a, b) return (a.dayCount or 0) > (b.dayCount or 0) end)
+    table.sort(killsSorted, function(a, b)
+        local ak = a.killCount or 0
+        local bk = b.killCount or 0
+        if ak == bk then
+            return (a.displayName or "") < (b.displayName or "")
+        end
+        return ak > bk
+    end)
+
+    if #daysSorted == 0 then
         local entry = {}
         entry.displayName = getText("IGUI_Lifeboard_BoardEmpty")
         entry.dayCount = 0
-        self.playerList:addItem(entry.displayName, entry)
+        entry.killCount = 0
+        self.daysList:addItem(entry.displayName, entry)
+        self.killsList:addItem(entry.displayName, entry)
         return
     end
 
-    for i,player in ipairs(LifeBoard.board) do
+    for _, player in ipairs(daysSorted) do
         local entry = {}
         entry.displayName = player.displayName
         entry.dayCount = player.dayCount
-        self.playerList:addItem(entry.displayName, entry)
+        self.daysList:addItem(entry.displayName, entry)
+    end
+
+    for _, player in ipairs(killsSorted) do
+        local entry = {}
+        entry.displayName = player.displayName
+        entry.killCount = player.killCount or 0
+        self.killsList:addItem(entry.displayName, entry)
     end
 end
 
-function ISLifeboardUI:drawPlayers(y, entry, alt)
-
+local function drawRow(list, y, entry, valueText)
     local a = 0.9
+    list:drawRectBorder(0, (y), list:getWidth(), list.itemheight - 1, a, list.borderColor.r, list.borderColor.g, list.borderColor.b)
 
-    self:drawRectBorder(0, (y), self:getWidth(), self.itemheight - 1, a, self.borderColor.r, self.borderColor.g, self.borderColor.b)
-
-    if self.selected == entry.index then
-        self:drawRect(0, (y), self:getWidth(), self.itemheight - 1, 0.3, 0.7, 0.35, 0.15)
+    if list.selected == entry.index then
+        list:drawRect(0, (y), list:getWidth(), list.itemheight - 1, 0.3, 0.7, 0.35, 0.15)
     end
 
-    self:drawText(tostring(entry.index), 3, y + 2, 1, 1, 1, a, self.font)
-    self:drawText(entry.item.displayName, self.columns[2].size + 3, y + 2, 1, 1, 1, a, self.font)
-    self:drawText(tostring(entry.item.dayCount), self.columns[3].size + 3, y + 4, 1, 1, 1, a, self.font)
+    list:drawText(tostring(entry.index), 3, y + 2, 1, 1, 1, a, list.font)
+    list:drawText(entry.item.displayName, list.columns[2].size + 3, y + 2, 1, 1, 1, a, list.font)
+    list:drawText(valueText, list.columns[3].size + 3, y + 2, 1, 1, 1, a, list.font)
 
-    return y + self.itemheight
+    return y + list.itemheight
+end
+
+function ISLifeboardUI:drawDaysEntry(y, entry, alt)
+    return drawRow(self, y, entry, tostring(entry.item.dayCount or 0))
+end
+
+function ISLifeboardUI:drawKillsEntry(y, entry, alt)
+    return drawRow(self, y, entry, tostring(entry.item.killCount or 0))
 end
 
 function ISLifeboardUI:prerender()
-    local z = 10
+    local headerY = 10
     self:drawRect(0, 0, self.width, self.height, self.backgroundColor.a, self.backgroundColor.r, self.backgroundColor.g, self.backgroundColor.b)
     self:drawRectBorder(0, 0, self.width, self.height, self.borderColor.a, self.borderColor.r, self.borderColor.g, self.borderColor.b)
-    self:drawText(getText("IGUI_Lifeboard_Title"), self.width/2 - (getTextManager():MeasureStringX(UIFont.Small, getText("IGUI_Lifeboard_Title")) / 2), z, 1,1,1,1, UIFont.Small)
+
+    local titleText = getText("IGUI_Lifeboard_Title")
+    self:drawText(titleText, self.width/2 - (getTextManager():MeasureStringX(UIFont.Small, titleText) / 2), headerY, 1,1,1,1, UIFont.Small)
 end
 
 function ISLifeboardUI:onClick(button)
@@ -145,7 +202,7 @@ local function onPressLifeboardBtn()
             windowHeight = 500
         end
 
-        lifeboardWindow = ISLifeboardUI:new(200, 50, 280, windowHeight, getPlayer())
+        lifeboardWindow = ISLifeboardUI:new(200, 50, WINDOW_WIDTH, windowHeight, getPlayer())
         lifeboardWindow:initialise()
         lifeboardWindow:addToUIManager()
         lifeboardWindow:populateList()
@@ -189,7 +246,7 @@ local function onServerCommand(module, command, arguments)
     if command ~= "UpdateBoard" then return end
     if not isClient() then return end
 
-    -- The server now sends the full board as args.board = [{displayName, dayCount}, ...]
+    -- The server now sends the full board as args.board = [{displayName, dayCount, killCount}, ...]
     -- Rebuild LifeBoard.board in place so any captured references stay valid.
     for k in pairs(LifeBoard.board) do LifeBoard.board[k] = nil end
 
@@ -198,6 +255,7 @@ local function onServerCommand(module, command, arguments)
             LifeBoard.board[i] = {
                 displayName = entry.displayName,
                 dayCount = entry.dayCount,
+                killCount = entry.killCount,
             }
         end
     end

@@ -99,6 +99,71 @@ public final class SurvivorLeaderboardBridge {
         }
     }
 
+    /**
+     * Credit the killer with +1 PvP kill and reset the victim's kill count to 0. Upserts rows for
+     * both players if they are not yet on the board. Broadcasts on success.
+     *
+     * @return null on success, or an error message
+     */
+    public static String recordPlayerKill(IsoPlayer killer, IsoPlayer victim) {
+        long killerSteamId = killer.getSteamID();
+        String killerUsername = killer.getUsername();
+        long victimSteamId = victim.getSteamID();
+        String victimUsername = victim.getUsername();
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+
+            if (!repo.incrementKillCount(killerSteamId, killerUsername)) {
+                repo.insertSurvivor(killerSteamId, killerUsername);
+                repo.incrementKillCount(killerSteamId, killerUsername);
+            }
+
+            if (!repo.resetKillCount(victimSteamId, victimUsername)) {
+                repo.insertSurvivor(victimSteamId, victimUsername);
+                // Fresh row already has kill_count = 0; no reset call needed.
+            }
+
+            LOGGER.info(
+                    "[Lifeboard] Recorded PvP kill: killer={} victim={}",
+                    killerUsername,
+                    victimUsername);
+            broadcast(repo);
+            return null;
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[Lifeboard] Failed to record PvP kill killer={} victim={}",
+                    killerUsername,
+                    victimUsername,
+                    e);
+            return "Database error recording kill.";
+        }
+    }
+
+    /**
+     * Reset the player's kill count to 0 (used when they die from a non-PvP cause). Upserts the row
+     * if absent, then broadcasts.
+     *
+     * @return null on success, or an error message
+     */
+    public static String resetKillsForPlayer(IsoPlayer victim) {
+        long steamId = victim.getSteamID();
+        String username = victim.getUsername();
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            if (!repo.resetKillCount(steamId, username)) {
+                repo.insertSurvivor(steamId, username);
+            }
+            LOGGER.info("[Lifeboard] Reset kills for victim={}", username);
+            broadcast(repo);
+            return null;
+        } catch (SQLException e) {
+            LOGGER.error("[Lifeboard] Failed to reset kills for {}", username, e);
+            return "Database error resetting kills.";
+        }
+    }
+
     /** Delete every entry whose Steam ID matches, then broadcast. */
     public static String deleteBySteamId(long steamId) {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
@@ -180,6 +245,17 @@ public final class SurvivorLeaderboardBridge {
         }
     }
 
+    public static List<SurvivorRecord> listKillers() {
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            return repo.loadAllOrderedByKills();
+        } catch (SQLException e) {
+            LOGGER.error("[Lifeboard] Failed to list killers", e);
+            return List.of();
+        }
+    }
+
     // ---- Network ----
 
     /** Broadcast the full leaderboard to every connected client. */
@@ -205,7 +281,7 @@ public final class SurvivorLeaderboardBridge {
     /**
      * Wire format consumed by LifeBoard_UI.lua's {@code OnServerCommand}:
      *
-     * <pre>{ board = [ {displayName, dayCount}, ... ] }</pre>
+     * <pre>{ board = [ {displayName, dayCount, killCount}, ... ] }</pre>
      *
      * Numbers are written as {@link Double} because Kahlua stores all Lua numbers that way.
      */
@@ -220,6 +296,7 @@ public final class SurvivorLeaderboardBridge {
             KahluaTable entry = LuaManager.platform.newTable();
             entry.rawset("displayName", s.username());
             entry.rawset("dayCount", (double) s.dayCount());
+            entry.rawset("killCount", (double) s.killCount());
             boardTable.rawset(idx++, entry);
         }
         args.rawset("board", boardTable);

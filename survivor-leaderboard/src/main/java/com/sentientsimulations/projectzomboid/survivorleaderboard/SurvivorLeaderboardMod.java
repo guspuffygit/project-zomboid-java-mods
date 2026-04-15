@@ -8,12 +8,15 @@ import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.OnCli
 import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
+import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import io.pzstorm.storm.event.lua.OnServerStartedEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
 import io.pzstorm.storm.event.zomboid.OnBanSteamIDEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
 import java.sql.SQLException;
 import java.util.List;
+import zombie.characters.IsoGameCharacter;
+import zombie.characters.IsoPlayer;
 
 public class SurvivorLeaderboardMod implements ZomboidMod {
 
@@ -25,6 +28,7 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
                 "[Lifeboard] Registering event handlers for {}",
                 SurvivorLeaderboardMod.class.getCanonicalName());
         StormEventDispatcher.registerEventHandler(this);
+        StormEventDispatcher.registerEventHandler(SurvivorLeaderboardEndpoints.class);
         LOGGER.info("[Lifeboard] Event handlers registered successfully");
     }
 
@@ -61,6 +65,29 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
             }
         } catch (NumberFormatException e) {
             LOGGER.error("[Lifeboard] Invalid SteamID format: {}", event.getSteamID(), e);
+        }
+    }
+
+    /**
+     * Record PvP kills and reset the victim's kill count whenever a player dies. Mirrors the
+     * attacker-attribution pattern used in the extra-logging mod's DeathEventHandler.
+     */
+    @SubscribeEvent
+    public void onCharacterDeath(OnCharacterDeathEvent event) {
+        if (!(event.character instanceof IsoPlayer victim)) {
+            return;
+        }
+        IsoGameCharacter attacker = victim.getAttackedBy();
+        if (attacker instanceof IsoPlayer killer && killer != victim) {
+            String error = SurvivorLeaderboardBridge.recordPlayerKill(killer, victim);
+            if (error != null) {
+                LOGGER.warn("[Lifeboard] recordPlayerKill failed: {}", error);
+            }
+        } else {
+            String error = SurvivorLeaderboardBridge.resetKillsForPlayer(victim);
+            if (error != null) {
+                LOGGER.warn("[Lifeboard] resetKillsForPlayer failed: {}", error);
+            }
         }
     }
 
