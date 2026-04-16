@@ -15,4 +15,8 @@ public class OnClientIncrementCommand extends ClientCommandEvent {
     public Double getDaysSurvived() {
         return getDouble("daysSurvived");
     }
+
+    public Double getZombieKills() {
+        return getDouble("zombieKills");
+    }
 }

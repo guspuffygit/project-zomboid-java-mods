@@ -19,7 +19,7 @@ local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local LIST_WIDTH = 260
 local LIST_GAP = 20
 local SIDE_MARGIN = 10
-local WINDOW_WIDTH = SIDE_MARGIN + LIST_WIDTH + LIST_GAP + LIST_WIDTH + SIDE_MARGIN
+local WINDOW_WIDTH = SIDE_MARGIN + (LIST_WIDTH * 3) + (LIST_GAP * 2) + SIDE_MARGIN
 
 function ISLifeboardUI:initialise()
     ISPanel.initialise(self)
@@ -60,6 +60,21 @@ function ISLifeboardUI:initialise()
     self.killsList:addColumn(getText("IGUI_Killboard_Kills"), LIST_WIDTH - 60)
     self:addChild(self.killsList)
 
+    local zombieKillsX = SIDE_MARGIN + (LIST_WIDTH + LIST_GAP) * 2
+    self.zombieKillsList = ISScrollingListBox:new(zombieKillsX, listY, LIST_WIDTH, listHeight)
+    self.zombieKillsList:initialise()
+    self.zombieKillsList:instantiate()
+    self.zombieKillsList.itemheight = FONT_HGT_SMALL + 2 * 2
+    self.zombieKillsList.selected = 0
+    self.zombieKillsList.joypadParent = self
+    self.zombieKillsList.font = UIFont.NewSmall
+    self.zombieKillsList.doDrawItem = self.drawZombieKillsEntry
+    self.zombieKillsList.drawBorder = true
+    self.zombieKillsList:addColumn(getText("IGUI_Lifeboard_Ranking"), 0)
+    self.zombieKillsList:addColumn(getText("IGUI_Lifeboard_DisplayName"), 42)
+    self.zombieKillsList:addColumn(getText("IGUI_Lifeboard_ZombieKills"), LIST_WIDTH - 60)
+    self:addChild(self.zombieKillsList)
+
     self.no = ISButton:new(self.width - SIDE_MARGIN - btnWid, listY + listHeight + 5, btnWid, btnHgt, getText("UI_btn_close"), self, ISLifeboardUI.onClick)
     self.no.internal = "CLOSE"
     self.no.anchorTop = false
@@ -74,12 +89,21 @@ function ISLifeboardUI:populateList()
     if not lifeboardWindow then return end
     self.daysList:clear()
     self.killsList:clear()
+    self.zombieKillsList:clear()
 
     local daysSorted = {}
     local killsSorted = {}
+    local zombieKillsSorted = {}
     for _, player in pairs(LifeBoard.board) do
-        daysSorted[#daysSorted + 1] = player
-        killsSorted[#killsSorted + 1] = player
+        if (player.dayCount or 0) ~= 0 then
+            daysSorted[#daysSorted + 1] = player
+        end
+        if (player.killCount or 0) ~= 0 then
+            killsSorted[#killsSorted + 1] = player
+        end
+        if (player.zombieKillCount or 0) ~= 0 then
+            zombieKillsSorted[#zombieKillsSorted + 1] = player
+        end
     end
     table.sort(daysSorted, function(a, b) return (a.dayCount or 0) > (b.dayCount or 0) end)
     table.sort(killsSorted, function(a, b)
@@ -90,29 +114,67 @@ function ISLifeboardUI:populateList()
         end
         return ak > bk
     end)
+    table.sort(zombieKillsSorted, function(a, b)
+        local ak = a.zombieKillCount or 0
+        local bk = b.zombieKillCount or 0
+        if ak == bk then
+            return (a.displayName or "") < (b.displayName or "")
+        end
+        return ak > bk
+    end)
+
+    if #daysSorted == 0 and #killsSorted == 0 and #zombieKillsSorted == 0 then
+        local entry = {}
+        entry.displayName = getText("IGUI_Lifeboard_BoardEmpty")
+        entry.dayCount = 0
+        entry.killCount = 0
+        entry.zombieKillCount = 0
+        self.daysList:addItem(entry.displayName, entry)
+        self.killsList:addItem(entry.displayName, entry)
+        self.zombieKillsList:addItem(entry.displayName, entry)
+        return
+    end
 
     if #daysSorted == 0 then
         local entry = {}
         entry.displayName = getText("IGUI_Lifeboard_BoardEmpty")
         entry.dayCount = 0
+        self.daysList:addItem(entry.displayName, entry)
+    else
+        for _, player in ipairs(daysSorted) do
+            local entry = {}
+            entry.displayName = player.displayName
+            entry.dayCount = player.dayCount
+            self.daysList:addItem(entry.displayName, entry)
+        end
+    end
+
+    if #killsSorted == 0 then
+        local entry = {}
+        entry.displayName = getText("IGUI_Lifeboard_BoardEmpty")
         entry.killCount = 0
-        self.daysList:addItem(entry.displayName, entry)
         self.killsList:addItem(entry.displayName, entry)
-        return
+    else
+        for _, player in ipairs(killsSorted) do
+            local entry = {}
+            entry.displayName = player.displayName
+            entry.killCount = player.killCount or 0
+            self.killsList:addItem(entry.displayName, entry)
+        end
     end
 
-    for _, player in ipairs(daysSorted) do
+    if #zombieKillsSorted == 0 then
         local entry = {}
-        entry.displayName = player.displayName
-        entry.dayCount = player.dayCount
-        self.daysList:addItem(entry.displayName, entry)
-    end
-
-    for _, player in ipairs(killsSorted) do
-        local entry = {}
-        entry.displayName = player.displayName
-        entry.killCount = player.killCount or 0
-        self.killsList:addItem(entry.displayName, entry)
+        entry.displayName = getText("IGUI_Lifeboard_BoardEmpty")
+        entry.zombieKillCount = 0
+        self.zombieKillsList:addItem(entry.displayName, entry)
+    else
+        for _, player in ipairs(zombieKillsSorted) do
+            local entry = {}
+            entry.displayName = player.displayName
+            entry.zombieKillCount = player.zombieKillCount or 0
+            self.zombieKillsList:addItem(entry.displayName, entry)
+        end
     end
 end
 
@@ -137,6 +199,10 @@ end
 
 function ISLifeboardUI:drawKillsEntry(y, entry, alt)
     return drawRow(self, y, entry, tostring(entry.item.killCount or 0))
+end
+
+function ISLifeboardUI:drawZombieKillsEntry(y, entry, alt)
+    return drawRow(self, y, entry, tostring(entry.item.zombieKillCount or 0))
 end
 
 function ISLifeboardUI:prerender()
@@ -246,7 +312,7 @@ local function onServerCommand(module, command, arguments)
     if command ~= "UpdateBoard" then return end
     if not isClient() then return end
 
-    -- The server now sends the full board as args.board = [{displayName, dayCount, killCount}, ...]
+    -- The server now sends the full board as args.board = [{displayName, dayCount, killCount, zombieKillCount}, ...]
     -- Rebuild LifeBoard.board in place so any captured references stay valid.
     for k in pairs(LifeBoard.board) do LifeBoard.board[k] = nil end
 
@@ -256,6 +322,7 @@ local function onServerCommand(module, command, arguments)
                 displayName = entry.displayName,
                 dayCount = entry.dayCount,
                 killCount = entry.killCount,
+                zombieKillCount = entry.zombieKillCount,
             }
         end
     end

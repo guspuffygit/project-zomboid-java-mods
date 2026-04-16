@@ -102,6 +102,7 @@ class SurvivorLeaderboardBanPruneTest {
         repo.insertSurvivor(BANNED_STEAM_ID, "bannedChar1");
         repo.insertSurvivor(BANNED_STEAM_ID, "bannedChar2");
         repo.insertSurvivor(OTHER_STEAM_ID, "cleanUser");
+        repo.updateDayCount(OTHER_STEAM_ID, "cleanUser", 2);
 
         int removed = SurvivorLeaderboardBridge.pruneBannedSurvivors(repo);
 
@@ -121,6 +122,7 @@ class SurvivorLeaderboardBanPruneTest {
     @Test
     void pruneIsNoopWhenNothingBanned() throws Exception {
         repo.insertSurvivor(OTHER_STEAM_ID, "cleanUser");
+        repo.updateDayCount(OTHER_STEAM_ID, "cleanUser", 1);
 
         int removed = SurvivorLeaderboardBridge.pruneBannedSurvivors(repo);
 

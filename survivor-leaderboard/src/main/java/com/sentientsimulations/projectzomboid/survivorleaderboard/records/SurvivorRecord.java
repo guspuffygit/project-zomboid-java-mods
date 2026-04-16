@@ -1,3 +1,4 @@
 package com.sentientsimulations.projectzomboid.survivorleaderboard.records;
 
-public record SurvivorRecord(long id, long steamId, String username, int dayCount, int killCount) {}
+public record SurvivorRecord(
+        long id, long steamId, String username, int dayCount, int killCount, int zombieKills) {}

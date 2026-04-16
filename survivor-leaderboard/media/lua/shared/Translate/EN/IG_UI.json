@@ -4,5 +4,6 @@
   "IGUI_Lifeboard_DisplayName": "Player",
   "IGUI_Lifeboard_Days": "Days",
   "IGUI_Lifeboard_BoardEmpty": "Board is empty!",
-  "IGUI_Killboard_Kills": "Kills"
+  "IGUI_Killboard_Kills": "Kills",
+  "IGUI_Lifeboard_ZombieKills": "Zombies"
 }

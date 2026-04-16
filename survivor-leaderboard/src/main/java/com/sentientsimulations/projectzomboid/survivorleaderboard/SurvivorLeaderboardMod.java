@@ -8,6 +8,7 @@ import com.sentientsimulations.projectzomboid.survivorleaderboard.commands.OnCli
 import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
+import io.pzstorm.storm.event.lua.EveryHoursEvent;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import io.pzstorm.storm.event.lua.OnServerStartedEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
@@ -79,7 +80,8 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
         }
         IsoGameCharacter attacker = victim.getAttackedBy();
         if (attacker instanceof IsoPlayer killer && killer != victim) {
-            String error = SurvivorLeaderboardBridge.recordPlayerKill(killer, victim);
+            boolean isAlly = SurvivorLeaderboardBridge.areAllies(killer, victim);
+            String error = SurvivorLeaderboardBridge.recordPlayerKill(killer, victim, isAlly);
             if (error != null) {
                 LOGGER.warn("[Lifeboard] recordPlayerKill failed: {}", error);
             }
@@ -89,6 +91,15 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
                 LOGGER.warn("[Lifeboard] resetKillsForPlayer failed: {}", error);
             }
         }
+    }
+
+    /**
+     * Sweep the kill log for un-decided ally kills and apply delayed penalties. Fires once per
+     * in-game hour.
+     */
+    @SubscribeEvent
+    public void onEveryHours(EveryHoursEvent event) {
+        SurvivorLeaderboardBridge.processAllyKillPenalties();
     }
 
     /** Prune banned survivors on the first tick, once ServerWorldDatabase is fully ready. */
@@ -125,16 +136,20 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
     @OnClientCommand
     public void onIncrement(OnClientIncrementCommand event) {
         Double daysSurvived = event.getDaysSurvived();
+        Double zombieKills = event.getZombieKills();
         LOGGER.info(
-                "[Lifeboard] onIncrement from {} daysSurvived={}",
+                "[Lifeboard] onIncrement from {} daysSurvived={} zombieKills={}",
                 event.getPlayer().getUsername(),
-                daysSurvived);
+                daysSurvived,
+                zombieKills);
         if (daysSurvived == null) {
             LOGGER.warn("[Lifeboard] increment missing daysSurvived arg");
             return;
         }
+        int zombieKillsInt = zombieKills != null ? zombieKills.intValue() : 0;
         String error =
-                SurvivorLeaderboardBridge.incrementDays(event.getPlayer(), daysSurvived.intValue());
+                SurvivorLeaderboardBridge.incrementDays(
+                        event.getPlayer(), daysSurvived.intValue(), zombieKillsInt);
         if (error != null) {
             LOGGER.warn("[Lifeboard] increment failed: {}", error);
         }

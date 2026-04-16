@@ -9,6 +9,10 @@ local function getDaysSurvived(playerObj)
     return daysSurvived or "Error"
 end
 
+local function getZombieKills(playerObj)
+    return playerObj:getZombieKills() or 0
+end
+
 BravensUtilsLB = {}
 
 BravensUtilsLB.DelayFunction = function(func, delay)
@@ -50,7 +54,7 @@ local function everyMinute()
 
     if timer >= cooldown then
 		local playerObj = getPlayer()
-		sendClientCommand(playerObj, "Lifeboard", "Increment", {daysSurvived = getDaysSurvived(playerObj)})
+		sendClientCommand(playerObj, "Lifeboard", "Increment", {daysSurvived = getDaysSurvived(playerObj), zombieKills = getZombieKills(playerObj)})
         timer = 0
     end
 end
