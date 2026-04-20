@@ -18,6 +18,8 @@ import java.sql.SQLException;
 import java.util.List;
 import zombie.characters.IsoGameCharacter;
 import zombie.characters.IsoPlayer;
+import zombie.characters.animals.IsoAnimal;
+import zombie.network.GameClient;
 
 public class SurvivorLeaderboardMod implements ZomboidMod {
 
@@ -75,6 +77,9 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
      */
     @SubscribeEvent
     public void onCharacterDeath(OnCharacterDeathEvent event) {
+        if (event.character instanceof IsoAnimal) {
+            return;
+        }
         if (!(event.character instanceof IsoPlayer victim)) {
             return;
         }
@@ -105,7 +110,7 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
     /** Prune banned survivors on the first tick, once ServerWorldDatabase is fully ready. */
     @SubscribeEvent
     public void onTick(OnTickEvent event) {
-        if (hasPruned) {
+        if (hasPruned || GameClient.client) {
             return;
         }
         hasPruned = true;

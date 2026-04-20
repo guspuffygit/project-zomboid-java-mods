@@ -217,7 +217,7 @@ public final class SurvivorLeaderboardBridge {
     static final long ALLY_KILL_WINDOW_MS = 60L * 60L * 1000L;
 
     /** Amount deducted from a killer's {@code kill_count} per qualifying ally kill. */
-    static final int ALLY_KILL_PENALTY = 5;
+    static final int ALLY_KILL_PENALTY = 8;
 
     /**
      * Walk every un-decided ally kill (oldest first). For each one, if the same killer has another
