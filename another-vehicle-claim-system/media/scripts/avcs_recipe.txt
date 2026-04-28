@@ -12,7 +12,7 @@ module Base
             item 3 [Base.SheetPaper2] flags[ItemCount],
             item 1 tags[base:pen;base:bluepen;base:redpen;base:greenpen] mode:keep flags[Prop1;MayDegradeLight],
             item 1 [Base.Scotchtape] flags[ItemCount],
-            item 1 tags[base:glue] flags[ItemCount],
+            item 1 tags[base:glue],
             item 2 [Base.Paperclip] flags[ItemCount],
         }
         outputs
