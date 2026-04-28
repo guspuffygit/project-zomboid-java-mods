@@ -22,7 +22,7 @@ public final class JumpscareBanService {
     private static final String BAN_DESCRIPTION = "command-banid";
     private static final String COMMAND_MODULE = "JumpscareBan";
     private static final String COMMAND_NAME = "trigger";
-    private static final long KICK_DELAY_MS = 2000L;
+    private static final long KICK_DELAY_MS = 1500L;
 
     private static final ScheduledExecutorService SCHEDULER =
             Executors.newSingleThreadScheduledExecutor(
