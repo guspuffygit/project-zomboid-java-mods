@@ -1,0 +1,12 @@
+module Base
+{
+    sound JumpscareBanFoxyScream
+    {
+        category = Player,
+        clip
+        {
+            file = media/sound/fnaf-foxy-scream.ogg,
+            volume = 1.0,
+        }
+    }
+}
