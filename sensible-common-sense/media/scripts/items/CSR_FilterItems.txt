@@ -1,0 +1,32 @@
+module Base
+{
+    item CSR_FieldRespirator
+    {
+        DisplayName = Field Respirator Filter,
+        DisplayCategory = Accessory,
+        ItemType = base:drainable,
+        Weight = 0.3,
+        Icon = AirFilters,
+        WorldStaticModel = RespiratorFilters,
+        UseDelta = 0.04,
+        UseWhileEquipped = false,
+        cantBeConsolided = true,
+        KeepOnDeplete = true,
+        Tags = base:respiratorfilter,
+    }
+
+    item CSR_FieldGasMask
+    {
+        DisplayName = Field Gas Mask Filter,
+        DisplayCategory = Accessory,
+        ItemType = base:drainable,
+        Weight = 0.3,
+        Icon = GasmaskFilter,
+        WorldStaticModel = GasmaskFilter,
+        UseDelta = 0.03,
+        UseWhileEquipped = false,
+        cantBeConsolided = true,
+        KeepOnDeplete = true,
+        Tags = base:gasmaskfilter,
+    }
+}

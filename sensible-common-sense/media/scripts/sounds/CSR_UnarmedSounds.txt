@@ -1,0 +1,20 @@
+module Base
+{
+	sound CSR_UnarmedPunchHit
+	{
+		category = Player,
+		clip
+		{
+			event = Weapon/Melee/BareHands/Hit,
+		}
+	}
+
+	sound CSR_UnarmedPunchSwing
+	{
+		category = Player,
+		clip
+		{
+			event = Character/Combat/AttackShove,
+		}
+	}
+}

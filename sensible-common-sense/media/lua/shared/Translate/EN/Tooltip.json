@@ -1,0 +1,13 @@
+{
+    "Tooltip_CSR_Firework": "A small distraction firework. <LINE> Requires: Lighter or Matches in inventory. <LINE> Right-click the firework to light the fuse. <LINE> Attracts and confuses nearby zombies for 30 seconds.",
+    "Tooltip_CSR_ToolRoll": "A compact roll containing a saw, hammer, and screwdriver. <LINE> Functions as all three tools at once. <LINE> Degrades with use. When it breaks, the empty roll is returned.",
+    "Tooltip_CSR_Toolbox": "A toolbox containing a saw, hammer, screwdriver, wrench, and lug wrench. <LINE> Functions as all five tools at once. <LINE> Degrades with use. When it breaks, the empty toolbox is returned.",
+    "Tooltip_CSR_FullToolbox": "A fully loaded toolbox with saw, hammer, screwdriver, wrench, lug wrench, and pipe wrench. <LINE> Functions as all six tools at once. <LINE> Degrades with use. When it breaks, the empty toolbox is returned.",
+    "Tooltip_CSR_CraftToolRoll": "Bundle three hand tools into a single tool roll. <LINE> The roll functions as a saw, hammer, and screwdriver simultaneously.",
+    "Tooltip_CSR_CraftToolbox": "Combine five tools into a single toolbox. <LINE> Functions as saw, hammer, screwdriver, wrench, and lug wrench.",
+    "Tooltip_CSR_CraftFullToolbox": "Add a pipe wrench to complete the toolbox. <LINE> Functions as all six standard tools.",
+    "Tooltip_CSR_DisassembleToolSet": "Take apart the combined tool to recover the individual tools and container.",
+    "Tooltip_CSR_UncapBarrel": "Use your pipe wrench to pry open this barrel. Once uncapped it can store fluids and collect rainwater outdoors.",
+    "Tooltip_CSR_SweepAshes_Ready": "Sweep this ash pile away. Has a chance to drop charcoal.",
+    "Tooltip_CSR_SweepAshes_NeedBroom": "Requires a broom (or any tool tagged ClearAshes) in inventory."
+}

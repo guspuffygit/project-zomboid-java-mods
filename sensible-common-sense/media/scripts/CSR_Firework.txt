@@ -1,0 +1,13 @@
+module CommonSenseReborn
+{
+    item Firework
+    {
+        DisplayCategory = Explosives,
+        ItemType = base:normal,
+        DisplayName = Distraction Firework,
+        Weight = 0.5,
+        Icon = CSRFirework,
+        Tooltip = Tooltip_CSR_Firework,
+        WorldStaticModel = Firecracker,
+    }
+}

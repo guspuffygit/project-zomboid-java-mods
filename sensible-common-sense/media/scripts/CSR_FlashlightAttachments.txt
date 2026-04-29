@@ -1,0 +1,124 @@
+module Base
+{
+    model FemaleBody
+    {
+        mesh = Skinned/FemaleBody,
+
+        attachment torch_right_verysmall
+        {
+            offset = 0.0500 -0.0990 -0.0150,
+            rotate = 180.0000 90.0000 -95.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_right_small
+        {
+            offset = 0.0680 -0.0990 -0.0150,
+            rotate = 180.0000 90.0000 -95.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_left_verysmall
+        {
+            offset = 0.0500 0.0990 -0.0150,
+            rotate = 180.0000 90.0000 -85.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_left_small
+        {
+            offset = 0.0680 0.0990 -0.0150,
+            rotate = -180.0000 90.0000 -85.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_left_angled
+        {
+            offset = 0.0000 0.0990 -0.0150,
+            rotate = 0.0000 -185.0000 90.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_right_angled
+        {
+            offset = 0.0000 -0.0990 -0.0150,
+            rotate = 0.0000 -175.0000 90.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment webbing_right_walkie
+        {
+            offset = -0.0147 -0.0694 0.0895,
+            rotate = -78.9636 -2.2401 -90.4660,
+            bone = Bip01_Spine1,
+        }
+
+        attachment webbing_left_walkie
+        {
+            offset = -0.0143 0.0697 0.0887,
+            rotate = -101.3686 2.3431 -90.4975,
+            bone = Bip01_Spine1,
+        }
+    }
+
+    model MaleBody
+    {
+        mesh = Skinned/MaleBody,
+
+        attachment torch_right_verysmall
+        {
+            offset = 0.0500 -0.0990 -0.0150,
+            rotate = 180.0000 90.0000 -95.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_right_small
+        {
+            offset = 0.0680 -0.0990 -0.0150,
+            rotate = 180.0000 90.0000 -95.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_left_verysmall
+        {
+            offset = 0.0500 0.0990 -0.0150,
+            rotate = 180.0000 90.0000 -85.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_left_small
+        {
+            offset = 0.0680 0.0990 -0.0150,
+            rotate = -180.0000 90.0000 -85.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_left_angled
+        {
+            offset = 0.0680 0.0990 -0.0150,
+            rotate = 0.0000 -180.0000 90.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment torch_right_angled
+        {
+            offset = 0.0680 -0.0990 -0.0150,
+            rotate = 0.0000 -180.0000 90.0000,
+            bone = Bip01_Pelvis,
+        }
+
+        attachment webbing_right_walkie
+        {
+            offset = -0.0147 -0.0694 0.0895,
+            rotate = -78.9636 -2.2401 -90.4660,
+            bone = Bip01_Spine1,
+        }
+
+        attachment webbing_left_walkie
+        {
+            offset = -0.0143 0.0697 0.0887,
+            rotate = -101.3686 2.3431 -90.4975,
+            bone = Bip01_Spine1,
+        }
+    }
+}

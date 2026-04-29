@@ -1,0 +1,101 @@
+module Base
+{
+    craftRecipe CleanDirtyBandageWithAlcohol
+    {
+        timedAction = ScrubClothWithSoap,
+        Time = 40,
+        Tags = InHandCraft;Health,
+        category = Medical,
+        MetaRecipe = CleanBandage,
+        inputs
+        {
+            item 1 [Base.BandageDirty;Base.DenimStripsDirty;Base.LeatherStripsDirty;Base.RippedSheetsDirty] mode:destroy mappers[ragType],
+            item 1 [*],
+            -fluid 0.1 [RubbingAlcohol;Vodka;Whiskey],
+        }
+        outputs
+        {
+            item 1 mapper:ragType,
+        }
+        itemMapper ragType
+        {
+            Base.Bandage = Base.BandageDirty,
+            Base.DenimStrips = Base.DenimStripsDirty,
+            Base.LeatherStrips = Base.LeatherStripsDirty,
+            Base.RippedSheets = Base.RippedSheetsDirty,
+        }
+    }
+
+    craftRecipe CutSheetFromClothing
+    {
+        timedAction = SewingCloth,
+        Time = 60,
+        Tags = AnySurfaceCraft,
+        category = Tailoring,
+        MetaRecipe = CutSheet,
+        inputs
+        {
+            item 1 tags[Scissors] mode:keep flags[MayDegradeLight],
+            item 1 tags[RipClothingCotton],
+        }
+        outputs
+        {
+            item 1 Base.Sheet,
+        }
+    }
+
+    craftRecipe ExtractPumpkinSeeds
+    {
+        timedAction = SliceFood_Surface,
+        Time = 80,
+        Tags = AnySurfaceCraft,
+        category = Farming,
+        OnCreate = CSR_RecipeCallbacks.onExtractPumpkinSeeds,
+        inputs
+        {
+            item 1 tags[CutPlant] mode:keep flags[MayDegradeLight],
+            item 1 [Base.Pumpkin] mode:destroy,
+        }
+        outputs
+        {
+            item 3 Base.PumpkinSeed,
+        }
+    }
+
+    craftRecipe CSR_CraftFieldRespiratorFilter
+    {
+        timedAction = Making,
+        time = 80,
+        Tags = AnySurfaceCraft,
+        category = Survival,
+        inputs
+        {
+            item 1 [Base.RippedSheets],
+            item 1 [Base.Charcoal;Base.CharcoalCrafted],
+            item 1 [Base.Twine;Base.RubberBand;Base.Wire],
+        }
+        outputs
+        {
+            item 1 Base.CSR_FieldRespirator,
+        }
+    }
+
+    craftRecipe CSR_CraftFieldGasMaskFilter
+    {
+        timedAction = Making,
+        time = 120,
+        Tags = AnySurfaceCraft,
+        category = Survival,
+        inputs
+        {
+            item 1 [Base.RippedSheets],
+            item 1 [Base.Charcoal;Base.CharcoalCrafted],
+            item 1 tags[base:emptycan] flags[IsEmpty;ItemCount],
+            item 1 tags[base:tape] mode:keep flags[MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 Base.CSR_FieldGasMask,
+        }
+    }
+}

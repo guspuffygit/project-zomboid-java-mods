@@ -1,0 +1,7 @@
+
+modInfo {
+	name = 'Sensible Common Sense'
+	description = '''\
+		Skeleton mod.
+	'''.stripIndent()
+}

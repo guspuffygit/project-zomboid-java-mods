@@ -1,0 +1,10 @@
+UI_EN = {
+    IGUI_Hotbar_Back2 = "Back 2",
+    IGUI_CSR_Guide_Title = "Common Sense Reborn - Guide",
+    IGUI_CSR_InfRes_Survived = "Your body fights off the infection...",
+    ContextMenu_CSR_UncapBarrel = "Uncap Barrel",
+    Tooltip_CSR_UncapBarrel = "Use your pipe wrench to pry open this barrel. Once uncapped it can store fluids and collect rainwater outdoors.",
+    IGUI_CSR_UB_Uncapped = "Barrel uncapped.",
+    ItemName_CSR_FieldRespirator = "Field Respirator Filter",
+    ItemName_CSR_FieldGasMask = "Field Gas Mask Filter",
+}

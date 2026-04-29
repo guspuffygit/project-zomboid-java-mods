@@ -1,0 +1,81 @@
+module Base
+{
+    /* CSR Tool Roll -- combines Saw + Hammer + Screwdriver into one item */
+    /* Satisfies all three tool tag checks engine-wide (crafting, building, vehicles) */
+
+    item CSR_ToolRoll_Leather
+    {
+        DisplayName = All-In-One Tool Roll (Leather),
+        DisplayCategory = Tool,
+        ItemType = base:normal,
+        AttachmentType = Bedroll,
+        Weight = 2.5,
+        Icon = ToolRoll_Leather,
+        ConditionLowerChanceOneIn = 3,
+        ConditionMax = 70,
+        SurvivalGear = true,
+        WorldStaticModel = ToolRoll_Leather,
+        OnBreak = OnBreak.CSR_RollLeather,
+        BreakSound = CrowbarBreak,
+        Tags = base:saw;base:hammer;base:screwdriver;base:showcondition,
+        Tooltip = Tooltip_CSR_ToolRoll,
+    }
+
+    item CSR_ToolRoll_Fabric
+    {
+        DisplayName = All-In-One Tool Roll (Fabric),
+        DisplayCategory = Tool,
+        ItemType = base:normal,
+        AttachmentType = Bedroll,
+        Weight = 2.5,
+        Icon = ToolRoll_Chef,
+        ConditionLowerChanceOneIn = 3,
+        ConditionMax = 70,
+        SurvivalGear = true,
+        WorldStaticModel = ToolRoll_Fabric,
+        OnBreak = OnBreak.CSR_RollFabric,
+        BreakSound = CrowbarBreak,
+        Tags = base:saw;base:hammer;base:screwdriver;base:showcondition,
+        Tooltip = Tooltip_CSR_ToolRoll,
+    }
+
+    /* CSR Toolbox -- combines all 5 basic tools (Saw + Hammer + Screwdriver + Wrench + LugWrench) */
+
+    item CSR_Toolbox
+    {
+        DisplayName = All-In-One Toolbox,
+        DisplayCategory = Tool,
+        ItemType = base:normal,
+        AttachmentType = Bedroll,
+        Weight = 3.5,
+        Icon = Toolbox,
+        ConditionLowerChanceOneIn = 4,
+        ConditionMax = 70,
+        SurvivalGear = true,
+        WorldStaticModel = ToolBox_Ground,
+        OnBreak = OnBreak.CSR_Toolbox,
+        BreakSound = CrowbarBreak,
+        Tags = base:saw;base:hammer;base:screwdriver;base:wrench;base:lugwrench;base:showcondition,
+        Tooltip = Tooltip_CSR_Toolbox,
+    }
+
+    /* CSR Full Toolbox -- all 6 tools including pipe wrench */
+
+    item CSR_FullToolbox
+    {
+        DisplayName = All-In-One Full Toolbox,
+        DisplayCategory = Tool,
+        ItemType = base:normal,
+        AttachmentType = Bedroll,
+        Weight = 4.0,
+        Icon = Toolbox,
+        ConditionLowerChanceOneIn = 4,
+        ConditionMax = 70,
+        SurvivalGear = true,
+        WorldStaticModel = ToolBox_Ground,
+        OnBreak = OnBreak.CSR_FullToolbox,
+        BreakSound = CrowbarBreak,
+        Tags = base:saw;base:hammer;base:screwdriver;base:wrench;base:lugwrench;base:pipewrench;base:showcondition,
+        Tooltip = Tooltip_CSR_FullToolbox,
+    }
+}

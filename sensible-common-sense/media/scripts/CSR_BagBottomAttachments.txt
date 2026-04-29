@@ -1,0 +1,262 @@
+module Base
+{
+    model FemaleBody
+    {
+        attachment big_weapon_bottom_bag
+        {
+            offset = 0.03 -0.19 -0.12,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_weapon_bottom_bag_big
+        {
+            offset = 0.03 -0.19 -0.14,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_weapon_bottom_bag_alice
+        {
+            offset = 0.04 -0.19 -0.15,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_blade_bottom_bag
+        {
+            offset = 0.03 -0.25 -0.12,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_blade_bottom_bag_big
+        {
+            offset = 0.03 -0.25 -0.14,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_blade_bottom_bag_alice
+        {
+            offset = 0.04 -0.25 -0.15,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment racket_bottom_bag
+        {
+            offset = 0.03 -0.19 -0.12,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment racket_bottom_bag_big
+        {
+            offset = 0.03 -0.19 -0.14,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment racket_bottom_bag_alice
+        {
+            offset = 0.04 -0.19 -0.15,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment shovel_bottom_bag
+        {
+            offset = 0.03 -0.25 -0.12,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment shovel_bottom_bag_big
+        {
+            offset = 0.03 -0.25 -0.14,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment shovel_bottom_bag_alice
+        {
+            offset = 0.04 -0.25 -0.15,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment pan_bottom_bag
+        {
+            offset = 0.03 -0.1 -0.12,
+            rotate = -84.0 44.0 -32.0,
+            bone = Bip01_BackPack,
+        }
+        attachment pan_bottom_bag_big
+        {
+            offset = 0.03 -0.1 -0.14,
+            rotate = -84.0 44.0 -32.0,
+            bone = Bip01_BackPack,
+        }
+        attachment pan_bottom_bag_alice
+        {
+            offset = 0.04 -0.1 -0.15,
+            rotate = -84.0 44.0 -32.0,
+            bone = Bip01_BackPack,
+        }
+        attachment rifle_bottom_bag
+        {
+            offset = 0.03 -0.1 -0.12,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment rifle_bottom_bag_big
+        {
+            offset = 0.03 -0.1 -0.14,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment rifle_bottom_bag_alice
+        {
+            offset = 0.04 -0.1 -0.15,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment saucepan_bottom_bag
+        {
+            offset = 0.03 -0.1 -0.12,
+            rotate = 82.0 36.0 -166.0,
+            bone = Bip01_BackPack,
+        }
+        attachment saucepan_bottom_bag_big
+        {
+            offset = 0.03 -0.1 -0.14,
+            rotate = 82.0 36.0 -166.0,
+            bone = Bip01_BackPack,
+        }
+        attachment saucepan_bottom_bag_alice
+        {
+            offset = 0.04 -0.1 -0.15,
+            rotate = 82.0 36.0 -166.0,
+            bone = Bip01_BackPack,
+        }
+    }
+
+    model MaleBody
+    {
+        attachment big_weapon_bottom_bag
+        {
+            offset = 0.03 -0.19 -0.12,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_weapon_bottom_bag_big
+        {
+            offset = 0.03 -0.19 -0.14,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_weapon_bottom_bag_alice
+        {
+            offset = 0.04 -0.19 -0.15,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_blade_bottom_bag
+        {
+            offset = 0.03 -0.25 -0.12,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_blade_bottom_bag_big
+        {
+            offset = 0.03 -0.25 -0.14,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment big_blade_bottom_bag_alice
+        {
+            offset = 0.04 -0.25 -0.15,
+            rotate = 0.0 0.0 0.0,
+            bone = Bip01_BackPack,
+        }
+        attachment racket_bottom_bag
+        {
+            offset = 0.03 -0.19 -0.12,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment racket_bottom_bag_big
+        {
+            offset = 0.03 -0.19 -0.14,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment racket_bottom_bag_alice
+        {
+            offset = 0.04 -0.19 -0.15,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment shovel_bottom_bag
+        {
+            offset = 0.03 -0.25 -0.12,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment shovel_bottom_bag_big
+        {
+            offset = 0.03 -0.25 -0.14,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment shovel_bottom_bag_alice
+        {
+            offset = 0.04 -0.25 -0.15,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment pan_bottom_bag
+        {
+            offset = 0.03 -0.1 -0.12,
+            rotate = -84.0 44.0 -32.0,
+            bone = Bip01_BackPack,
+        }
+        attachment pan_bottom_bag_big
+        {
+            offset = 0.03 -0.1 -0.14,
+            rotate = -84.0 44.0 -32.0,
+            bone = Bip01_BackPack,
+        }
+        attachment pan_bottom_bag_alice
+        {
+            offset = 0.04 -0.1 -0.15,
+            rotate = -84.0 44.0 -32.0,
+            bone = Bip01_BackPack,
+        }
+        attachment rifle_bottom_bag
+        {
+            offset = 0.03 -0.1 -0.12,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment rifle_bottom_bag_big
+        {
+            offset = 0.03 -0.1 -0.14,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment rifle_bottom_bag_alice
+        {
+            offset = 0.04 -0.1 -0.15,
+            rotate = -90.0 90.0 90.0,
+            bone = Bip01_BackPack,
+        }
+        attachment saucepan_bottom_bag
+        {
+            offset = 0.03 -0.1 -0.12,
+            rotate = 82.0 36.0 -166.0,
+            bone = Bip01_BackPack,
+        }
+        attachment saucepan_bottom_bag_big
+        {
+            offset = 0.03 -0.1 -0.14,
+            rotate = 82.0 36.0 -166.0,
+            bone = Bip01_BackPack,
+        }
+        attachment saucepan_bottom_bag_alice
+        {
+            offset = 0.04 -0.1 -0.15,
+            rotate = 82.0 36.0 -166.0,
+            bone = Bip01_BackPack,
+        }
+    }
+}

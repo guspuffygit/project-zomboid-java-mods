@@ -1,0 +1,10 @@
+UI_TR = {
+    IGUI_Hotbar_Back2 = "Sırt 2",
+    IGUI_CSR_Guide_Title = "Common Sense Reborn - Rehber",
+    IGUI_CSR_InfRes_Survived = "Vücudun enfeksiyonla savaşıp galip geldi...",
+    ContextMenu_CSR_UncapBarrel = "Varilin Kapağını Aç",
+    Tooltip_CSR_UncapBarrel = "Boru anahtarı kullanarak bu varilin kapağını açın. Kapağı açıldıktan sonra sıvı depolayabilir ve dışarıda yağmur suyu toplayabilir.",
+    IGUI_CSR_UB_Uncapped = "Varilin kapağı açıldı.",
+    ItemName_CSR_FieldRespirator = "Sahra Respiratör Filtresi",
+    ItemName_CSR_FieldGasMask = "Sahra Gaz Maskesi Filtresi",
+}

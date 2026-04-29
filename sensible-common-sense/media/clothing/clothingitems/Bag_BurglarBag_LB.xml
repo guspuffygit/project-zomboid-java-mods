@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<clothingItem>
+	<m_MaleModel>skinned\backpacks\m_duffelbag_LB</m_MaleModel>
+	<m_FemaleModel>skinned\backpacks\f_duffelbag_LB</m_FemaleModel>
+	<m_GUID>22aacbbc-a494-4f21-aa48-ddf927b7541b</m_GUID>
+	<m_Static>false</m_Static>
+	<m_AllowRandomHue>false</m_AllowRandomHue>
+	<m_AllowRandomTint>true</m_AllowRandomTint>
+	<m_AttachBone></m_AttachBone>
+	<textureChoices>clothes\bag\duffelbagwhite</textureChoices>
+</clothingItem>

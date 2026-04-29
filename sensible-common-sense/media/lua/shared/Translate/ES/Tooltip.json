@@ -1,0 +1,11 @@
+{
+    "Tooltip_CSR_Firework": "Un pequeño petardo de distracción. <LINE> Requiere: Encendedor o Cerillas en el inventario. <LINE> Haz clic derecho en el petardo para encender la mecha. <LINE> Atrae y confunde a los zombis cercanos durante 30 segundos.",
+    "Tooltip_CSR_ToolRoll": "Un estuche compacto que contiene una sierra, martillo y destornillador. <LINE> Funciona como las tres herramientas a la vez. <LINE> Se degrada con el uso. Al romperse, devuelve el estuche vacío.",
+    "Tooltip_CSR_Toolbox": "Una caja de herramientas que contiene sierra, martillo, destornillador, llave inglesa y llave de ruedas. <LINE> Funciona como las cinco herramientas a la vez. <LINE> Se degrada con el uso. Al romperse, devuelve la caja vacía.",
+    "Tooltip_CSR_FullToolbox": "Una caja de herramientas completamente equipada con sierra, martillo, destornillador, llave inglesa, llave de ruedas y llave de tubo. <LINE> Funciona como las seis herramientas a la vez. <LINE> Se degrada con el uso. Al romperse, devuelve la caja vacía.",
+    "Tooltip_CSR_CraftToolRoll": "Agrupa tres herramientas manuales en un solo estuche. <LINE> El estuche funciona como sierra, martillo y destornillador simultáneamente.",
+    "Tooltip_CSR_CraftToolbox": "Combina cinco herramientas en una sola caja. <LINE> Funciona como sierra, martillo, destornillador, llave inglesa y llave de ruedas.",
+    "Tooltip_CSR_CraftFullToolbox": "Añade una llave de tubo para completar la caja. <LINE> Funciona como las seis herramientas estándar.",
+    "Tooltip_CSR_DisassembleToolSet": "Desmonta la herramienta combinada para recuperar las herramientas individuales y el contenedor.",
+    "Tooltip_CSR_UncapBarrel": "Usa tu llave de tubo para abrir este barril. Una vez destapado, puede almacenar fluidos y recoger agua de lluvia en exteriores."
+}

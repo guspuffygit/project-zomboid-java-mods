@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>ShovePunch</m_Name>
+	<m_Priority>5</m_Priority>
+	<m_AnimName>Bob_Attack1Hand01_Hit</m_AnimName>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.15</m_BlendTime>
+	<m_BlendOutTime>0.25</m_BlendOutTime>
+	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
+	<m_SpeedScale>CombatSpeed</m_SpeedScale>
+	<m_Scalar>AttackVariationX</m_Scalar>
+	<m_Scalar2>AttackVariationY</m_Scalar2>
+	<m_2DBlends referenceID="1">
+		<m_AnimName>Bob_Attack1Hand01_Hit</m_AnimName>
+		<m_XPos>0.00</m_XPos>
+		<m_YPos>0.00</m_YPos>
+		<m_SpeedScale>0.80</m_SpeedScale>
+	</m_2DBlends>
+	<m_2DBlends referenceID="2">
+		<m_AnimName>Bob_Attack1Hand01_HitB</m_AnimName>
+		<m_XPos>-1.00</m_XPos>
+		<m_YPos>0.00</m_YPos>
+		<m_SpeedScale>0.80</m_SpeedScale>
+	</m_2DBlends>
+	<m_2DBlends referenceID="3">
+		<m_AnimName>Bob_Attack1Hand01_Hit</m_AnimName>
+		<m_XPos>0.00</m_XPos>
+		<m_YPos>-1.00</m_YPos>
+		<m_SpeedScale>0.80</m_SpeedScale>
+	</m_2DBlends>
+	<m_2DBlends referenceID="4">
+		<m_AnimName>Bob_Attack1Hand01_HitC</m_AnimName>
+		<m_XPos>1.00</m_XPos>
+		<m_YPos>0.00</m_YPos>
+		<m_SpeedScale>0.80</m_SpeedScale>
+	</m_2DBlends>
+	<m_Conditions>
+		<m_Name>UnarmedPunching</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>true</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="06d43068-7150-4a32-a6d7-f75181d6cf40">
+		<m_Name>isStompAnim</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="3cb527f0-b66e-4724-b965-ac154427c101">
+		<m_Name>AimFloorAnim</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Events x_name="be0fc268-d456-4784-8613-fc3522c4e53a">
+		<m_EventName>SetVariable</m_EventName>
+		<m_TimePc>0.1</m_TimePc>
+		<m_ParameterValue>ZombieHitReaction=HeadLeft</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="981e6009-001c-4085-a9c8-dc6a014a1342">
+		<m_EventName>AttackCollisionCheck</m_EventName>
+		<m_TimePc>0.25</m_TimePc>
+		<m_ParameterValue>MeleeSwing</m_ParameterValue>
+	</m_Events>
+	<!--<m_Events x_name="458f60f1-d573-48e1-8f85-e97465dea270">
+		<m_EventName>BlockMovement</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>FALSE</m_ParameterValue>
+	</m_Events>-->
+	<m_Events x_name="32090770-9cb0-4652-9dbf-e064cac69978">
+		<m_EventName>AttackAnim</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>TRUE</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="8cb96cb3-0959-476c-92a5-9b2cd99574c3">
+		<m_EventName>AttackAnim</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>FALSE</m_ParameterValue>
+	</m_Events>
+	<!--<m_Events x_name="b482b393-477f-4271-bf99-f500c515646f">
+		<m_EventName>BlockMovement</m_EventName>
+		<m_TimePc>0.1</m_TimePc>
+		<m_ParameterValue>TRUE</m_ParameterValue>
+	</m_Events>-->
+	<m_Events x_name="b6467cb2-3bbd-4052-ba49-8513830251a7">
+		<m_EventName>SetMeleeDelay</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>12</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="5f9245fc-7383-4532-b7a4-eaa5d4a0fa08">
+		<m_EventName>PlayerVoiceSound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>MeleeShove</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="80fd7a0c-2f43-4876-8c5f-03a7a3b9476a">
+		<m_EventName>PlayerVoiceSound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>MeleeAttack</m_ParameterValue>
+	</m_Events>
+	<m_2DBlendTri>
+		<node1>1</node1>
+		<node2>2</node2>
+		<node3>3</node3>
+	</m_2DBlendTri>
+	<m_2DBlendTri>
+		<node1>3</node1>
+		<node2>4</node2>
+		<node3>1</node3>
+	</m_2DBlendTri>
+	<m_Transitions>
+		<m_Target>Idle</m_Target>
+		<m_AnimName>Bob_AimToIdle_1Hand</m_AnimName>
+		<m_blendInTime>0.5</m_blendInTime>
+		<m_blendOutTime>0.5</m_blendOutTime>
+		<m_speedScale>1.3</m_speedScale>
+	</m_Transitions>
+	<m_Transitions>
+		<m_Target>sneakidle</m_Target>
+		<m_AnimName>Bob_AimToIdle_1Hand</m_AnimName>
+		<m_blendInTime>0.5</m_blendInTime>
+		<m_blendOutTime>0.5</m_blendOutTime>
+		<m_speedScale>1.3</m_speedScale>
+	</m_Transitions>
+	<m_Transitions>
+		<m_Target>sneakIdleLow</m_Target>
+		<m_AnimName>Bob_AimToIdle_1Hand</m_AnimName>
+		<m_blendInTime>0.5</m_blendInTime>
+		<m_blendOutTime>0.5</m_blendOutTime>
+		<m_speedScale>1.3</m_speedScale>
+	</m_Transitions>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Neck</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_BackPack</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop2</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine</boneName>
+		<includeDescendants>false</includeDescendants>
+	</m_SubStateBoneWeights>
+</animNode>

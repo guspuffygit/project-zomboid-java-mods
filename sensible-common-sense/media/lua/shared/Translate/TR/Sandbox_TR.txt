@@ -1,0 +1,285 @@
+Sandbox_TR = {
+    Sandbox_CommonSenseReborn = "Common Sense Reborn",
+
+    Sandbox_EnablePrySystem = "Levye ile zorlama sistemini aktif et",
+    Sandbox_EnablePrySystem_tooltip = "Kilitli kapıların, pencerelerin ve garaj kapılarının levye ile zorlanarak açılmasına izin verir. Başarı şansı güce dayalıdır ve gürültü çıkarır.",
+    Sandbox_EnableScrewdriverLockpick = "Tornavida ile kilit açmayı aktif et",
+    Sandbox_EnableScrewdriverLockpick_tooltip = "Bina kapı kilitlerini tornavida kullanarak sessizce açmaya izin verir.",
+    Sandbox_PrySuccessMultiplier = "Zorlama başarı çarpanı",
+    Sandbox_PrySuccessMultiplier_tooltip = "Levye ile zorlama başarı şansını ölçeklendirir. 1.0 = normal, 2.0 = iki kat şans, 0.5 = yarı şans.",
+    Sandbox_PryNoiseMultiplier = "Zorlama gürültü çarpanı",
+    Sandbox_PryNoiseMultiplier_tooltip = "Zorlama sırasında çıkan gürültüyü ölçeklendirir. Yüksek değerler daha fazla zombi çeker.",
+    Sandbox_LockpickSuccessMultiplier = "Maymuncuk başarı çarpanı",
+    Sandbox_LockpickSuccessMultiplier_tooltip = "Kilit açma başarı şansını ölçeklendirir. 1.0 = normal, 2.0 = iki kat şans.",
+    Sandbox_LockpickNoiseMultiplier = "Maymuncuk gürültü çarpanı",
+    Sandbox_LockpickNoiseMultiplier_tooltip = "Kilit açma gürültüsünü ölçeklendirir. Varsayılan 0.4 = çok sessiz.",
+    Sandbox_InjuryChance = "Eylem yaralanma şansı",
+    Sandbox_InjuryChance_tooltip = "Zorlama veya kilit açma sırasında küçük el yaralanması oluşma şansı. 0.0 = kapalı, 1.0 = garantili.",
+    Sandbox_ToolWearMultiplier = "Alet aşınma çarpanı",
+    Sandbox_ToolWearMultiplier_tooltip = "Giriş eylemleri sırasında levye, tornavida ve demir makaslarının kondisyon kaybını ölçeklendirir.",
+
+    Sandbox_EnableAlternateCanOpening = "Alternatif konserve açmayı aktif et",
+    Sandbox_EnableAlternateCanOpening_tooltip = "Konserve açacağı yerine bıçak ve tornavida ile konserve ve kavanoz açılmasına izin verir.",
+    Sandbox_CanInjuryChance = "Konserve açma yaralanma şansı",
+    Sandbox_CanInjuryChance_tooltip = "Bıçakla konserve açarken kesik oluşma şansı. 0.0 = kapalı.",
+
+    Sandbox_EnableRepairExtensions = "Gelişmiş tamiri aktif et",
+    Sandbox_EnableRepairExtensions_tooltip = "Hasarlı eşyaları tamir etmek için sağ tıklayın. Ayrıca koli bandı ve yapıştırıcı gibi alternatif tamir malzemelerini de etkinleştirir.",
+
+    Sandbox_EnableEquipmentQoL = "Ekipman kullanım kolaylıklarını aktif et",
+    Sandbox_EnableEquipmentQoL_tooltip = "Pil değişimi, çakmak doldurma, kumaş yırtma, bandaj yapımı ve diğer ekipman kısayolları.",
+
+    Sandbox_EnableCorpseIgnite = "Ceset yakmayı aktif et",
+    Sandbox_EnableCorpseIgnite_tooltip = "Cesetleri çakmak veya kibritle yakmak için sağ tıklayın.",
+
+    Sandbox_EnablePlayerMapTracking = "Oyuncu harita takibini aktif et",
+    Sandbox_EnablePlayerMapTracking_tooltip = "Çok oyunculu modda diğer oyuncuları dünya haritasında ve mini haritada gösterir.",
+    Sandbox_PlayerMapVisibilityMode = "Oyuncu harita görünürlük modu",
+    Sandbox_PlayerMapVisibilityMode_tooltip = "1 = herkes tüm oyuncuları görür, 2 = sadece adminler, 3 = kapalı.",
+
+    Sandbox_EnableSeatbeltProtection = "Emniyet kemeri korumasını aktif et",
+    Sandbox_EnableSeatbeltProtection_tooltip = "Sürüş sırasında kaza hasarını azaltmak için Numpad + ile emniyet kemerini takın.",
+
+    Sandbox_EnableWalkingItemActions = "Yürürken eşya kullanımını aktif et",
+    Sandbox_EnableWalkingItemActions_tooltip = "Durmak yerine yürürken kıyafet giyip çıkarmaya izin verir.",
+
+    Sandbox_EnableVehicleMechanicsQoL = "Araç mekaniği kolaylıklarını aktif et",
+    Sandbox_EnableVehicleMechanicsQoL_tooltip = "Araç parçalarını toplu olarak sökme (tüm lastikler, farlar, camlar, kapılar).",
+
+    Sandbox_EnableImprovisedHotwire = "Doğaçlama düz kontak yapmayı aktif et",
+    Sandbox_EnableImprovisedHotwire_tooltip = "Elektrik/Mekanik becerileri veya Hırsız özelliği eksik olduğunda araçları tornavida ile düz kontak yapmaya izin verir.",
+
+    Sandbox_EnableVehicleDoorPry = "Araç kapısı zorlamayı aktif et",
+    Sandbox_EnableVehicleDoorPry_tooltip = "Kilitli araç kapılarını ve bagajlarını radyal menü üzerinden levye ile zorlayarak açın.",
+    Sandbox_EnableGarageDoorPry = "Garaj kapısı zorlamayı aktif et",
+    Sandbox_EnableGarageDoorPry_tooltip = "Garaj kapıları ve sarmal kapıların levye ile zorlanmasına izin verir.",
+    Sandbox_EnableSafeDoorPry = "Güçlendirilmiş kapı zorlamayı aktif et",
+    Sandbox_EnableSafeDoorPry_tooltip = "Güçlendirilmiş ve kasa kapılarının zorlanmasına izin verir. Yüksek Güç gerektirir.",
+    Sandbox_ReinforcedDoorLevel = "Güçlendirilmiş kapılar için min. güç",
+    Sandbox_ReinforcedDoorLevel_tooltip = "Güçlendirilmiş kapıları zorlamak için gereken minimum Güç seviyesi.",
+    Sandbox_VehicleWindowShatterChance = "Araç camı patlama şansı",
+    Sandbox_VehicleWindowShatterChance_tooltip = "Kilitli bir kapıyı zorlarken araç camının patlama yüzdesi.",
+
+    Sandbox_EnableWashMenuSplits = "Yıkama menüsü ayırma seçeneklerini aktif et",
+    Sandbox_EnableWashMenuSplits_tooltip = "Daha kolay eşya seçimi için yıkama menüsünü su gereksinimine göre sıralar.",
+
+    Sandbox_EnableDashboardHighlights = "Gösterge paneli vurgularını aktif et",
+    Sandbox_EnableDashboardHighlights_tooltip = "Hızlı durum kontrolü için araç göstergelerini (akü, motor ısısı, kalorifer) renklendirir.",
+
+    Sandbox_EnablePourCanContents = "Kutu içeriğini dökmeyi aktif et",
+    Sandbox_EnablePourCanContents_tooltip = "İçeriği yere dökmek için açık kaplara sağ tıklayın.",
+
+    Sandbox_EnableProximityLootHelper = "Yakın eşya toplama yardımcısını aktif et",
+    Sandbox_EnableProximityLootHelper_tooltip = "Tab tuşu, yakındaki yerdeki eşyaları gösteren ve 'Hepsini Al' desteği sunan bir panel açar.",
+
+    Sandbox_EnableGroundCleanup = "Yerdeki eşya temizliğini aktif et",
+    Sandbox_EnableGroundCleanup_tooltip = "Oyuncuların yakınındaki yer eşyalarının periyodik olarak sunucu tarafından kaldırılması.",
+    Sandbox_GroundCleanupMinutes = "Temizlik aralığı (dakika)",
+    Sandbox_GroundCleanupMinutes_tooltip = "Temizliğin ne sıklıkla çalışacağı. Varsayılan 1440 = günde bir kez.",
+    Sandbox_GroundCleanupScanRadius = "Temizlik tarama yarıçapı",
+    Sandbox_GroundCleanupScanRadius_tooltip = "Temizlik sırasında yerdeki eşyaları taramak için oyuncu etrafındaki kare yarıçapı.",
+    Sandbox_GroundCleanupMaxZ = "Temizlik maksimum kat sınırı",
+    Sandbox_GroundCleanupMaxZ_tooltip = "Taramaya dahil edilecek en yüksek kat seviyesi (Z).",
+    Sandbox_GroundCleanupMaxPerScan = "Tarama başı maksimum eşya",
+    Sandbox_GroundCleanupMaxPerScan_tooltip = "Sunucu yükünü sınırlamak için döngü başına kaldırılan maksimum eşya sayısı.",
+    Sandbox_LogGroundCleanup = "Temizlik eylemlerini günlüğe kaydet",
+    Sandbox_LogGroundCleanup_tooltip = "İzleme için yer temizleme faaliyetlerini sunucu günlüğüne yazar.",
+
+    Sandbox_EnableZombieDensityOverlay = "Zombi yoğunluk katmanını aktif et",
+    Sandbox_EnableZombieDensityOverlay_tooltip = "Dünya haritasında zombi yoğunluğunu gösteren bir ısı haritası görüntüler.",
+    Sandbox_EnableZombieDensityMinimap = "Mini haritada zombi yoğunluğunu aktif et",
+    Sandbox_EnableZombieDensityMinimap_tooltip = "Zombi yoğunluğunu mini haritada da gösterir.",
+
+
+    Sandbox_EnableUtilityHud = "Yardımcı HUD panelini aktif et",
+    Sandbox_EnableUtilityHud_tooltip = "Hızlı geçişler ve durum bilgileri içeren sürüklenebilir panel. Numpad / ile açılır.",
+
+    Sandbox_EnableLootFilter = "Eşya filtresini aktif et",
+    Sandbox_EnableLootFilter_tooltip = "İstenmeyen eşyaları gizleyin. Paneli Ters Bölü (\\) tuşuyla açın.",
+
+    Sandbox_EnableVisualSoundCues = "Görsel ses ipuçlarını aktif et",
+    Sandbox_EnableVisualSoundCues_tooltip = "Yakındaki sesleri kaynağına göre kategorize eden yönlü halka göstergesi.",
+
+    Sandbox_EnableClipboardQoL = "Not panosu kolaylıklarını aktif et",
+    Sandbox_EnableClipboardQoL_tooltip = "Not panosu eşyalarına kontrol listeleri yazın ve okuyun.",
+
+    Sandbox_EnableItemInsightTooltips = "Gelişmiş eşya bilgilerini aktif et",
+    Sandbox_EnableItemInsightTooltips_tooltip = "Eşya bilgilerinde ek verileri gösterir: tazelik süresi, kondisyon, besin değerleri ve kopya uyarısı.",
+
+    Sandbox_EnableSmartVehicleKeyLabels = "Akıllı araç anahtarı etiketlerini aktif et",
+    Sandbox_EnableSmartVehicleKeyLabels_tooltip = "Araç anahtarlarını araca göre otomatik adlandırır.",
+
+    Sandbox_EnableEatAllStack = "Yığının tamamını yemeyi aktif et",
+    Sandbox_EnableEatAllStack_tooltip = "Bir yemek yığınının tamamını tek bir eylemde yemek için sağ tıklayın.",
+
+    Sandbox_EnableMagazineBatchActions = "Toplu şarjör eylemlerini aktif et",
+    Sandbox_EnableMagazineBatchActions_tooltip = "Tüm eşleşen şarjörleri tek seferde doldurun veya boşaltın.",
+
+    Sandbox_EnableQuickDeviceToggle = "Hızlı cihaz aç/kapatmayı aktif et",
+    Sandbox_EnableQuickDeviceToggle_tooltip = "Radyo ve TV'leri doğrudan sağ tık menüsünden açıp kapatın.",
+
+
+    Sandbox_EnableQuickSit = "Hızlı oturmayı aktif et",
+    Sandbox_EnableQuickSit_tooltip = "Numpad - tuşu ile mobilyalara veya yere oturun.",
+
+    Sandbox_EnableWeaponHudOverlay = "Silah HUD katmanını aktif et",
+    Sandbox_EnableWeaponHudOverlay_tooltip = "Kısayol çubuğunda ve nişangah üzerinde mühimmat sayısını gösterir.",
+
+
+    Sandbox_EnableVehicleClock = "Araç gösterge saatini aktif et",
+    Sandbox_EnableVehicleClock_tooltip = "Araç panelinde 12 saatlik bir saat görüntüler.",
+
+    Sandbox_EnableSweepTrash = "Çöpleri süpürmeyi aktif et",
+    Sandbox_EnableSweepTrash_tooltip = "Yer çöplerini ve molozları temizlemek için süpürge ve çöp torbası kullanın.",
+
+
+    Sandbox_EnableFirework = "Oyalayıcı havai fişekleri aktif et",
+    Sandbox_EnableFirework_tooltip = "30 saniyelik bir zombi şaşırtma bölgesi oluşturmak için havai fişek yapın.",
+
+    Sandbox_EnableBoltCutter = "Demir makası ile girişi aktif et",
+    Sandbox_EnableBoltCutter_tooltip = "Demir makası ile metal kapıları ve güvenlik kapılarını kesin.",
+    Sandbox_BoltCutSuccessMultiplier = "Demir makası başarı çarpanı",
+    Sandbox_BoltCutSuccessMultiplier_tooltip = "Demir makası başarı şansını ölçeklendirir.",
+
+    Sandbox_EnableDualWield = "Çift el saldırılarını aktif et",
+    Sandbox_EnableDualWield_tooltip = "Sol el silahsız yumruk takip saldırısı. Deneysel özellik.",
+
+    Sandbox_EnableAdvancedSoundOptions = "Gelişmiş ses ayarlarını aktif et",
+    Sandbox_EnableAdvancedSoundOptions_tooltip = "Seçenekler menüsünde PZ'nin gizli ses kontrolü ayarlarını açar.",
+
+    Sandbox_EnableSawAllDropToGround = "Hepsini Kes kalasları yere bıraksın",
+    Sandbox_EnableSawAllDropToGround_tooltip = "Kütükleri keserken kalasları envanter yerine yere bırakır.",
+
+    Sandbox_EnableStairSense = "Merdiven sezgisini aktif et",
+    Sandbox_EnableStairSense_tooltip = "Merdivenlerde üstünüzde zombi tespit edildiğinde bir uyarı simgesi gösterir.",
+
+    Sandbox_EnableTowelDrying = "Havlula kurulanmayı aktif et",
+    Sandbox_EnableTowelDrying_tooltip = "Oyuncuların kurulanmak için havlu ve çarşaf kullanmasına izin verir.",
+
+    Sandbox_EnableSleepAnywhere = "Her yerde uyumayı aktif et",
+    Sandbox_EnableSleepAnywhere_tooltip = "Oyuncuların yatak olmadan yerde uyumasına izin verir.",
+
+    Sandbox_EnableDismantleAllWatches = "Tüm saatleri parçalamayı aktif et",
+    Sandbox_EnableDismantleAllWatches_tooltip = "Saatleri toplu halde elektronik hurdaya dönüştürün.",
+
+    Sandbox_EnableMassage = "Masajı aktif et (Sadece MP)",
+    Sandbox_EnableMassage_tooltip = "Oyuncuların başka bir oyuncunun kaslarına masaj yapmasına izin verir.",
+
+    Sandbox_EnableHideInFurniture = "Mobilyalara saklanmayı aktif et",
+    Sandbox_EnableHideInFurniture_tooltip = "Dolaplara ve konteynerlere saklanmak için sağ tıklayın.",
+
+    Sandbox_EnablePointBlank = "Sıfır mesafe isabetini aktif et",
+    Sandbox_EnablePointBlank_tooltip = "Yakın mesafedeki zombilere ateşli silahla büyük isabet ve hasar bonusu sağlar.",
+
+    Sandbox_EnableVehicleSalvage = "Araç geri dönüşümünü aktif et",
+    Sandbox_EnableVehicleSalvage_tooltip = "Terk edilmiş araçları hurda metal için parçalayın.",
+
+    Sandbox_EnableItemRename = "Eşya adlandırmayı aktif et",
+    Sandbox_EnableItemRename_tooltip = "Herhangi bir eşyayı yeniden adlandırmak için sağ tıklayın.",
+
+    Sandbox_EnableVehicleHVAC = "Araç klima göstergesini aktif et",
+    Sandbox_EnableVehicleHVAC_tooltip = "Araç panelinde bir sıcaklık kaydırıcısı gösterir.",
+
+    Sandbox_EnableCharacterInfoEnhancements = "Karakter bilgisi geliştirmelerini aktif et",
+    Sandbox_EnableCharacterInfoEnhancements_tooltip = "Karakter ekranında detaylı bir beslenme paneli gösterir.",
+
+    Sandbox_EnableVehicleRadio = "Araç radyo panelini aktif et",
+    Sandbox_EnableVehicleRadio_tooltip = "Gösterge panelinde her zaman görünür bir radyo paneli ekler.",
+
+    Sandbox_EnableHideWatermark = "Sürüm yazısını gizle",
+    Sandbox_EnableHideWatermark_tooltip = "Ekrandaki sürüm numarası yazısını kaldırır.",
+
+    Sandbox_EnableSleepBenefits = "Uyku sıkılmayı ve mutsuzluğu azaltır",
+    Sandbox_EnableSleepBenefits_tooltip = "Uyurken her 10 oyun dakikasında bir ruh sağlığı iyileşir.",
+
+    Sandbox_EnableBagBottomAttach = "Çanta altına silah asmayı aktif et",
+    Sandbox_EnableBagBottomAttach_tooltip = "Büyük silahların sırt çantalarının altına asılmasına izin verir.",
+
+    Sandbox_EnableNestedContainers = "İç içe kapları aktif et",
+    Sandbox_EnableNestedContainers_tooltip = "Envanter çubuğunda iç içe kapları ayrı düğmeler olarak gösterir.",
+
+    Sandbox_EnableToolSet = "Hepsi bir arada alet setini aktif et",
+    Sandbox_EnableToolSet_tooltip = "Birleşik alet setleri üretmeye izin verir.",
+
+    Sandbox_EnableBulletPenetration = "Mermi delip geçmesini aktif et",
+    Sandbox_EnableBulletPenetration_tooltip = "Mermilerin öldürülen zombilerin içinden geçerek arkadakilere hasar vermesine izin verir.",
+    Sandbox_BulletPenetrationMode = "Mermi delip geçme modu",
+    Sandbox_BulletPenetrationMode_tooltip = "Merminin geçiş koşulunu belirler.",
+    Sandbox_BulletPenetrationDamageScale = "Delip geçme hasar ölçeği",
+    Sandbox_BulletPenetrationDamageScale_tooltip = "Geçen merminin hasar çarpanı.",
+    Sandbox_BulletPenetrationMaxTargets = "Maksimum delip geçme hedefi",
+    Sandbox_BulletPenetrationMaxTargets_tooltip = "Bir merminin vurabileceği ek hedef sayısı.",
+
+    Sandbox_EnableBack2Slot = "İkinci sırt silah yuvasını aktif et",
+    Sandbox_EnableBack2Slot_tooltip = "Karakterin sırtına ikinci bir büyük silah yuvası ekler.",
+
+    Sandbox_EnableWarmUp = "Elleri ısıtma eylemini aktif et",
+    Sandbox_EnableWarmUp_tooltip = "Vücut ısısı düştüğünde elleri ısıtma seçeneği ekler.",
+
+    Sandbox_EnableStopDropRoll = "Yat ve yuvarlan eylemini aktif et",
+    Sandbox_EnableStopDropRoll_tooltip = "Yanarken alevleri söndürmek için yere yatıp yuvarlanma seçeneği ekler.",
+
+    Sandbox_EnableConeVisionOutline = "Zombi görüş konisi hattını aktif et",
+    Sandbox_EnableConeVisionOutline_tooltip = "Görüş koniniz içindeki zombileri vurgular.",
+    Sandbox_ConeVisionOutlineRange = "Görüş hattı menzili (kare)",
+    Sandbox_ConeVisionOutlineRange_tooltip = "Zombi vurgulama hattı için maksimum mesafe.",
+    Sandbox_ConeVisionOutlineColorR = "Görüş hattı rengi - Kırmızı",
+    Sandbox_ConeVisionOutlineColorR_tooltip = "Vurgu renginin kırmızı bileşeni.",
+    Sandbox_ConeVisionOutlineColorG = "Görüş hattı rengi - Yeşil",
+    Sandbox_ConeVisionOutlineColorG_tooltip = "Vurgu renginin yeşil bileşeni.",
+    Sandbox_ConeVisionOutlineColorB = "Görüş hattı rengi - Mavi",
+    Sandbox_ConeVisionOutlineColorB_tooltip = "Vurgu renginin mavi bileşeni.",
+    Sandbox_ConeVisionOutlineAlpha = "Görüş hattı yoğunluğu (%)",
+    Sandbox_ConeVisionOutlineAlpha_tooltip = "Vurgunun opaklığı.",
+
+    Sandbox_EnableExerciseWithGear = "Egzersiz sırasında ekipmanı çıkarma",
+    Sandbox_EnableExerciseWithGear_tooltip = "Egzersiz yaparken çantaların otomatik çıkarılmasını engeller.",
+
+    Sandbox_EnableInfectionResilience = "Enfeksiyon Direnci",
+    Sandbox_EnableInfectionResilience_tooltip = "Zombi virüsü kapan oyunculara hayatta kalma şansı verir.",
+    Sandbox_InfResChanceToHeal = "Enfeksiyon Direnci - Temel hayatta kalma (%)",
+    Sandbox_InfResChanceToHeal_tooltip = "Enfeksiyondan kurtulma temel şansı.",
+    Sandbox_InfResPenaltyMultiplier = "Enfeksiyon Direnci - Çoklu yara cezası",
+    Sandbox_InfResPenaltyMultiplier_tooltip = "Isırılan bölge başına uygulanan ceza çarpanı.",
+    Sandbox_InfResThresholdMin = "Enfeksiyon Direnci - En erken tetiklenme (%)",
+    Sandbox_InfResThresholdMin_tooltip = "Kurtulma şansının deneneceği minimum ilerleme.",
+    Sandbox_InfResThresholdMax = "Enfeksiyon Direnci - En geç tetiklenme (%)",
+    Sandbox_InfResThresholdMax_tooltip = "Kurtulma şansının deneneceği maksimum ilerleme.",
+
+    Sandbox_EnableUsefulBarrels = "Kullanışlı Variller",
+    Sandbox_EnableUsefulBarrels_tooltip = "Varillerin açılmasına ve yağmur suyu toplayan kaplara dönüşmesine izin verir.",
+    Sandbox_UsefulBarrelCapacity = "Kullanışlı Variller - Kapasite (Litre)",
+    Sandbox_UsefulBarrelCapacity_tooltip = "Varilin maksimum sıvı kapasitesi.",
+
+    Sandbox_EnableClimbWithBags = "Çantalarla tırmanmayı aktif et",
+    Sandbox_EnableClimbWithBags_tooltip = "Tırmanırken çantaları elinizde tutun.",
+
+    Sandbox_EnableFieldFilters = "Sahra filtrelerini aktif et",
+    Sandbox_EnableFieldFilters_tooltip = "Basit malzemelerden maske filtreleri üretilmesine izin verir.",
+    Sandbox_FilterLifespanMultiplier = "Filtre ömür çarpanı",
+    Sandbox_FilterLifespanMultiplier_tooltip = "Filtrelerin ne kadar uzun ömürlü olacağını belirler.",
+
+    Sandbox_EnableTowAssist = "Çekme asistanını aktif et",
+    Sandbox_EnableTowAssist_tooltip = "Araç çekerken hantallığı azaltmak için itiş desteği ekler.",
+    Sandbox_TowAssistStandardFactor = "Çekme asistanı - Standart araçlar",
+    Sandbox_TowAssistStandardFactor_tooltip = "Standart araçlar için itiş çarpanı.",
+    Sandbox_TowAssistHeavyDutyFactor = "Çekme asistanı - Ağır vasıtalar",
+    Sandbox_TowAssistHeavyDutyFactor_tooltip = "Ağır vasıtalar için itiş çarpanı.",
+    Sandbox_TowAssistSportFactor = "Çekme asistanı - Spor araçlar",
+    Sandbox_TowAssistSportFactor_tooltip = "Spor araçlar için itiş çarpanı.",
+
+    Sandbox_EnableRoomScanner = "Oda tarayıcıyı aktif et",
+    Sandbox_EnableRoomScanner_tooltip = "Kapalı odaları tarar ve envanterini not panosuna işler.",
+
+    Sandbox_EnableGeneratorInfo = "Gelişmiş jeneratör bilgisini aktif et",
+    Sandbox_EnableGeneratorInfo_tooltip = "Kalan yakıt süresi ve güç menzilini gösteren gelişmiş jeneratör ekranı.",
+
+    Sandbox_AdminAuthoritativeControl = "Admin yetkili kontrolü",
+    Sandbox_AdminAuthoritativeControl_tooltip = "Aktif edildiğinde, oyuncular sandbox ayarlarını kişisel seçimleriyle değiştiremez.",
+
+    Sandbox_EnableWearableSlotFix = "Giyilebilir slot düzeltmesini aktif et",
+    Sandbox_EnableWearableSlotFix_tooltip = "Kulak koruyucuları şapka yerine kulak slotuna taşır.",
+
+    Sandbox_EnableClimbWithGenerator = "Jeneratörle tırmanmayı aktif et",
+    Sandbox_EnableClimbWithGenerator_tooltip = "Jeneratör tutarken tırmanmaya izin verir.",
+}

@@ -1,0 +1,10 @@
+Tooltip_TR = {
+    Tooltip_CSR_Firework = "Küçük bir şaşırtma havai fişeği. <LINE> Gereksinim: Envanterde Çakmak veya Kibrit. <LINE> Fitili ateşlemek için havai fişeğe sağ tıklayın. <LINE> Yakındaki zombileri çeker ve 30 saniye boyunca kafalarını karıştırır.",
+    Tooltip_CSR_ToolRoll = "Testere, çekiç ve tornavida içeren kompakt bir alet rulosu. <LINE> Aynı anda üç aletin birden işlevini görür. <LINE> Kullanıldıkça aşınır. Bozulduğunda boş rulo iade edilir.",
+    Tooltip_CSR_Toolbox = "Testere, çekiç, tornavida, İngiliz anahtarı ve bijon anahtarı içeren bir alet çantası. <LINE> Aynı anda beş aletin birden işlevini görür. <LINE> Kullanıldıkça aşınır. Bozulduğunda boş alet çantası iade edilir.",
+    Tooltip_CSR_FullToolbox = "Testere, çekiç, tornavida, İngiliz anahtarı, bijon anahtarı ve boru anahtarı içeren tam donanımlı alet çantası. <LINE> Aynı anda altı aletin birden işlevini görür. <LINE> Kullanıldıkça aşınır. Bozulduğunda boş alet çantası iade edilir.",
+    Tooltip_CSR_CraftToolRoll = "Üç el aletini tek bir alet rulosunda birleştirin. <LINE> Rulo aynı anda testere, çekiç ve tornavida işlevi görür.",
+    Tooltip_CSR_CraftToolbox = "Beş aleti tek bir alet çantasında birleştirin. <LINE> Testere, çekiç, tornavida, İngiliz anahtarı ve bijon anahtarı işlevi görür.",
+    Tooltip_CSR_CraftFullToolbox = "Alet çantasını tamamlamak için bir boru anahtarı ekleyin. <LINE> Standart altı aletin tamamının işlevini görür.",
+    Tooltip_CSR_DisassembleToolSet = "Birleştirilmiş aleti parçalarına ayırarak içindeki aletleri ve çantayı geri alın.",
+}

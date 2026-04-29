@@ -1,0 +1,30 @@
+module Base
+{
+	model CSR_Generator
+	{
+		mesh = CSR_Generator,
+		texture = WorldItems/Generator,
+		scale = 0.00275,
+	}
+
+	model CSR_GeneratorBlue
+	{
+		mesh = CSR_Generator_Valutech,
+		texture = CSR_Generator_blue,
+		scale = 0.0027,
+	}
+
+	model CSR_GeneratorYellow
+	{
+		mesh = CSR_Generator,
+		texture = CSR_Generator_yellow,
+		scale = 0.00275,
+	}
+
+	model CSR_GeneratorOld
+	{
+		mesh = CSR_Generator_Old,
+		texture = CSR_Generator_old,
+		scale = 0.00275,
+	}
+}

@@ -1,0 +1,208 @@
+module Base
+{
+    /* ==================== */
+    /* Tool Roll Recipes    */
+    /* ==================== */
+
+    /* Assemble Tool Roll: Hammer + Screwdriver + Saw + empty ToolRoll container → CSR Tool Roll */
+    craftRecipe CSR_MakeToolRoll
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 50,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_CraftToolRoll,
+
+        inputs
+        {
+            item 1 [Base.BallPeenHammer;Base.BallPeenHammerForged;Base.Hammer;Base.HammerForged] flags[IsNotDull],
+            item 1 [Base.Screwdriver;Base.Screwdriver_Old] flags[IsNotDull],
+            item 1 [Base.Saw] flags[IsNotDull],
+            item 1 [Base.ToolRoll_Leather;Base.ToolRoll_Fabric] mappers[rollType] flags[IsEmpty;Prop2],
+        }
+        outputs
+        {
+            item 1 mapper:rollType,
+        }
+        itemMapper rollType
+        {
+            Base.CSR_ToolRoll_Leather = Base.ToolRoll_Leather,
+            Base.CSR_ToolRoll_Fabric = Base.ToolRoll_Fabric,
+        }
+    }
+
+    /* Disassemble Tool Roll: CSR Tool Roll → returns empty ToolRoll container to ground */
+    craftRecipe CSR_DisassembleToolRoll
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 40,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_DisassembleToolSet,
+
+        inputs
+        {
+            item 1 [Base.CSR_ToolRoll_Leather;Base.CSR_ToolRoll_Fabric] mappers[rollType],
+        }
+        outputs
+        {
+            item 1 mapper:rollType,
+            item 1 Base.Saw,
+            item 1 Base.Hammer,
+            item 1 Base.Screwdriver,
+        }
+        itemMapper rollType
+        {
+            Base.ToolRoll_Leather = Base.CSR_ToolRoll_Leather,
+            Base.ToolRoll_Fabric = Base.CSR_ToolRoll_Fabric,
+        }
+    }
+
+    /* ==================== */
+    /* Toolbox Recipes      */
+    /* ==================== */
+
+    /* Assemble Toolbox: Hammer + Screwdriver + Saw + Wrench + LugWrench + empty Toolbox → CSR Toolbox */
+    craftRecipe CSR_MakeToolbox
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 50,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_CraftToolbox,
+
+        inputs
+        {
+            item 1 [Base.BallPeenHammer;Base.BallPeenHammerForged;Base.Hammer;Base.HammerForged] flags[IsNotDull],
+            item 1 [Base.Screwdriver;Base.Screwdriver_Old] flags[IsNotDull],
+            item 1 [Base.Saw] flags[IsNotDull],
+            item 1 [Base.Ratchet;Base.Wrench] flags[IsNotDull],
+            item 1 [Base.LugWrench;Base.TireIron] flags[IsNotDull],
+            item 1 [Base.Toolbox;Base.Bag_JanitorToolbox;Base.Toolbox_Farming;Base.Toolbox_Fishing;Base.Toolbox_Gardening;Base.Toolbox_Mechanic] flags[IsEmpty;Prop2],
+        }
+        outputs
+        {
+            item 1 Base.CSR_Toolbox,
+        }
+    }
+
+    /* Assemble Toolbox from Tool Roll: CSR Tool Roll + Wrench + LugWrench + empty Toolbox → CSR Toolbox */
+    craftRecipe CSR_MakeToolboxFromRoll
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 50,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_CraftToolbox,
+
+        inputs
+        {
+            item 1 [Base.CSR_ToolRoll_Leather;Base.CSR_ToolRoll_Fabric] flags[InheritCondition],
+            item 1 [Base.Ratchet;Base.Wrench] flags[IsNotDull],
+            item 1 [Base.LugWrench;Base.TireIron] flags[IsNotDull],
+            item 1 [Base.Toolbox;Base.Bag_JanitorToolbox;Base.Toolbox_Farming;Base.Toolbox_Fishing;Base.Toolbox_Gardening;Base.Toolbox_Mechanic] flags[IsEmpty;Prop2],
+        }
+        outputs
+        {
+            item 1 Base.CSR_Toolbox,
+        }
+    }
+
+    /* Disassemble Toolbox: CSR Toolbox → returns components */
+    craftRecipe CSR_DisassembleToolbox
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 40,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_DisassembleToolSet,
+
+        inputs
+        {
+            item 1 [Base.CSR_Toolbox],
+        }
+        outputs
+        {
+            item 1 Base.Toolbox,
+            item 1 Base.Saw,
+            item 1 Base.Hammer,
+            item 1 Base.Screwdriver,
+            item 1 Base.Wrench,
+            item 1 Base.LugWrench,
+        }
+    }
+
+    /* ==================== */
+    /* Full Toolbox Recipes */
+    /* ==================== */
+
+    /* Upgrade Toolbox: CSR Toolbox + PipeWrench → CSR Full Toolbox */
+    craftRecipe CSR_MakeFullToolbox
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 30,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_CraftFullToolbox,
+
+        inputs
+        {
+            item 1 [Base.CSR_Toolbox] flags[InheritCondition],
+            item 1 [Base.PipeWrench] flags[IsNotDull],
+        }
+        outputs
+        {
+            item 1 Base.CSR_FullToolbox,
+        }
+    }
+
+    /* Assemble Full Toolbox from scratch: all 6 tools + empty Toolbox → CSR Full Toolbox */
+    craftRecipe CSR_MakeFullToolboxDirect
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 60,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_CraftFullToolbox,
+
+        inputs
+        {
+            item 1 [Base.BallPeenHammer;Base.BallPeenHammerForged;Base.Hammer;Base.HammerForged] flags[IsNotDull],
+            item 1 [Base.Screwdriver;Base.Screwdriver_Old] flags[IsNotDull],
+            item 1 [Base.Saw] flags[IsNotDull],
+            item 1 [Base.Ratchet;Base.Wrench] flags[IsNotDull],
+            item 1 [Base.LugWrench;Base.TireIron] flags[IsNotDull],
+            item 1 [Base.PipeWrench] flags[IsNotDull],
+            item 1 [Base.Toolbox;Base.Bag_JanitorToolbox;Base.Toolbox_Farming;Base.Toolbox_Fishing;Base.Toolbox_Gardening;Base.Toolbox_Mechanic] flags[IsEmpty;Prop2],
+        }
+        outputs
+        {
+            item 1 Base.CSR_FullToolbox,
+        }
+    }
+
+    /* Disassemble Full Toolbox: CSR Full Toolbox → returns all 6 tools + empty Toolbox */
+    craftRecipe CSR_DisassembleFullToolbox
+    {
+        timedAction = PutInBag,
+        category = Tools,
+        time = 40,
+        Tags = InHandCraft;CanBeDoneInDark,
+        Tooltip = Tooltip_CSR_DisassembleToolSet,
+
+        inputs
+        {
+            item 1 [Base.CSR_FullToolbox],
+        }
+        outputs
+        {
+            item 1 Base.Toolbox,
+            item 1 Base.Saw,
+            item 1 Base.Hammer,
+            item 1 Base.Screwdriver,
+            item 1 Base.Wrench,
+            item 1 Base.LugWrench,
+            item 1 Base.PipeWrench,
+        }
+    }
+}

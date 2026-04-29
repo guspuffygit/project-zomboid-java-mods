@@ -1,0 +1,1082 @@
+VERSION = 1,
+
+option CommonSenseReborn.EnableEntryActions
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableEntryActions,
+}
+
+option CommonSenseReborn.EnablePrySystem
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnablePrySystem,
+}
+
+option CommonSenseReborn.PrySuccessMultiplier
+{
+    type = double,
+    min = 0.25,
+    max = 2.0,
+    default = 1.0,
+    page = CSR_Tools,
+    translation = PrySuccessMultiplier,
+}
+
+option CommonSenseReborn.PryNoiseMultiplier
+{
+    type = double,
+    min = 0.25,
+    max = 3.0,
+    default = 1.0,
+    page = CSR_Tools,
+    translation = PryNoiseMultiplier,
+}
+
+option CommonSenseReborn.EnableScrewdriverLockpick
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableScrewdriverLockpick,
+}
+
+option CommonSenseReborn.LockpickSuccessMultiplier
+{
+    type = double,
+    min = 0.25,
+    max = 2.0,
+    default = 1.0,
+    page = CSR_Tools,
+    translation = LockpickSuccessMultiplier,
+}
+
+option CommonSenseReborn.LockpickNoiseMultiplier
+{
+    type = double,
+    min = 0.1,
+    max = 1.0,
+    default = 0.4,
+    page = CSR_Tools,
+    translation = LockpickNoiseMultiplier,
+}
+
+option CommonSenseReborn.EnableBoltCutter
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableBoltCutter,
+}
+
+option CommonSenseReborn.BoltCutSuccessMultiplier
+{
+    type = double,
+    min = 0.25,
+    max = 2.0,
+    default = 1.0,
+    page = CSR_Tools,
+    translation = BoltCutSuccessMultiplier,
+}
+
+option CommonSenseReborn.EnableImprovisedHotwire
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableImprovisedHotwire,
+}
+
+option CommonSenseReborn.EnableUnHotwire
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableUnHotwire,
+}
+
+option CommonSenseReborn.EnableVehicleDoorPry
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableVehicleDoorPry,
+}
+
+option CommonSenseReborn.EnableGarageDoorPry
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableGarageDoorPry,
+}
+
+option CommonSenseReborn.EnableSafeDoorPry
+{
+    type = boolean,
+    default = false,
+    page = CSR_Tools,
+    translation = EnableSafeDoorPry,
+}
+
+option CommonSenseReborn.ReinforcedDoorLevel
+{
+    type = integer,
+    min = 0,
+    max = 10,
+    default = 8,
+    page = CSR_Tools,
+    translation = ReinforcedDoorLevel,
+}
+
+option CommonSenseReborn.VehicleWindowShatterChance
+{
+    type = integer,
+    min = 0,
+    max = 100,
+    default = 20,
+    page = CSR_Tools,
+    translation = VehicleWindowShatterChance,
+}
+
+option CommonSenseReborn.InjuryChance
+{
+    type = double,
+    min = 0.0,
+    max = 1.0,
+    default = 0.1,
+    page = CSR_Tools,
+    translation = InjuryChance,
+}
+
+option CommonSenseReborn.ToolWearMultiplier
+{
+    type = double,
+    min = 0.25,
+    max = 3.0,
+    default = 1.0,
+    page = CSR_Tools,
+    translation = ToolWearMultiplier,
+}
+
+option CommonSenseReborn.EnableAlternateCanOpening
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableAlternateCanOpening,
+}
+
+option CommonSenseReborn.CanInjuryChance
+{
+    type = double,
+    min = 0.0,
+    max = 1.0,
+    default = 0.05,
+    page = CSR_Tools,
+    translation = CanInjuryChance,
+}
+
+option CommonSenseReborn.EnableRepairExtensions
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableRepairExtensions,
+}
+
+option CommonSenseReborn.EnableRepairAllClothing
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableRepairAllClothing,
+}
+
+option CommonSenseReborn.EnableEquipmentQoL
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableEquipmentQoL,
+}
+
+option CommonSenseReborn.EnableToolSet
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableToolSet,
+}
+
+option CommonSenseReborn.EnableFieldFilters
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableFieldFilters,
+}
+
+option CommonSenseReborn.FilterLifespanMultiplier
+{
+    type = integer,
+    min = 1,
+    max = 50,
+    default = 1,
+    page = CSR_Tools,
+    translation = FilterLifespanMultiplier,
+}
+
+option CommonSenseReborn.EnableWearableSlotFix
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableWearableSlotFix,
+}
+
+option CommonSenseReborn.EnableClimbWithBags
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableClimbWithBags,
+}
+
+option CommonSenseReborn.EnableClimbWithGenerator
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableClimbWithGenerator,
+}
+
+option CommonSenseReborn.EnableBagBottomAttach
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableBagBottomAttach,
+}
+
+option CommonSenseReborn.EnableNestedContainers
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableNestedContainers,
+}
+
+option CommonSenseReborn.EnableSawAllDropToGround
+{
+    type = boolean,
+    default = false,
+    page = CSR_Tools,
+    translation = EnableSawAllDropToGround,
+}
+
+option CommonSenseReborn.EnableDismantleAllWatches
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableDismantleAllWatches,
+}
+
+option CommonSenseReborn.EnableItemRename
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableItemRename,
+}
+
+option CommonSenseReborn.EnableSweepTrash
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableSweepTrash,
+}
+
+option CommonSenseReborn.EnableSweepAshes
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableSweepAshes,
+}
+
+option CommonSenseReborn.SweepAshesCharcoalChance
+{
+    type = integer,
+    min = 0,
+    max = 100,
+    default = 33,
+    page = CSR_Tools,
+    translation = SweepAshesCharcoalChance,
+}
+
+option CommonSenseReborn.EnableFirework
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableFirework,
+}
+
+option CommonSenseReborn.EnableCorpseIgnite
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableCorpseIgnite,
+}
+
+option CommonSenseReborn.EnableDualWield
+{
+    type = boolean,
+    default = false,
+    page = CSR_Gameplay,
+    translation = EnableDualWield,
+}
+
+option CommonSenseReborn.EnablePointBlank
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnablePointBlank,
+}
+
+option CommonSenseReborn.EnableBulletPenetration
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableBulletPenetration,
+}
+
+option CommonSenseReborn.BulletPenetrationMode
+{
+    type = enum,
+    numValues = 2,
+    default = 1,
+    page = CSR_Gameplay,
+    translation = BulletPenetrationMode,
+}
+
+option CommonSenseReborn.BulletPenetrationDamageScale
+{
+    type = double,
+    min = 0.1,
+    max = 1.0,
+    default = 0.4,
+    page = CSR_Gameplay,
+    translation = BulletPenetrationDamageScale,
+}
+
+option CommonSenseReborn.BulletPenetrationMaxTargets
+{
+    type = integer,
+    min = 1,
+    max = 4,
+    default = 2,
+    page = CSR_Gameplay,
+    translation = BulletPenetrationMaxTargets,
+}
+
+option CommonSenseReborn.EnableConeVisionOutline
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableConeVisionOutline,
+}
+
+option CommonSenseReborn.ConeVisionOutlineRange
+{
+    type = integer,
+    min = 10,
+    max = 80,
+    default = 50,
+    page = CSR_Gameplay,
+    translation = ConeVisionOutlineRange,
+}
+
+option CommonSenseReborn.ConeVisionOutlineColorR
+{
+    type = integer,
+    min = 0,
+    max = 255,
+    default = 178,
+    page = CSR_Gameplay,
+    translation = ConeVisionOutlineColorR,
+}
+
+option CommonSenseReborn.ConeVisionOutlineColorG
+{
+    type = integer,
+    min = 0,
+    max = 255,
+    default = 51,
+    page = CSR_Gameplay,
+    translation = ConeVisionOutlineColorG,
+}
+
+option CommonSenseReborn.ConeVisionOutlineColorB
+{
+    type = integer,
+    min = 0,
+    max = 255,
+    default = 255,
+    page = CSR_Gameplay,
+    translation = ConeVisionOutlineColorB,
+}
+
+option CommonSenseReborn.ConeVisionOutlineAlpha
+{
+    type = integer,
+    min = 5,
+    max = 100,
+    default = 35,
+    page = CSR_Gameplay,
+    translation = ConeVisionOutlineAlpha,
+}
+
+option CommonSenseReborn.EnableBack2Slot
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableBack2Slot,
+}
+
+option CommonSenseReborn.EnableWeaponHudOverlay
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableWeaponHudOverlay,
+}
+
+option CommonSenseReborn.EnableAimingAmmoCursor
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableAimingAmmoCursor,
+}
+
+option CommonSenseReborn.EnableAimingHealthCursor
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableAimingHealthCursor,
+}
+
+option CommonSenseReborn.EnableAimingDensityCursor
+{
+    type = boolean,
+    default = false,
+    page = CSR_Gameplay,
+    translation = EnableAimingDensityCursor,
+}
+
+option CommonSenseReborn.EnableInfectionResilience
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableInfectionResilience,
+}
+
+option CommonSenseReborn.InfResChanceToHeal
+{
+    type = integer,
+    min = 1,
+    max = 100,
+    default = 10,
+    page = CSR_Gameplay,
+    translation = InfResChanceToHeal,
+}
+
+option CommonSenseReborn.InfResPenaltyMultiplier
+{
+    type = double,
+    min = 1.0,
+    max = 5.0,
+    default = 1.5,
+    page = CSR_Gameplay,
+    translation = InfResPenaltyMultiplier,
+}
+
+option CommonSenseReborn.InfResThresholdMin
+{
+    type = integer,
+    min = 10,
+    max = 99,
+    default = 70,
+    page = CSR_Gameplay,
+    translation = InfResThresholdMin,
+}
+
+option CommonSenseReborn.InfResThresholdMax
+{
+    type = integer,
+    min = 10,
+    max = 99,
+    default = 95,
+    page = CSR_Gameplay,
+    translation = InfResThresholdMax,
+}
+
+option CommonSenseReborn.EnableSleepAnywhere
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableSleepAnywhere,
+}
+
+option CommonSenseReborn.EnableSleepBenefits
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableSleepBenefits,
+}
+
+option CommonSenseReborn.EnableHideInFurniture
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableHideInFurniture,
+}
+
+option CommonSenseReborn.EnableStopDropRoll
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableStopDropRoll,
+}
+
+option CommonSenseReborn.EnableWarmUp
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableWarmUp,
+}
+
+option CommonSenseReborn.EnableTowelDrying
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableTowelDrying,
+}
+
+option CommonSenseReborn.EnableExerciseWithGear
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableExerciseWithGear,
+}
+
+option CommonSenseReborn.EnableUsefulBarrels
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableUsefulBarrels,
+}
+
+option CommonSenseReborn.UsefulBarrelCapacity
+{
+    type = integer,
+    min = 100,
+    max = 2000,
+    default = 400,
+    page = CSR_Gameplay,
+    translation = UsefulBarrelCapacity,
+}
+
+option CommonSenseReborn.EnableVehicleMechanicsQoL
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableVehicleMechanicsQoL,
+}
+
+option CommonSenseReborn.EnableSeatbeltProtection
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableSeatbeltProtection,
+}
+
+option CommonSenseReborn.EnableVehicleSalvage
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableVehicleSalvage,
+}
+
+option CommonSenseReborn.EnableVehicleClock
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableVehicleClock,
+}
+
+option CommonSenseReborn.EnableVehicleHVAC
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableVehicleHVAC,
+}
+
+option CommonSenseReborn.EnableVehicleRadio
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableVehicleRadio,
+}
+
+option CommonSenseReborn.EnableDashboardHighlights
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableDashboardHighlights,
+}
+
+option CommonSenseReborn.EnableTowAssist
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableTowAssist,
+}
+
+option CommonSenseReborn.TowAssistStandardFactor
+{
+    type = double,
+    min = 0.0,
+    max = 15.0,
+    default = 5.0,
+    page = CSR_Vehicles,
+    translation = TowAssistStandardFactor,
+}
+
+option CommonSenseReborn.TowAssistHeavyDutyFactor
+{
+    type = double,
+    min = 0.0,
+    max = 15.0,
+    default = 7.0,
+    page = CSR_Vehicles,
+    translation = TowAssistHeavyDutyFactor,
+}
+
+option CommonSenseReborn.TowAssistSportFactor
+{
+    type = double,
+    min = 0.0,
+    max = 15.0,
+    default = 4.0,
+    page = CSR_Vehicles,
+    translation = TowAssistSportFactor,
+}
+
+option CommonSenseReborn.EnableGeneratorInfo
+{
+    type = boolean,
+    default = true,
+    page = CSR_Vehicles,
+    translation = EnableGeneratorInfo,
+}
+
+option CommonSenseReborn.EnableUtilityHud
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableUtilityHud,
+}
+
+option CommonSenseReborn.EnableLootFilter
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableLootFilter,
+}
+
+option CommonSenseReborn.EnableVisualSoundCues
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableVisualSoundCues,
+}
+
+option CommonSenseReborn.EnableItemInsightTooltips
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableItemInsightTooltips,
+}
+
+option CommonSenseReborn.EnableSmartVehicleKeyLabels
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableSmartVehicleKeyLabels,
+}
+
+option CommonSenseReborn.EnableZombieDensityOverlay
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableZombieDensityOverlay,
+}
+
+option CommonSenseReborn.ZombieDensityCellRadius
+{
+    type = integer,
+    default = 2,
+    min = 1,
+    max = 3,
+    page = CSR_Interface,
+    translation = ZombieDensityCellRadius,
+}
+
+option CommonSenseReborn.EnableZombieDensityMinimap
+{
+    type = boolean,
+    default = false,
+    page = CSR_Interface,
+    translation = EnableZombieDensityMinimap,
+}
+
+option CommonSenseReborn.EnableStairSense
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableStairSense,
+}
+
+option CommonSenseReborn.EnableNoticeBoard
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableNoticeBoard,
+}
+
+option CommonSenseReborn.EnableClipboardQoL
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableClipboardQoL,
+}
+
+option CommonSenseReborn.EnableRoomScanner
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableRoomScanner,
+}
+
+option CommonSenseReborn.EnableCharacterInfoEnhancements
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableCharacterInfoEnhancements,
+}
+
+option CommonSenseReborn.EnableHideWatermark
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableHideWatermark,
+}
+
+option CommonSenseReborn.EnableWalkingItemActions
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableWalkingItemActions,
+}
+
+option CommonSenseReborn.EnableEatAllStack
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableEatAllStack,
+}
+
+option CommonSenseReborn.EnableMagazineBatchActions
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableMagazineBatchActions,
+}
+
+option CommonSenseReborn.EnableQuickDeviceToggle
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableQuickDeviceToggle,
+}
+
+option CommonSenseReborn.EnableWashMenuSplits
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableWashMenuSplits,
+}
+
+option CommonSenseReborn.EnablePourCanContents
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnablePourCanContents,
+}
+
+option CommonSenseReborn.EnableProximityLootHelper
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableProximityLootHelper,
+}
+
+option CommonSenseReborn.EnableGroundCleanup
+{
+    type = boolean,
+    default = false,
+    page = CSR_Interface,
+    translation = EnableGroundCleanup,
+}
+
+option CommonSenseReborn.GroundCleanupMinutes
+{
+    type = integer,
+    min = 5,
+    max = 43200,
+    default = 1440,
+    page = CSR_Interface,
+    translation = GroundCleanupMinutes,
+}
+
+option CommonSenseReborn.GroundCleanupScanRadius
+{
+    type = integer,
+    min = 10,
+    max = 200,
+    default = 40,
+    page = CSR_Interface,
+    translation = GroundCleanupScanRadius,
+}
+
+option CommonSenseReborn.GroundCleanupMaxZ
+{
+    type = integer,
+    min = 0,
+    max = 7,
+    default = 3,
+    page = CSR_Interface,
+    translation = GroundCleanupMaxZ,
+}
+
+option CommonSenseReborn.GroundCleanupMaxPerScan
+{
+    type = integer,
+    min = 10,
+    max = 2000,
+    default = 250,
+    page = CSR_Interface,
+    translation = GroundCleanupMaxPerScan,
+}
+
+option CommonSenseReborn.LogGroundCleanup
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = LogGroundCleanup,
+}
+
+option CommonSenseReborn.EnableItemWipeScheduler
+{
+    type = boolean,
+    default = false,
+    page = CSR_Interface,
+    translation = EnableItemWipeScheduler,
+}
+
+option CommonSenseReborn.ItemWipeIntervalMinutes
+{
+    type = integer,
+    min = 15,
+    max = 10080,
+    default = 360,
+    page = CSR_Interface,
+    translation = ItemWipeIntervalMinutes,
+}
+
+option CommonSenseReborn.ItemWipeWarnMinutes
+{
+    type = integer,
+    min = 0,
+    max = 240,
+    default = 60,
+    page = CSR_Interface,
+    translation = ItemWipeWarnMinutes,
+}
+
+option CommonSenseReborn.EnableQuickSit
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableQuickSit,
+}
+
+option CommonSenseReborn.EnableAdvancedSoundOptions
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableAdvancedSoundOptions,
+}
+
+option CommonSenseReborn.EnableVideoInsert
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableVideoInsert,
+}
+
+option CommonSenseReborn.EnableTVRadial
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableTVRadial,
+}
+
+option CommonSenseReborn.EnableAnimatedDuffles
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableAnimatedDuffles,
+}
+
+option CommonSenseReborn.EnablePlayerMapTracking
+{
+    type = boolean,
+    default = true,
+    page = CSR_Server,
+    translation = EnablePlayerMapTracking,
+}
+
+option CommonSenseReborn.PlayerMapVisibilityMode
+{
+    type = integer,
+    min = 1,
+    max = 3,
+    default = 1,
+    page = CSR_Server,
+    translation = PlayerMapVisibilityMode,
+}
+
+
+option CommonSenseReborn.EnableMassage
+{
+    type = boolean,
+    default = true,
+    page = CSR_Server,
+    translation = EnableMassage,
+}
+
+option CommonSenseReborn.AdminAuthoritativeControl
+{
+    type = boolean,
+    default = false,
+    page = CSR_Server,
+    translation = AdminAuthoritativeControl,
+}
+
+option CommonSenseReborn.EnableGearSling
+{
+    type = boolean,
+    default = true,
+    page = CSR_Gameplay,
+    translation = EnableGearSling,
+}
+
+
+option CommonSenseReborn.EnableSurvivorLedger
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableSurvivorLedger,
+}
+
+option CommonSenseReborn.EnableLadderClimb
+{
+    type = boolean,
+    default = true,
+    page = CSR_Tools,
+    translation = EnableLadderClimb,
+}
+
+option CommonSenseReborn.CSR_DebugBagDrop
+{
+    type = boolean,
+    default = false,
+    page = CSR_Server,
+    translation = CSR_DebugBagDrop,
+}
+option CommonSenseReborn.EnableColoredToggles
+{
+    type = boolean,
+    default = true,
+    page = CSR_Interface,
+    translation = EnableColoredToggles,
+}
+
