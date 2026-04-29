@@ -2,7 +2,7 @@ modInfo {
 	name = 'Jumpscare Ban'
 	workshopId = '3715980159'
 	workshopIdStage = ''
-	workshopIdProd = ''
+	workshopIdProd = '3716129274'
 	description = '''\
 		|Plays the Withered Foxy jumpscare on a player's screen the moment they get banned,
 		|right before they are disconnected from the server.
