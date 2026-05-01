@@ -1,0 +1,21 @@
+modInfo {
+	name = 'Survivor Economy'
+	workshopId = '3717669793'
+	workshopIdStage = '3717671739'
+	workshopIdProd = '3717671025'
+	description = '''\
+		|Server-authoritative economy for Project Zomboid dedicated servers. Every credit and debit lands in a SQLite ledger inside your save folder, and balances stay in lockstep across server restarts.
+		|
+		|Features:
+		|- Hourly paycheck once a player passes a configurable hours-played threshold.
+		|- Cash bounty for zombie kills, with a configurable hit chance and min/max amount per kill.
+		|- In-person player-to-player money transfer via right-click menu, range-gated and balance-checked server-side.
+		|- In-game balance window pinned to the equipped-item bar, listing every currency you hold; auto-refreshes whenever your balance changes.
+		|- Halo notifications for paychecks, bounties, and transfers (sent / received / failed).
+		|- HTTP API for tooling: transactions, balances, single-event lookup, and an admin SQL escape hatch.
+		|
+		|Sandbox options cover the paycheck cadence and value, zombie bounty chance and amount range, and the player-transfer max distance.
+		|
+		|Requires Storm mod loader.
+	'''.stripMargin('|')
+}

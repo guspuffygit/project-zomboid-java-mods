@@ -1,0 +1,12 @@
+{
+  "UI_SurvivorEconomy_ZombieBountyPaid": "Zombie bounty: +$%1",
+  "UI_SurvivorEconomy_PaycheckPaid": "Paycheck: +$%1",
+  "UI_SurvivorEconomy_TransferSent": "Sent: -$%1 to %2",
+  "UI_SurvivorEconomy_TransferReceived": "Received: +$%1 from %2",
+  "UI_SurvivorEconomy_TransferFailed_INSUFFICIENT_BALANCE": "Transfer failed: insufficient balance",
+  "UI_SurvivorEconomy_TransferFailed_INVALID_AMOUNT": "Transfer failed: invalid amount",
+  "UI_SurvivorEconomy_TransferFailed_SAME_PLAYER": "Transfer failed: cannot send to yourself",
+  "UI_SurvivorEconomy_TransferFailed_TARGET_OFFLINE": "Transfer failed: recipient is offline",
+  "UI_SurvivorEconomy_TransferFailed_OUT_OF_RANGE": "Transfer failed: out of range",
+  "UI_SurvivorEconomy_TransferFailed_DISABLED": "Transfer failed: transfers are disabled"
+}

@@ -1,0 +1,10 @@
+{
+  "IGUI_SurvivorEconomy_Title": "Balance",
+  "IGUI_SurvivorEconomy_Currency": "Currency",
+  "IGUI_SurvivorEconomy_Balance": "Balance",
+  "IGUI_SurvivorEconomy_NoBalance": "No balance yet",
+  "IGUI_SurvivorEconomy_ContextTransfer": "Transfer money to %1",
+  "IGUI_SurvivorEconomy_ContextTransferAmount": "Send to %1 (max $%2)",
+  "IGUI_SurvivorEconomy_ContextOutOfRange": "Get closer to send money",
+  "IGUI_SurvivorEconomy_ContextNoFunds": "No funds to send"
+}

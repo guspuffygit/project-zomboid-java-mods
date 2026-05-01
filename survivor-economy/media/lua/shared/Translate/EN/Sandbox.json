@@ -1,0 +1,23 @@
+{
+  "Sandbox_SurvivorEconomy_Paycheck": "Survivor Economy | Paycheck",
+  "Sandbox_SurvivorEconomy_IssuePaychecks": "Issue paychecks for time online",
+  "Sandbox_SurvivorEconomy_IssuePaychecks_tooltip": "When enabled, online players accrue hours and receive a paycheck once they reach the threshold.",
+  "Sandbox_SurvivorEconomy_HoursUntilPaycheck": "Hours online until paycheck",
+  "Sandbox_SurvivorEconomy_HoursUntilPaycheck_tooltip": "Real-time hours a player must be online (counted hourly) before a paycheck is issued.",
+  "Sandbox_SurvivorEconomy_PaycheckValue": "Paycheck amount",
+  "Sandbox_SurvivorEconomy_PaycheckValue_tooltip": "Amount of primary currency credited per paycheck.",
+  "Sandbox_SurvivorEconomy_ZombieBounty": "Survivor Economy | Zombie Bounty",
+  "Sandbox_SurvivorEconomy_PayZombieBounty": "Pay a random bounty for dead zombies",
+  "Sandbox_SurvivorEconomy_PayZombieBounty_tooltip": "When enabled, killing a zombie has a chance to credit the killer with a bounty in primary currency. Vehicle kills do not pay.",
+  "Sandbox_SurvivorEconomy_ZombieBountyChance": "Bounty chance (percent)",
+  "Sandbox_SurvivorEconomy_ZombieBountyChance_tooltip": "Percent chance per zombie kill that a bounty is paid out.",
+  "Sandbox_SurvivorEconomy_ZombieBountyMinAmount": "Minimum bounty amount",
+  "Sandbox_SurvivorEconomy_ZombieBountyMinAmount_tooltip": "Smallest possible bounty payout (primary currency) when a bounty roll succeeds.",
+  "Sandbox_SurvivorEconomy_ZombieBountyMaxAmount": "Maximum bounty amount",
+  "Sandbox_SurvivorEconomy_ZombieBountyMaxAmount_tooltip": "Largest possible bounty payout (primary currency) when a bounty roll succeeds.",
+  "Sandbox_SurvivorEconomy_PlayerTransfer": "Survivor Economy | Player Transfer",
+  "Sandbox_SurvivorEconomy_AllowPlayerTransfers": "Allow player-to-player transfers",
+  "Sandbox_SurvivorEconomy_AllowPlayerTransfers_tooltip": "When enabled, players can right-click another player nearby to send them money. Disable to lock the right-click submenu.",
+  "Sandbox_SurvivorEconomy_PlayerTransferMaxDistance": "Player transfer max distance (tiles)",
+  "Sandbox_SurvivorEconomy_PlayerTransferMaxDistance_tooltip": "Maximum tile distance between sender and recipient for an in-person transfer. Re-checked server-side."
+}

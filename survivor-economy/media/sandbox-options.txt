@@ -1,0 +1,85 @@
+VERSION = 1,
+
+option SurvivorEconomy.IssuePaychecks
+{
+    type = boolean,
+    default = true,
+    page = SurvivorEconomy_Paycheck,
+    translation = SurvivorEconomy_IssuePaychecks,
+}
+
+option SurvivorEconomy.HoursUntilPaycheck
+{
+    type = integer,
+    min = 1,
+    max = 336,
+    default = 40,
+    page = SurvivorEconomy_Paycheck,
+    translation = SurvivorEconomy_HoursUntilPaycheck,
+}
+
+option SurvivorEconomy.PaycheckValue
+{
+    type = integer,
+    min = 1,
+    max = 50000,
+    default = 200,
+    page = SurvivorEconomy_Paycheck,
+    translation = SurvivorEconomy_PaycheckValue,
+}
+
+option SurvivorEconomy.PayZombieBounty
+{
+    type = boolean,
+    default = true,
+    page = SurvivorEconomy_ZombieBounty,
+    translation = SurvivorEconomy_PayZombieBounty,
+}
+
+option SurvivorEconomy.ZombieBountyChance
+{
+    type = integer,
+    min = 1,
+    max = 100,
+    default = 10,
+    page = SurvivorEconomy_ZombieBounty,
+    translation = SurvivorEconomy_ZombieBountyChance,
+}
+
+option SurvivorEconomy.ZombieBountyMinAmount
+{
+    type = integer,
+    min = 1,
+    max = 100,
+    default = 1,
+    page = SurvivorEconomy_ZombieBounty,
+    translation = SurvivorEconomy_ZombieBountyMinAmount,
+}
+
+option SurvivorEconomy.ZombieBountyMaxAmount
+{
+    type = integer,
+    min = 1,
+    max = 100,
+    default = 10,
+    page = SurvivorEconomy_ZombieBounty,
+    translation = SurvivorEconomy_ZombieBountyMaxAmount,
+}
+
+option SurvivorEconomy.AllowPlayerTransfers
+{
+    type = boolean,
+    default = true,
+    page = SurvivorEconomy_PlayerTransfer,
+    translation = SurvivorEconomy_AllowPlayerTransfers,
+}
+
+option SurvivorEconomy.PlayerTransferMaxDistance
+{
+    type = integer,
+    min = 1,
+    max = 50,
+    default = 4,
+    page = SurvivorEconomy_PlayerTransfer,
+    translation = SurvivorEconomy_PlayerTransferMaxDistance,
+}
