@@ -687,3 +687,76 @@ if ISInventoryTransferAction and ISInventoryTransferAction.isValid then
         return _avcsOldTransferIsValid(self)
     end
 end
+
+-- =========================
+-- Third-party salvage/dismantle conflicts (VRO, VLCS_HDRcade)
+-- Layer 1: gray out the context-menu options when AVCS denies
+-- Layer 2: backstop the timed-action :isValid in case the menu was bypassed
+-- Wrapped in OnGameStart so we capture the third-party functions after their files have loaded
+-- =========================
+
+local function AVCS_canDestroyVehicle(character, vehicle)
+    if not character or not vehicle then
+        return true
+    end
+    return AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicle))
+end
+
+Events.OnGameStart.Add(function()
+    if ISVehicleSalvage and ISVehicleSalvage.isValid and not AVCS.oVroSalvageIsValid then
+        AVCS.oVroSalvageIsValid = ISVehicleSalvage.isValid
+        function ISVehicleSalvage:isValid()
+            if not AVCS_canDestroyVehicle(self.character, self.vehicle) then
+                if self.character then
+                    self.character:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
+                end
+                return false
+            end
+            return AVCS.oVroSalvageIsValid(self)
+        end
+    end
+
+    if VLCS_ScrapVehicleAction and VLCS_ScrapVehicleAction.isValid and not AVCS.oVlcsScrapIsValid then
+        AVCS.oVlcsScrapIsValid = VLCS_ScrapVehicleAction.isValid
+        function VLCS_ScrapVehicleAction:isValid()
+            if not AVCS_canDestroyVehicle(self.character, self.vehicle) then
+                if self.character then
+                    self.character:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
+                end
+                return false
+            end
+            return AVCS.oVlcsScrapIsValid(self)
+        end
+    end
+
+    if not AVCS.oFillMenuForeignFilter then
+        AVCS.oFillMenuForeignFilter = ISVehicleMenu.FillMenuOutsideVehicle
+        local vroSalvageText = getText("ContextMenu_SalvageVehicle")
+        local vlcsDismantleText = "Dismantle Frame (VLCS)"
+
+        function ISVehicleMenu.FillMenuOutsideVehicle(player, context, vehicle, test)
+            AVCS.oFillMenuForeignFilter(player, context, vehicle, test)
+            if test or not vehicle or not context or not context.options then
+                return
+            end
+
+            local playerObj = getSpecificPlayer(player)
+            if not playerObj then return end
+            if AVCS_canDestroyVehicle(playerObj, vehicle) then return end
+
+            for i = 1, #context.options do
+                local opt = context.options[i]
+                if opt and opt.name and (opt.name == vroSalvageText or opt.name == vlcsDismantleText) then
+                    opt.notAvailable = true
+                    opt.onSelect = nil
+                    opt.target = nil
+                    local tt = ISToolTip:new()
+                    tt:initialise()
+                    tt:setVisible(false)
+                    tt.description = getText("IGUI_AVCS_Vehicle_No_Permission")
+                    opt.toolTip = tt
+                end
+            end
+        end
+    end
+end)
