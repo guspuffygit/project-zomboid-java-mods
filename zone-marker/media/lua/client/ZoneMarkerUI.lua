@@ -1,12 +1,14 @@
-if isServer() then return end
+if isServer() then
+    return
+end
 
-require "ISUI/ISCollapsableWindow"
-require "ISUI/ISPanel"
-require "ISUI/ISButton"
-require "ISUI/ISTextEntryBox"
-require "ISUI/ISScrollingListBox"
-require "ISUI/ISLabel"
-require "ZoneMarkerClient"
+require("ISUI/ISCollapsableWindow")
+require("ISUI/ISPanel")
+require("ISUI/ISButton")
+require("ISUI/ISTextEntryBox")
+require("ISUI/ISScrollingListBox")
+require("ISUI/ISLabel")
+require("ZoneMarkerClient")
 
 ---@class ZoneMarkerUI : ISCollapsableWindow
 ---@field catList ISScrollingListBox Category list widget
@@ -78,8 +80,8 @@ function ZoneMarkerUI:createChildren()
     self.catList:initialise()
     self.catList:instantiate()
     self.catList.itemheight = 22
-    self.catList.backgroundColor = {r = 0, g = 0, b = 0, a = 0.5}
-    self.catList.borderColor = {r = 0.4, g = 0.4, b = 0.4, a = 0.9}
+    self.catList.backgroundColor = { r = 0, g = 0, b = 0, a = 0.5 }
+    self.catList.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 0.9 }
     self.catList:setOnMouseDownFunction(self, ZoneMarkerUI.onSelectCategory)
     self:addChild(self.catList)
     y = y + LIST_H + 10
@@ -135,12 +137,21 @@ function ZoneMarkerUI:createChildren()
     y = y + ROW_H + 10
 
     -- Category buttons
-    self.addCatBtn = ISButton:new(x, y, halfW, BTN_H, "Add Category", self, ZoneMarkerUI.onAddCategory)
+    self.addCatBtn =
+        ISButton:new(x, y, halfW, BTN_H, "Add Category", self, ZoneMarkerUI.onAddCategory)
     self.addCatBtn:initialise()
     self.addCatBtn:instantiate()
     self:addChild(self.addCatBtn)
 
-    self.delCatBtn = ISButton:new(x + halfW + gap, y, halfW, BTN_H, "Delete Category", self, ZoneMarkerUI.onDeleteCategory)
+    self.delCatBtn = ISButton:new(
+        x + halfW + gap,
+        y,
+        halfW,
+        BTN_H,
+        "Delete Category",
+        self,
+        ZoneMarkerUI.onDeleteCategory
+    )
     self.delCatBtn:initialise()
     self.delCatBtn:instantiate()
     self:addChild(self.delCatBtn)
@@ -160,8 +171,8 @@ function ZoneMarkerUI:createChildren()
     self.zoneList:initialise()
     self.zoneList:instantiate()
     self.zoneList.itemheight = 22
-    self.zoneList.backgroundColor = {r = 0, g = 0, b = 0, a = 0.5}
-    self.zoneList.borderColor = {r = 0.4, g = 0.4, b = 0.4, a = 0.9}
+    self.zoneList.backgroundColor = { r = 0, g = 0, b = 0, a = 0.5 }
+    self.zoneList.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 0.9 }
     self:addChild(self.zoneList)
     y = y + LIST_H + 10
 
@@ -223,7 +234,15 @@ function ZoneMarkerUI:createChildren()
     self.addZoneBtn:instantiate()
     self:addChild(self.addZoneBtn)
 
-    self.delZoneBtn = ISButton:new(x + halfW + gap, y, halfW, BTN_H, "Delete Zone", self, ZoneMarkerUI.onDeleteZone)
+    self.delZoneBtn = ISButton:new(
+        x + halfW + gap,
+        y,
+        halfW,
+        BTN_H,
+        "Delete Zone",
+        self,
+        ZoneMarkerUI.onDeleteZone
+    )
     self.delZoneBtn:initialise()
     self.delZoneBtn:instantiate()
     self:addChild(self.delZoneBtn)
@@ -258,7 +277,8 @@ function ZoneMarkerUI:refreshCategoryList()
     self.catList:clear()
     local newSelectedIdx = nil
     for i, cat in ipairs(ZoneMarkerCache.categories) do
-        local display = cat.name .. string.format("  (%.1f, %.1f, %.1f, %.1f)", cat.r, cat.g, cat.b, cat.a)
+        local display = cat.name
+            .. string.format("  (%.1f, %.1f, %.1f, %.1f)", cat.r, cat.g, cat.b, cat.a)
         self.catList:addItem(display, cat)
         if cat.name == prevSelected then
             newSelectedIdx = i
@@ -281,8 +301,14 @@ function ZoneMarkerUI:refreshZoneList()
     local zones = ZoneMarkerCache.zones[self.selectedCategory]
     if zones then
         for _, zone in ipairs(zones) do
-            local display = zone.region .. string.format("  (%d,%d - %d,%d)",
-                zone.xStart, zone.yStart, zone.xEnd, zone.yEnd)
+            local display = zone.region
+                .. string.format(
+                    "  (%d,%d - %d,%d)",
+                    zone.xStart,
+                    zone.yStart,
+                    zone.xEnd,
+                    zone.yEnd
+                )
             self.zoneList:addItem(display, zone)
         end
     end
@@ -303,12 +329,16 @@ end
 ---@param button ISButton
 function ZoneMarkerUI:onAddCategory(button)
     local name = self.catNameEntry:getText()
-    if not name or name == "" then return end
+    if not name or name == "" then
+        return
+    end
     local r = tonumber(self.catR:getText())
     local g = tonumber(self.catG:getText())
     local b = tonumber(self.catB:getText())
     local a = tonumber(self.catA:getText())
-    if not r or not g or not b then return end
+    if not r or not g or not b then
+        return
+    end
     sendClientCommand(getPlayer(), MODULE, "addCategory", {
         name = name,
         r = r,
@@ -321,9 +351,13 @@ end
 
 ---@param button ISButton
 function ZoneMarkerUI:onDeleteCategory(button)
-    if not self.catList.selected or self.catList.selected < 1 then return end
+    if not self.catList.selected or self.catList.selected < 1 then
+        return
+    end
     local item = self.catList.items[self.catList.selected]
-    if not item then return end
+    if not item then
+        return
+    end
     sendClientCommand(getPlayer(), MODULE, "removeCategory", {
         name = item.item.name,
     })
@@ -333,14 +367,20 @@ end
 
 ---@param button ISButton
 function ZoneMarkerUI:onAddZone(button)
-    if not self.selectedCategory then return end
+    if not self.selectedCategory then
+        return
+    end
     local name = self.zoneNameEntry:getText()
-    if not name or name == "" then return end
+    if not name or name == "" then
+        return
+    end
     local x1 = tonumber(self.zoneX1:getText())
     local y1 = tonumber(self.zoneY1:getText())
     local x2 = tonumber(self.zoneX2:getText())
     local y2 = tonumber(self.zoneY2:getText())
-    if not x1 or not y1 or not x2 or not y2 then return end
+    if not x1 or not y1 or not x2 or not y2 then
+        return
+    end
     sendClientCommand(getPlayer(), MODULE, "addZone", {
         category = self.selectedCategory,
         name = name,
@@ -358,10 +398,16 @@ end
 
 ---@param button ISButton
 function ZoneMarkerUI:onDeleteZone(button)
-    if not self.selectedCategory then return end
-    if not self.zoneList.selected or self.zoneList.selected < 1 then return end
+    if not self.selectedCategory then
+        return
+    end
+    if not self.zoneList.selected or self.zoneList.selected < 1 then
+        return
+    end
     local item = self.zoneList.items[self.zoneList.selected]
-    if not item then return end
+    if not item then
+        return
+    end
     sendClientCommand(getPlayer(), MODULE, "removeZone", {
         category = self.selectedCategory,
         name = item.item.region,
@@ -411,7 +457,7 @@ end
 -- Patch ISWorldMap right-click menu to add Zone Marker option
 --
 
-require "ISUI/Maps/ISWorldMap"
+require("ISUI/Maps/ISWorldMap")
 
 -- Store original only once so reloads don't capture the patched version
 if not ISWorldMap._zoneMarkerOriginalOnRightMouseUp then
@@ -429,7 +475,9 @@ function ISWorldMap:onRightMouseUp(x, y)
     end
 
     local context = getPlayerContextMenu(0)
-    if not context or context.numOptions <= 1 then return true end
+    if not context or context.numOptions <= 1 then
+        return true
+    end
 
     local worldX = self.mapAPI:uiToWorldX(x, y)
     local worldY = self.mapAPI:uiToWorldY(x, y)

@@ -1,51 +1,54 @@
 if isClient() and not isServer() then
-	return
+    return
 end
 
-require "TimedActions/ISBaseTimedAction"
-require "TimedActions/ISAVCSUninstallVehiclePart"
-require "TimedActions/ISAVCSTakeEngineParts"
+require("TimedActions/ISBaseTimedAction")
+require("TimedActions/ISAVCSUninstallVehiclePart")
+require("TimedActions/ISAVCSTakeEngineParts")
 
 if ISInventoryPage == nil then
-	ISInventoryPage = {}
+    ISInventoryPage = {}
 end
 
 -- AVCS guard: avoid nil duration crashing NetTimedAction
 if not ISBaseTimedAction.__avcsDurationGuard then
-	ISBaseTimedAction.__avcsDurationGuard = true
-	local _avcsOldGetDuration = ISBaseTimedAction.getDuration
-	local _avcsLogged = {}
-	function ISBaseTimedAction:getDuration()
-		local v = _avcsOldGetDuration(self)
-		if v == nil then
-			local name = self.__className or self.Type or (self.getType and self:getType()) or "UnknownTimedAction"
-			if not _avcsLogged[name] then
-				_avcsLogged[name] = true
-				print("[AVCS] getDuration() nil for action: " .. tostring(name))
-			end
-			return 1
-		end
-		return v
-	end
+    ISBaseTimedAction.__avcsDurationGuard = true
+    local _avcsOldGetDuration = ISBaseTimedAction.getDuration
+    local _avcsLogged = {}
+    function ISBaseTimedAction:getDuration()
+        local v = _avcsOldGetDuration(self)
+        if v == nil then
+            local name = self.__className
+                or self.Type
+                or (self.getType and self:getType())
+                or "UnknownTimedAction"
+            if not _avcsLogged[name] then
+                _avcsLogged[name] = true
+                print("[AVCS] getDuration() nil for action: " .. tostring(name))
+            end
+            return 1
+        end
+        return v
+    end
 end
 
 -- Force server to use AVCS actions even if vanilla is called
 do
-	local oldNew = ISUninstallVehiclePart and ISUninstallVehiclePart.new
-	if oldNew and ISAVCSUninstallVehiclePart then
-		function ISUninstallVehiclePart:new(character, part, workTime)
-			return ISAVCSUninstallVehiclePart:new(character, part, workTime)
-		end
-	end
+    local oldNew = ISUninstallVehiclePart and ISUninstallVehiclePart.new
+    if oldNew and ISAVCSUninstallVehiclePart then
+        function ISUninstallVehiclePart:new(character, part, workTime)
+            return ISAVCSUninstallVehiclePart:new(character, part, workTime)
+        end
+    end
 end
 
 do
-	local oldNew = ISTakeEngineParts and ISTakeEngineParts.new
-	if oldNew and ISAVCSTakeEngineParts then
-		function ISTakeEngineParts:new(character, part, item, maxTime)
-			return ISAVCSTakeEngineParts:new(character, part, item, maxTime)
-		end
-	end
+    local oldNew = ISTakeEngineParts and ISTakeEngineParts.new
+    if oldNew and ISAVCSTakeEngineParts then
+        function ISTakeEngineParts:new(character, part, item, maxTime)
+            return ISAVCSTakeEngineParts:new(character, part, item, maxTime)
+        end
+    end
 end
 
 --[[
@@ -61,7 +64,7 @@ end
 
 function Vehicles.LowerCondition(vehicle, part, elapsedMinutes)
     AVCS.updateVehicleCoordinate(vehicle)
-	return AVCS.oLowerCondition(vehicle, part, elapsedMinutes)
+    return AVCS.oLowerCondition(vehicle, part, elapsedMinutes)
 end
 
 -- =========================
@@ -71,10 +74,16 @@ end
 -- =========================
 
 local function _avcsServerHasPermission(player, vehicleId)
-    if not player or not vehicleId then return true end
-    if not AVCS.dbByVehicleSQLID then return true end
+    if not player or not vehicleId then
+        return true
+    end
+    if not AVCS.dbByVehicleSQLID then
+        return true
+    end
     local vehicle = getVehicleById(vehicleId)
-    if not vehicle then return true end
+    if not vehicle then
+        return true
+    end
     return AVCS.getSimpleBooleanPermission(AVCS.checkPermission(player, vehicle))
 end
 
@@ -85,7 +94,16 @@ Events.OnGameStart.Add(function()
             if command == "DismantleVehicle" and args and args.id then
                 if not _avcsServerHasPermission(player, args.id) then
                     local uname = player and player:getUsername() or "?"
-                    writeLog("AVCS", "[" .. getTimestamp() .. "] Warning: Blocked VLCS DismantleVehicle on claimed vehicle [" .. uname .. "] [veh=" .. tostring(args.id) .. "]")
+                    writeLog(
+                        "AVCS",
+                        "["
+                            .. getTimestamp()
+                            .. "] Warning: Blocked VLCS DismantleVehicle on claimed vehicle ["
+                            .. uname
+                            .. "] [veh="
+                            .. tostring(args.id)
+                            .. "]"
+                    )
                     sendServerCommand(player, "AVCS", "forcesyncClientGlobalModData", {})
                     return
                 end
@@ -96,9 +114,24 @@ Events.OnGameStart.Add(function()
 end)
 
 Events.OnClientCommand.Add(function(module, command, player, args)
-    if module ~= "vehicle" or command ~= "remove" then return end
-    if not args or not args.vehicle then return end
-    if _avcsServerHasPermission(player, args.vehicle) then return end
+    if module ~= "vehicle" or command ~= "remove" then
+        return
+    end
+    if not args or not args.vehicle then
+        return
+    end
+    if _avcsServerHasPermission(player, args.vehicle) then
+        return
+    end
     local uname = player and player:getUsername() or "?"
-    writeLog("AVCS", "[" .. getTimestamp() .. "] Warning: vehicle/remove on claimed vehicle by [" .. uname .. "] [veh=" .. tostring(args.vehicle) .. "] — client-side guard expected to block; server-side blocking requires Storm patch")
+    writeLog(
+        "AVCS",
+        "["
+            .. getTimestamp()
+            .. "] Warning: vehicle/remove on claimed vehicle by ["
+            .. uname
+            .. "] [veh="
+            .. tostring(args.vehicle)
+            .. "] — client-side guard expected to block; server-side blocking requires Storm patch"
+    )
 end)

@@ -1,4 +1,4 @@
-require "TimedActions/ISBaseTimedAction"
+require("TimedActions/ISBaseTimedAction")
 
 ---@class ISAVCSVehicleClaimAction : ISBaseTimedAction
 ---@field character IsoGameCharacter
@@ -40,7 +40,7 @@ function ISAVCSVehicleClaimAction:perform()
         self.character:getEmitter():stopSound(self.sound)
     end
 
-	sendClientCommand(self.character, "AVCS", "claimVehicle", { vehicle = self.vehicle:getId() })
+    sendClientCommand(self.character, "AVCS", "claimVehicle", { vehicle = self.vehicle:getId() })
 
     self.character:playSound("CarLock")
 

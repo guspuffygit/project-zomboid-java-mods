@@ -1,5 +1,5 @@
-require "ISUI/Maps/ISWorldMap"
-require "ZoneMarkerClient"
+require("ISUI/Maps/ISWorldMap")
+require("ZoneMarkerClient")
 
 --
 -- Dynamic filter options
@@ -25,10 +25,18 @@ local function getOrCreateOption(categoryName)
     end
     ---@type ZoneMarkerFilterOption
     local opt = {}
-    function opt:getName() return categoryName end
-    function opt:getType() return "boolean" end
-    function opt:getValue() return filterState[categoryName] end
-    function opt:setValue(v) filterState[categoryName] = v end
+    function opt:getName()
+        return categoryName
+    end
+    function opt:getType()
+        return "boolean"
+    end
+    function opt:getValue()
+        return filterState[categoryName]
+    end
+    function opt:setValue(v)
+        filterState[categoryName] = v
+    end
     return opt
 end
 
@@ -62,12 +70,18 @@ if not WorldMapOptions._visibleOptionsHooksPatched then
         local visibleOptions = self:getVisibleOptions()
         local boolCount = 0
         for _, opt in ipairs(visibleOptions) do
-            if opt:getType() == "boolean" then boolCount = boolCount + 1 end
+            if opt:getType() == "boolean" then
+                boolCount = boolCount + 1
+            end
         end
         if boolCount ~= (self._lastBoolCount or -1) then
             local children = {}
-            for k, v in pairs(self:getChildren()) do table.insert(children, v) end
-            for _, child in ipairs(children) do self:removeChild(child) end
+            for k, v in pairs(self:getChildren()) do
+                table.insert(children, v)
+            end
+            for _, child in ipairs(children) do
+                self:removeChild(child)
+            end
             self:createChildren()
             self._lastBoolCount = boolCount
         end
@@ -116,7 +130,17 @@ local function renderZone(mapUI, zone, r, g, b, a)
     local x2 = api:worldToUIX(zone.xEnd, zone.yEnd)
     local y2 = api:worldToUIY(zone.xEnd, zone.yEnd)
 
-    javaObject:DrawTextureScaledColor(nil, PZMath.floor(x1), PZMath.floor(y1), x2 - x1, y2 - y1, r, g, b, a)
+    javaObject:DrawTextureScaledColor(
+        nil,
+        PZMath.floor(x1),
+        PZMath.floor(y1),
+        x2 - x1,
+        y2 - y1,
+        r,
+        g,
+        b,
+        a
+    )
 
     local midX = (zone.xStart + zone.xEnd) / 2
     local midY = (zone.yStart + zone.yEnd) / 2

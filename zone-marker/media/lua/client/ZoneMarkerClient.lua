@@ -1,4 +1,6 @@
-if isServer() then return end
+if isServer() then
+    return
+end
 
 ---@class ZoneMarkerZone
 ---@field xStart number
@@ -49,7 +51,9 @@ end
 ---@param command string
 ---@param args? table
 local function onServerCommand(module, command, args)
-    if module ~= MODULE then return end
+    if module ~= MODULE then
+        return
+    end
     if command == "sync" and args then
         ZoneMarkerCache.categories = args.categories or {}
         ZoneMarkerCache.zones = args.zones or {}

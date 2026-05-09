@@ -1,4 +1,4 @@
-require "ISUI/Maps/ISWorldMap"
+require("ISUI/Maps/ISWorldMap")
 
 --
 -- getDetailedVehicleList - moved from jar-injected Lua to vanilla client Lua
@@ -46,7 +46,9 @@ local function getDetailedVehicleList()
     end
 
     local player = getPlayer()
-    if player == nil then return response end
+    if player == nil then
+        return response
+    end
 
     local currentPlayer = player:getUsername()
     addVehiclesForPlayer(currentPlayer, "personal")
@@ -92,10 +94,18 @@ end
 local avcsFilterEnabled = true
 
 local avcsFilterOption = {}
-function avcsFilterOption:getName() return "Claimed Vehicles" end
-function avcsFilterOption:getType() return "boolean" end
-function avcsFilterOption:getValue() return avcsFilterEnabled end
-function avcsFilterOption:setValue(v) avcsFilterEnabled = v end
+function avcsFilterOption:getName()
+    return "Claimed Vehicles"
+end
+function avcsFilterOption:getType()
+    return "boolean"
+end
+function avcsFilterOption:getValue()
+    return avcsFilterEnabled
+end
+function avcsFilterOption:setValue(v)
+    avcsFilterEnabled = v
+end
 
 WorldMapOptions_visibleOptionsHooks = WorldMapOptions_visibleOptionsHooks or {}
 
@@ -120,12 +130,18 @@ if not WorldMapOptions._visibleOptionsHooksPatched then
         local visibleOptions = self:getVisibleOptions()
         local boolCount = 0
         for _, opt in ipairs(visibleOptions) do
-            if opt:getType() == "boolean" then boolCount = boolCount + 1 end
+            if opt:getType() == "boolean" then
+                boolCount = boolCount + 1
+            end
         end
         if boolCount ~= (self._lastBoolCount or -1) then
             local children = {}
-            for k, v in pairs(self:getChildren()) do table.insert(children, v) end
-            for _, child in ipairs(children) do self:removeChild(child) end
+            for k, v in pairs(self:getChildren()) do
+                table.insert(children, v)
+            end
+            for _, child in ipairs(children) do
+                self:removeChild(child)
+            end
             self:createChildren()
             self._lastBoolCount = boolCount
         end
@@ -159,7 +175,9 @@ local function renderVehiclePoint(mapUI, vehicle)
 
     local worldX = vehicle.lastLocationX
     local worldY = vehicle.lastLocationY
-    if worldX == nil or worldY == nil then return end
+    if worldX == nil or worldY == nil then
+        return
+    end
 
     -- dot: draw a 1x1 world-unit square
     local x1 = api:worldToUIX(worldX, worldY)
@@ -174,7 +192,17 @@ local function renderVehiclePoint(mapUI, vehicle)
         r, g, b = 1, 0.8, 0
     end
 
-    javaObject:DrawTextureScaledColor(nil, PZMath.floor(x1), PZMath.floor(y1), x2 - x1, y2 - y1, r, g, b, a)
+    javaObject:DrawTextureScaledColor(
+        nil,
+        PZMath.floor(x1),
+        PZMath.floor(y1),
+        x2 - x1,
+        y2 - y1,
+        r,
+        g,
+        b,
+        a
+    )
 
     renderVehicleLabel(javaObject, api, worldX, worldY, vehicle.displayName)
 end
@@ -188,7 +216,9 @@ local originalRender = ISWorldMap.render
 function ISWorldMap:render()
     originalRender(self)
 
-    if not avcsFilterEnabled then return end
+    if not avcsFilterEnabled then
+        return
+    end
 
     local vehicles = getDetailedVehicleList()
     for _, vehicle in ipairs(vehicles) do

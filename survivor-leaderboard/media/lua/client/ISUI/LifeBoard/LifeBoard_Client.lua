@@ -27,7 +27,9 @@ BravensUtilsLB.DelayFunction = function(func, delay)
         end
 
         Events.OnTick.Remove(onTick)
-        if not canceled then func() end
+        if not canceled then
+            func()
+        end
     end
 
     Events.OnTick.Add(onTick)
@@ -36,31 +38,41 @@ BravensUtilsLB.DelayFunction = function(func, delay)
     end
 end
 
-
 local function onLoadCharacter()
-	if not getWorld():getGameMode() == "Multiplayer" then return end
+    if not getWorld():getGameMode() == "Multiplayer" then
+        return
+    end
 
-	BravensUtilsLB.DelayFunction(function()
-		-- Always tell the server we're here. The server decides whether to insert
-		-- a new row or just re-broadcast, and replies with the authoritative board
-		-- via the UpdateBoard server command handled in LifeBoard_UI.lua.
-		sendClientCommand(getPlayer(), "Lifeboard", "AddPlayer", {})
-	end, 300)
+    BravensUtilsLB.DelayFunction(function()
+        -- Always tell the server we're here. The server decides whether to insert
+        -- a new row or just re-broadcast, and replies with the authoritative board
+        -- via the UpdateBoard server command handled in LifeBoard_UI.lua.
+        sendClientCommand(getPlayer(), "Lifeboard", "AddPlayer", {})
+    end, 300)
 end
 
 local function everyMinute()
-    if not cooldown then return end
+    if not cooldown then
+        return
+    end
     timer = timer + 1
 
     if timer >= cooldown then
-		local playerObj = getPlayer()
-		sendClientCommand(playerObj, "Lifeboard", "Increment", {daysSurvived = getDaysSurvived(playerObj), zombieKills = getZombieKills(playerObj)})
+        local playerObj = getPlayer()
+        sendClientCommand(
+            playerObj,
+            "Lifeboard",
+            "Increment",
+            { daysSurvived = getDaysSurvived(playerObj), zombieKills = getZombieKills(playerObj) }
+        )
         timer = 0
     end
 end
 
 local function onInitGlobalModData(isNewGame)
-	if not isClient() then return end
+    if not isClient() then
+        return
+    end
 
     if SandboxVars.Lifeboard then
         cooldown = SandboxVars.Lifeboard.Cooldown or 60

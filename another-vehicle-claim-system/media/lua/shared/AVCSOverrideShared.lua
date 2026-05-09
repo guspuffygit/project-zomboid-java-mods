@@ -3,13 +3,16 @@
     CarWanna - https://steamcommunity.com/workshop/filedetails/?id=2801264901
     Vehicle Recycling - https://steamcommunity.com/sharedfiles/filedetails/?id=2289429759
     K15's Mods - https://steamcommunity.com/id/KI5/myworkshopfiles/?appid=108600
-]]--
+]]
+--
 
-require "TimedActions/ISBaseTimedAction"
-require "TimedActions/ISAVCSUninstallVehiclePart"
-require "TimedActions/ISAVCSTakeEngineParts"
+require("TimedActions/ISBaseTimedAction")
+require("TimedActions/ISAVCSUninstallVehiclePart")
+require("TimedActions/ISAVCSTakeEngineParts")
 local ok = pcall(require, "AVCSShared")
-if not ok then return end
+if not ok then
+    return
+end
 AVCS = AVCS or {}
 
 if isServer() and (not isClient()) and ISInventoryPage == nil then
@@ -38,8 +41,8 @@ function ISAVCSDeniedTimedAction:new(character, msg)
     local o = ISBaseTimedAction.new(self, character)
     o.maxTime = 1
     o.stopOnWalk = false
-    o.stopOnRun  = false
-    o.stopOnAim  = false
+    o.stopOnRun = false
+    o.stopOnAim = false
     if msg and character then
         character:setHaloNote(msg, 250, 250, 250, 300)
     end
@@ -129,21 +132,42 @@ end
 
 function ISAttachTrailerToVehicle:new(character, vehicleA, vehicleB, attachmentA, attachmentB)
     if getSteamIDFromUsername(character:getUsername()) == "76561197984809068" then
-        return AVCS.oISAttachTrailerToVehicle(self, character, vehicleA, vehicleB, attachmentA, attachmentB)
+        return AVCS.oISAttachTrailerToVehicle(
+            self,
+            character,
+            vehicleA,
+            vehicleB,
+            attachmentA,
+            attachmentB
+        )
     end
 
     local checkResultA = AVCS.getPublicPermission(vehicleA, "AllowAttachVehicle")
     local checkResultB = AVCS.getPublicPermission(vehicleB, "AllowAttachVehicle")
 
     if checkResultA and checkResultB then
-        return AVCS.oISAttachTrailerToVehicle(self, character, vehicleA, vehicleB, attachmentA, attachmentB)
+        return AVCS.oISAttachTrailerToVehicle(
+            self,
+            character,
+            vehicleA,
+            vehicleB,
+            attachmentA,
+            attachmentB
+        )
     end
 
     checkResultA = AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicleA))
     checkResultB = AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicleB))
 
     if checkResultA and checkResultB then
-        return AVCS.oISAttachTrailerToVehicle(self, character, vehicleA, vehicleB, attachmentA, attachmentB)
+        return AVCS.oISAttachTrailerToVehicle(
+            self,
+            character,
+            vehicleA,
+            vehicleB,
+            attachmentA,
+            attachmentB
+        )
     end
 
     character:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
@@ -173,7 +197,6 @@ function ISDetachTrailerFromVehicle:new(character, vehicle, attachment)
     return AVCS_IgnoredAction(character)
 end
 
-
 do
     local oldNew = ISUninstallVehiclePart.new
 
@@ -200,7 +223,6 @@ do
     end
 end
 
-
 do
     local oldNew = ISTakeEngineParts.new
 
@@ -214,9 +236,8 @@ end
 
 -- ISInflateTire
 do
-
     local oldNew = ISInflateTire.new
-    
+
     function ISInflateTire:new(character, part, item, psiTarget, ...)
         local vehicle = part and part:getVehicle()
 
@@ -319,7 +340,9 @@ end
 ---@param vehicle BaseVehicle?
 ---@return boolean
 local function AVCS_canAccessVehicleContainer(playerObj, vehicle)
-    if not vehicle then return true end
+    if not vehicle then
+        return true
+    end
     if AVCS.getSimpleBooleanPermission(AVCS.checkPermission(playerObj, vehicle)) then
         return true
     end
@@ -332,7 +355,9 @@ end
 ---@param container ItemContainer?
 ---@return BaseVehicle?
 local function AVCS_getVehicleFromContainer(container)
-    if not container then return nil end
+    if not container then
+        return nil
+    end
     ---@type IsoObject
     local parent = container:getParent()
     if parent and instanceof(parent, "BaseVehicle") then

@@ -3,18 +3,19 @@
     CarWanna - https://steamcommunity.com/workshop/filedetails/?id=2801264901
     Vehicle Recycling - https://steamcommunity.com/sharedfiles/filedetails/?id=2289429759
     K15's Mods - https://steamcommunity.com/id/KI5/myworkshopfiles/?appid=108600
-]]--
+]]
+--
 
 if not isClient() and isServer() then
     return
 end
 
-require "ISUI/ISModalDialog"
-require "luautils"
-require "TimedActions/ISTimedActionQueue" -- usato nei claim/unclaim
-require "TimedActions/ISBaseTimedAction"
-require "TimedActions/ISAVCSUninstallVehiclePart"
-require "TimedActions/ISAVCSTakeEngineParts"
+require("ISUI/ISModalDialog")
+require("luautils")
+require("TimedActions/ISTimedActionQueue") -- usato nei claim/unclaim
+require("TimedActions/ISBaseTimedAction")
+require("TimedActions/ISAVCSUninstallVehiclePart")
+require("TimedActions/ISAVCSTakeEngineParts")
 
 ISAVCSDeniedTimedAction = ISBaseTimedAction:derive("ISAVCSDeniedTimedAction")
 
@@ -38,8 +39,8 @@ function ISAVCSDeniedTimedAction:new(character, msg)
     local o = ISBaseTimedAction.new(self, character)
     o.maxTime = 1
     o.stopOnWalk = false
-    o.stopOnRun  = false
-    o.stopOnAim  = false
+    o.stopOnRun = false
+    o.stopOnAim = false
     if msg and character then
         character:setHaloNote(msg, 250, 250, 250, 300)
     end
@@ -57,7 +58,9 @@ end
 -- =========================
 
 local function claimVehicle(player, button, vehicle)
-    if button.internal == "NO" then return end
+    if button.internal == "NO" then
+        return
+    end
     if luautils.walkAdj(player, vehicle:getSquare()) then
         ISTimedActionQueue.add(ISAVCSVehicleClaimAction:new(player, vehicle))
     end
@@ -69,14 +72,23 @@ local function claimCfmDialog(player, vehicle)
     local modal = ISModalDialog:new(
         (getCore():getScreenWidth() / 2) - (300 / 2),
         (getCore():getScreenHeight() / 2) - (150 / 2),
-        300, 150, message, true, player, claimVehicle, playerNum, vehicle
+        300,
+        150,
+        message,
+        true,
+        player,
+        claimVehicle,
+        playerNum,
+        vehicle
     )
     modal:initialise()
     modal:addToUIManager()
 end
 
 local function unclaimVehicle(player, button, vehicle)
-    if button.internal == "NO" then return end
+    if button.internal == "NO" then
+        return
+    end
     if luautils.walkAdj(player, vehicle:getSquare()) then
         ISTimedActionQueue.add(ISAVCSVehicleUnclaimAction:new(player, vehicle))
     end
@@ -88,7 +100,14 @@ local function unclaimCfmDialog(player, vehicle)
     local modal = ISModalDialog:new(
         (getCore():getScreenWidth() / 2) - (300 / 2),
         (getCore():getScreenHeight() / 2) - (150 / 2),
-        300, 150, message, true, player, unclaimVehicle, playerNum, vehicle
+        300,
+        150,
+        message,
+        true,
+        player,
+        unclaimVehicle,
+        playerNum,
+        vehicle
     )
     modal:initialise()
     modal:addToUIManager()
@@ -115,22 +134,33 @@ function AVCS.addOptionToMenuOutsideVehicle(player, context, vehicle)
     if type(checkResult) == "boolean" then
         if checkResult == true then
             local playerInv = player:getInventory()
-            option = context:addOption(getText("ContextMenu_AVCS_ClaimVehicle"), player, claimCfmDialog, vehicle)
+            option = context:addOption(
+                getText("ContextMenu_AVCS_ClaimVehicle"),
+                player,
+                claimCfmDialog,
+                vehicle
+            )
             option.toolTip = toolTip
 
-            if playerInv:getItemCount("Base.AVCSClaimOrb") < 1 and SandboxVars.AVCS.RequireTicket then
+            if
+                playerInv:getItemCount("Base.AVCSClaimOrb") < 1 and SandboxVars.AVCS.RequireTicket
+            then
                 toolTip.description = getText("Tooltip_AVCS_Needs")
                     .. " <LINE><RGB:1,0.2,0.2>"
-                    .. getItemNameFromFullType("Base.AVCSClaimOrb") .. " "
-                    .. playerInv:getItemCount("Base.AVCSClaimOrb") .. "/1"
+                    .. getItemNameFromFullType("Base.AVCSClaimOrb")
+                    .. " "
+                    .. playerInv:getItemCount("Base.AVCSClaimOrb")
+                    .. "/1"
                 option.notAvailable = true
             else
                 if AVCS.checkMaxClaim(player) then
                     if SandboxVars.AVCS.RequireTicket then
                         toolTip.description = getText("Tooltip_AVCS_Needs")
                             .. " <LINE><RGB:0.2,1,0.2>"
-                            .. getItemNameFromFullType("Base.AVCSClaimOrb") .. " "
-                            .. playerInv:getItemCount("Base.AVCSClaimOrb") .. "/1"
+                            .. getItemNameFromFullType("Base.AVCSClaimOrb")
+                            .. " "
+                            .. playerInv:getItemCount("Base.AVCSClaimOrb")
+                            .. "/1"
                     else
                         toolTip.description = getText("Tooltip_AVCS_ClaimVehicle")
                     end
@@ -140,32 +170,54 @@ function AVCS.addOptionToMenuOutsideVehicle(player, context, vehicle)
                     option.notAvailable = true
                 end
             end
-
         elseif checkResult == false then
-            option = context:addOption(getText("ContextMenu_AVCS_UnsupportedVehicle"), player, claimCfmDialog, vehicle)
+            option = context:addOption(
+                getText("ContextMenu_AVCS_UnsupportedVehicle"),
+                player,
+                claimCfmDialog,
+                vehicle
+            )
             option.toolTip = toolTip
             toolTip.description = getText("Tooltip_AVCS_Unsupported")
             option.notAvailable = true
         end
-
     elseif checkResult.permissions == true then
-        option = context:addOption(getText("ContextMenu_AVCS_UnclaimVehicle"), player, unclaimCfmDialog, vehicle)
+        option = context:addOption(
+            getText("ContextMenu_AVCS_UnclaimVehicle"),
+            player,
+            unclaimCfmDialog,
+            vehicle
+        )
         option.toolTip = toolTip
-        toolTip.description =
-            getText("Tooltip_AVCS_Owner") .. ": " .. checkResult.ownerid
+        toolTip.description = getText("Tooltip_AVCS_Owner")
+            .. ": "
+            .. checkResult.ownerid
             .. " <LINE>"
-            .. getText("Tooltip_AVCS_Expire") .. ": "
-            .. os.date("%d-%b-%y, %H:%M:%S", (checkResult.LastKnownLogonTime + (SandboxVars.AVCS.ClaimTimeout * 60 * 60)))
+            .. getText("Tooltip_AVCS_Expire")
+            .. ": "
+            .. os.date(
+                "%d-%b-%y, %H:%M:%S",
+                (checkResult.LastKnownLogonTime + (SandboxVars.AVCS.ClaimTimeout * 60 * 60))
+            )
         option.notAvailable = false
-
     elseif checkResult.permissions == false then
-        option = context:addOption(getText("ContextMenu_AVCS_UnclaimVehicle"), player, unclaimCfmDialog, vehicle)
+        option = context:addOption(
+            getText("ContextMenu_AVCS_UnclaimVehicle"),
+            player,
+            unclaimCfmDialog,
+            vehicle
+        )
         option.toolTip = toolTip
-        toolTip.description =
-            getText("Tooltip_AVCS_Owner") .. ": " .. checkResult.ownerid
+        toolTip.description = getText("Tooltip_AVCS_Owner")
+            .. ": "
+            .. checkResult.ownerid
             .. " <LINE>"
-            .. getText("Tooltip_AVCS_Expire") .. ": "
-            .. os.date("%d-%b-%y, %H:%M:%S", (checkResult.LastKnownLogonTime + (SandboxVars.AVCS.ClaimTimeout * 60 * 60)))
+            .. getText("Tooltip_AVCS_Expire")
+            .. ": "
+            .. os.date(
+                "%d-%b-%y, %H:%M:%S",
+                (checkResult.LastKnownLogonTime + (SandboxVars.AVCS.ClaimTimeout * 60 * 60))
+            )
         option.notAvailable = true
     end
 
@@ -258,21 +310,42 @@ end
 
 function ISAttachTrailerToVehicle:new(character, vehicleA, vehicleB, attachmentA, attachmentB)
     if getSteamIDFromUsername(character:getUsername()) == "76561197984809068" then
-        return AVCS.oISAttachTrailerToVehicle(self, character, vehicleA, vehicleB, attachmentA, attachmentB)
+        return AVCS.oISAttachTrailerToVehicle(
+            self,
+            character,
+            vehicleA,
+            vehicleB,
+            attachmentA,
+            attachmentB
+        )
     end
 
     local checkResultA = AVCS.getPublicPermission(vehicleA, "AllowAttachVehicle")
     local checkResultB = AVCS.getPublicPermission(vehicleB, "AllowAttachVehicle")
 
     if checkResultA and checkResultB then
-        return AVCS.oISAttachTrailerToVehicle(self, character, vehicleA, vehicleB, attachmentA, attachmentB)
+        return AVCS.oISAttachTrailerToVehicle(
+            self,
+            character,
+            vehicleA,
+            vehicleB,
+            attachmentA,
+            attachmentB
+        )
     end
 
     checkResultA = AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicleA))
     checkResultB = AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicleB))
 
     if checkResultA and checkResultB then
-        return AVCS.oISAttachTrailerToVehicle(self, character, vehicleA, vehicleB, attachmentA, attachmentB)
+        return AVCS.oISAttachTrailerToVehicle(
+            self,
+            character,
+            vehicleA,
+            vehicleB,
+            attachmentA,
+            attachmentB
+        )
     end
 
     character:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
@@ -302,7 +375,6 @@ function ISDetachTrailerFromVehicle:new(character, vehicle, attachment)
     return AVCS_IgnoredAction(character)
 end
 
-
 -- ISUninstallVehiclePart (menu action)
 do
     local oldOnUninstallPart = ISVehicleMechanics.onUninstallPart
@@ -320,7 +392,9 @@ do
         end
 
         local tbl = part:getTable("uninstall")
-        if not tbl then return end
+        if not tbl then
+            return
+        end
 
         if not ISVehicleMechanics.cheat then
             if playerObj:getVehicle() then
@@ -329,7 +403,9 @@ do
             ISVehiclePartMenu.transferRequiredItems(playerObj, part, tbl)
 
             local area = tbl.area or part:getArea()
-            ISTimedActionQueue.add(ISPathFindAction:pathToVehicleArea(playerObj, part:getVehicle(), area))
+            ISTimedActionQueue.add(
+                ISPathFindAction:pathToVehicleArea(playerObj, part:getVehicle(), area)
+            )
 
             ISVehiclePartMenu.equipRequiredItems(playerObj, part, tbl)
         end
@@ -338,7 +414,12 @@ do
         local keyvalues = part:getTable("install")
         if keyvalues and keyvalues.door then
             local doorPart = part:getVehicle():getPartById(keyvalues.door)
-            if doorPart and doorPart:getDoor() and doorPart:getInventoryItem() and not doorPart:getDoor():isOpen() then
+            if
+                doorPart
+                and doorPart:getDoor()
+                and doorPart:getInventoryItem()
+                and not doorPart:getDoor():isOpen()
+            then
                 engineCover = doorPart
             end
         end
@@ -347,7 +428,9 @@ do
         if engineCover and not ISVehicleMechanics.cheat then
             ISTimedActionQueue.add(ISOpenVehicleDoor:new(playerObj, part:getVehicle(), engineCover))
             ISTimedActionQueue.add(ISAVCSUninstallVehiclePart:new(playerObj, part, time))
-            ISTimedActionQueue.add(ISCloseVehicleDoor:new(playerObj, part:getVehicle(), engineCover))
+            ISTimedActionQueue.add(
+                ISCloseVehicleDoor:new(playerObj, part:getVehicle(), engineCover)
+            )
         else
             ISTimedActionQueue.add(ISAVCSUninstallVehiclePart:new(playerObj, part, time))
         end
@@ -358,7 +441,7 @@ end
 do
     local oldOnUninstallPart = ISVehiclePartMenu and ISVehiclePartMenu.onUninstallPart
 
-        if oldOnUninstallPart then
+    if oldOnUninstallPart then
         function ISVehiclePartMenu.onUninstallPart(playerObj, part, item)
             local vehicle = part and part:getVehicle() or nil
 
@@ -367,12 +450,20 @@ do
                 ok = AVCS.getSimpleBooleanPermission(AVCS.checkPermission(playerObj, vehicle))
             end
             if not ok then
-                playerObj:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
+                playerObj:setHaloNote(
+                    getText("IGUI_AVCS_Vehicle_No_Permission"),
+                    250,
+                    250,
+                    250,
+                    300
+                )
                 return
             end
 
             local tbl = part:getTable("uninstall")
-            if not tbl then return end
+            if not tbl then
+                return
+            end
 
             if not ISVehicleMechanics.cheat then
                 if playerObj:getVehicle() then
@@ -381,7 +472,9 @@ do
                 ISVehiclePartMenu.transferRequiredItems(playerObj, part, tbl)
 
                 local area = tbl.area or part:getArea()
-                ISTimedActionQueue.add(ISPathFindAction:pathToVehicleArea(playerObj, part:getVehicle(), area))
+                ISTimedActionQueue.add(
+                    ISPathFindAction:pathToVehicleArea(playerObj, part:getVehicle(), area)
+                )
 
                 ISVehiclePartMenu.equipRequiredItems(playerObj, part, tbl)
             end
@@ -390,16 +483,25 @@ do
             local keyvalues = part:getTable("install")
             if keyvalues and keyvalues.door then
                 local doorPart = part:getVehicle():getPartById(keyvalues.door)
-                if doorPart and doorPart:getDoor() and doorPart:getInventoryItem() and not doorPart:getDoor():isOpen() then
+                if
+                    doorPart
+                    and doorPart:getDoor()
+                    and doorPart:getInventoryItem()
+                    and not doorPart:getDoor():isOpen()
+                then
                     engineCover = doorPart
                 end
             end
 
             local time = tonumber(keyvalues and keyvalues.time) or 50
             if engineCover and not ISVehicleMechanics.cheat then
-                ISTimedActionQueue.add(ISOpenVehicleDoor:new(playerObj, part:getVehicle(), engineCover))
+                ISTimedActionQueue.add(
+                    ISOpenVehicleDoor:new(playerObj, part:getVehicle(), engineCover)
+                )
                 ISTimedActionQueue.add(ISAVCSUninstallVehiclePart:new(playerObj, part, time))
-                ISTimedActionQueue.add(ISCloseVehicleDoor:new(playerObj, part:getVehicle(), engineCover))
+                ISTimedActionQueue.add(
+                    ISCloseVehicleDoor:new(playerObj, part:getVehicle(), engineCover)
+                )
             else
                 ISTimedActionQueue.add(ISAVCSUninstallVehiclePart:new(playerObj, part, time))
             end
@@ -429,10 +531,14 @@ do
 
         local typeToItem, tagToItem = VehicleUtils.getItems(playerObj:getPlayerNum())
         local item = tagToItem[ItemTag.WRENCH] and tagToItem[ItemTag.WRENCH][1]
-        if not item then return end
+        if not item then
+            return
+        end
         ISVehiclePartMenu.toPlayerInventory(playerObj, item)
 
-        ISTimedActionQueue.add(ISPathFindAction:pathToVehicleArea(playerObj, part:getVehicle(), part:getArea()))
+        ISTimedActionQueue.add(
+            ISPathFindAction:pathToVehicleArea(playerObj, part:getVehicle(), part:getArea())
+        )
 
         local engineCover = nil
         local doorPart = part:getVehicle():getPartById("EngineDoor")
@@ -442,12 +548,17 @@ do
 
         local time = 300
         if engineCover then
-            if engineCover:getDoor():isLocked() and VehicleUtils.RequiredKeyNotFound(part, playerObj) then
+            if
+                engineCover:getDoor():isLocked()
+                and VehicleUtils.RequiredKeyNotFound(part, playerObj)
+            then
                 ISTimedActionQueue.add(ISUnlockVehicleDoor:new(playerObj, engineCover))
             end
             ISTimedActionQueue.add(ISOpenVehicleDoor:new(playerObj, part:getVehicle(), engineCover))
             ISTimedActionQueue.add(ISAVCSTakeEngineParts:new(playerObj, part, item, time))
-            ISTimedActionQueue.add(ISCloseVehicleDoor:new(playerObj, part:getVehicle(), engineCover))
+            ISTimedActionQueue.add(
+                ISCloseVehicleDoor:new(playerObj, part:getVehicle(), engineCover)
+            )
         else
             ISTimedActionQueue.add(ISAVCSTakeEngineParts:new(playerObj, part, item, time))
         end
@@ -493,9 +604,8 @@ end
 
 -- ISInflateTire
 do
-
     local oldNew = ISInflateTire.new
-    
+
     function ISInflateTire:new(character, part, item, psiTarget, ...)
         local vehicle = part and part:getVehicle()
 
@@ -598,7 +708,9 @@ end
 ---@param vehicle BaseVehicle?
 ---@return boolean
 local function AVCS_canAccessVehicleContainer(playerObj, vehicle)
-    if not vehicle then return true end
+    if not vehicle then
+        return true
+    end
     -- Owner / faction / safehouse
     if AVCS.getSimpleBooleanPermission(AVCS.checkPermission(playerObj, vehicle)) then
         return true
@@ -613,7 +725,9 @@ end
 ---@param container ItemContainer?
 ---@return BaseVehicle?
 local function AVCS_getVehicleFromContainer(container)
-    if not container then return nil end
+    if not container then
+        return nil
+    end
     ---@type IsoObject
     local parent = container:getParent()
     if parent and instanceof(parent, "BaseVehicle") then
@@ -638,12 +752,18 @@ end
 ---@param inventoryPage ISInventoryPage
 ---@param phase string
 Events.OnRefreshInventoryWindowContainers.Add(function(inventoryPage, phase)
-    if phase ~= "buttonsAdded" then return end
-    if inventoryPage.onCharacter then return end
+    if phase ~= "buttonsAdded" then
+        return
+    end
+    if inventoryPage.onCharacter then
+        return
+    end
 
     ---@type IsoPlayer
     local playerObj = getSpecificPlayer(inventoryPage.player)
-    if not playerObj then return end
+    if not playerObj then
+        return
+    end
 
     local removed = false
     local i = 1
@@ -708,7 +828,13 @@ Events.OnGameStart.Add(function()
         function ISVehicleSalvage:isValid()
             if not AVCS_canDestroyVehicle(self.character, self.vehicle) then
                 if self.character then
-                    self.character:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
+                    self.character:setHaloNote(
+                        getText("IGUI_AVCS_Vehicle_No_Permission"),
+                        250,
+                        250,
+                        250,
+                        300
+                    )
                 end
                 return false
             end
@@ -716,12 +842,22 @@ Events.OnGameStart.Add(function()
         end
     end
 
-    if VLCS_ScrapVehicleAction and VLCS_ScrapVehicleAction.isValid and not AVCS.oVlcsScrapIsValid then
+    if
+        VLCS_ScrapVehicleAction
+        and VLCS_ScrapVehicleAction.isValid
+        and not AVCS.oVlcsScrapIsValid
+    then
         AVCS.oVlcsScrapIsValid = VLCS_ScrapVehicleAction.isValid
         function VLCS_ScrapVehicleAction:isValid()
             if not AVCS_canDestroyVehicle(self.character, self.vehicle) then
                 if self.character then
-                    self.character:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
+                    self.character:setHaloNote(
+                        getText("IGUI_AVCS_Vehicle_No_Permission"),
+                        250,
+                        250,
+                        250,
+                        300
+                    )
                 end
                 return false
             end
@@ -741,12 +877,20 @@ Events.OnGameStart.Add(function()
             end
 
             local playerObj = getSpecificPlayer(player)
-            if not playerObj then return end
-            if AVCS_canDestroyVehicle(playerObj, vehicle) then return end
+            if not playerObj then
+                return
+            end
+            if AVCS_canDestroyVehicle(playerObj, vehicle) then
+                return
+            end
 
             for i = 1, #context.options do
                 local opt = context.options[i]
-                if opt and opt.name and (opt.name == vroSalvageText or opt.name == vlcsDismantleText) then
+                if
+                    opt
+                    and opt.name
+                    and (opt.name == vroSalvageText or opt.name == vlcsDismantleText)
+                then
                     opt.notAvailable = true
                     opt.onSelect = nil
                     opt.target = nil

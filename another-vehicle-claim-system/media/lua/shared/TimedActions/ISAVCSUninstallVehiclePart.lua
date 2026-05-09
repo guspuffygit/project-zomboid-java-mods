@@ -1,4 +1,4 @@
-require "TimedActions/ISBaseTimedAction"
+require("TimedActions/ISBaseTimedAction")
 
 ISAVCSUninstallVehiclePart = ISBaseTimedAction:derive("ISAVCSUninstallVehiclePart")
 
@@ -11,14 +11,22 @@ local function hasPermission(character, vehicle)
 end
 
 function ISAVCSUninstallVehiclePart:isValid()
-    if self.character:isMechanicsCheat() then return true end
-    if not self.part or not self.vehicle then return false end
-    if not hasPermission(self.character, self.vehicle) then return false end
+    if self.character:isMechanicsCheat() then
+        return true
+    end
+    if not self.part or not self.vehicle then
+        return false
+    end
+    if not hasPermission(self.character, self.vehicle) then
+        return false
+    end
     return self.part:getInventoryItem() and self.vehicle:canUninstallPart(self.character, self.part)
 end
 
 function ISAVCSUninstallVehiclePart:waitToStart()
-    if self.character:isMechanicsCheat() then return false end
+    if self.character:isMechanicsCheat() then
+        return false
+    end
     self.character:faceThisObject(self.vehicle)
     return self.character:shouldBeTurning()
 end
@@ -29,7 +37,9 @@ function ISAVCSUninstallVehiclePart:update()
 end
 
 function ISAVCSUninstallVehiclePart:start()
-    if isServer() then return end
+    if isServer() then
+        return
+    end
     if self.part:getWheelIndex() ~= -1 or self.part:getId():contains("Brake") then
         self:setActionAnim("VehicleWorkOnTire")
     else
@@ -47,18 +57,29 @@ function ISAVCSUninstallVehiclePart:perform()
 end
 
 function ISAVCSUninstallVehiclePart:complete()
-    if not isServer() then return true end
-    if not self.vehicle or not self.part then return false end
-    if not hasPermission(self.character, self.vehicle) then return false end
+    if not isServer() then
+        return true
+    end
+    if not self.vehicle or not self.part then
+        return false
+    end
+    if not hasPermission(self.character, self.vehicle) then
+        return false
+    end
 
     local installTable = self.part:getTable("install")
-    if not installTable then return false end
+    if not installTable then
+        return false
+    end
 
     local perksTable = VehicleUtils.getPerksTableForChr(installTable.skills, self.character)
     local perks = installTable.skills
-    local success, failure = VehicleUtils.calculateInstallationSuccess(perks, self.character, perksTable)
+    local success, failure =
+        VehicleUtils.calculateInstallationSuccess(perks, self.character, perksTable)
     local item = self.part:getInventoryItem()
-    if not item then return false end
+    if not item then
+        return false
+    end
 
     if instanceof(item, "Radio") and item:getDeviceData() ~= nil then
         if self.part:getDeviceData() == nil then
@@ -83,7 +104,8 @@ function ISAVCSUninstallVehiclePart:complete()
         else
             local square = self.character:getCurrentSquare()
             if square then
-                local dropX, dropY, dropZ = ISTransferAction.GetDropItemOffset(self.character, square, item)
+                local dropX, dropY, dropZ =
+                    ISTransferAction.GetDropItemOffset(self.character, square, item)
                 square:AddWorldInventoryItem(item, dropX, dropY, dropZ)
             end
         end
@@ -112,7 +134,9 @@ function ISAVCSUninstallVehiclePart:getDuration()
     local workTime = tonumber(self.workTime) or 1
     local perk = self.character:getPerkLevel(Perks.Mechanics)
     local duration = workTime - (perk * (workTime / 15))
-    if duration < 1 then duration = 1 end
+    if duration < 1 then
+        duration = 1
+    end
     return duration
 end
 

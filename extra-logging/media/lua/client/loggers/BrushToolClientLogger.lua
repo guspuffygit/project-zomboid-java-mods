@@ -9,12 +9,12 @@ local BrushToolClientLogger = {}
 
 function BrushToolClientLogger.onDestroyTile(obj)
     local character = getPlayer()
-    local location = logutils.GetLocation(character);
-    local objLocation = logutils.GetLocation(obj);
+    local location = logutils.GetLocation(character)
+    local objLocation = logutils.GetLocation(obj)
     local texture = obj:getTextureName()
-    local objName = obj:getName() or obj:getObjectName();
+    local objName = obj:getName() or obj:getObjectName()
     if objName == "" then
-        objName = instanceof(obj, 'IsoThumpable') and "IsoThumpable" or "undefined"
+        objName = instanceof(obj, "IsoThumpable") and "IsoThumpable" or "undefined"
     end
 
     if isClient() then
@@ -23,8 +23,15 @@ function BrushToolClientLogger.onDestroyTile(obj)
         obj:getSquare():transmitRemoveItemFromSquare(obj)
     end
 
-    local message = logutils.GetLogLinePrefix(character, "removed " .. objName) .. " (" .. texture .. ") at " .. objLocation .. " (" .. location .. ")";
-    logutils.WriteLog(logutils.filemask.brushtool, message);
+    local message = logutils.GetLogLinePrefix(character, "removed " .. objName)
+        .. " ("
+        .. texture
+        .. ") at "
+        .. objLocation
+        .. " ("
+        .. location
+        .. ")"
+    logutils.WriteLog(logutils.filemask.brushtool, message)
 end
 
 function BrushToolClientLogger.doBrushToolOptions(player, context, worldobjects, test)
@@ -32,18 +39,20 @@ function BrushToolClientLogger.doBrushToolOptions(player, context, worldobjects,
         return
     end
 
-    if test and ISWorldObjectContextMenu.Test then return true end
+    if test and ISWorldObjectContextMenu.Test then
+        return true
+    end
 
     local destroyTileOption = context:getOptionFromName("Destroy tile")
     if destroyTileOption then
         local destroyTileMenu = context:getSubMenu(destroyTileOption.subOption)
         if destroyTileMenu then
-            for i=1, #destroyTileMenu.options do
-                local option = destroyTileMenu.options[i];
+            for i = 1, #destroyTileMenu.options do
+                local option = destroyTileMenu.options[i]
                 option.onSelect = BrushToolClientLogger.onDestroyTile
             end
         end
     end
 end
 
-Events.OnFillWorldObjectContextMenu.Add(BrushToolClientLogger.doBrushToolOptions);
+Events.OnFillWorldObjectContextMenu.Add(BrushToolClientLogger.doBrushToolOptions)

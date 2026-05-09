@@ -1,5 +1,5 @@
-require "ISUI/AdminPanel/ZoneEditor/ISMultiplayerZoneEditor"
-require "ZoneMarkerEditorMode"
+require("ISUI/AdminPanel/ZoneEditor/ISMultiplayerZoneEditor")
+require("ZoneMarkerEditorMode")
 
 local MODE_NAME = "ZoneMarker"
 local MODE_LABEL = "Zone Marker"

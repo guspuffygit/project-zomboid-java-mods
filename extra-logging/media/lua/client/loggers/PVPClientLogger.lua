@@ -14,7 +14,7 @@ PVPClientLogger.WeaponHitCharacter = function(attacker, target, weapon, damage)
         return
     end
 
-    if attacker ~= getPlayer() or not instanceof(target, 'IsoPlayer') then
+    if attacker ~= getPlayer() or not instanceof(target, "IsoPlayer") then
         return
     end
 
@@ -22,12 +22,16 @@ PVPClientLogger.WeaponHitCharacter = function(attacker, target, weapon, damage)
         return
     end
 
-    local message = 'user ' .. attacker:getUsername() .. ' (' .. logutils.GetLocation(attacker) ..  ') hit user ';
-    message = message .. target:getUsername() .. ' (' .. logutils.GetLocation(target) ..  ') with ';
-    message = message .. weapon:getFullType();
-    message = message .. ' damage ' .. string.format("%.3f", damage);
+    local message = "user "
+        .. attacker:getUsername()
+        .. " ("
+        .. logutils.GetLocation(attacker)
+        .. ") hit user "
+    message = message .. target:getUsername() .. " (" .. logutils.GetLocation(target) .. ") with "
+    message = message .. weapon:getFullType()
+    message = message .. " damage " .. string.format("%.3f", damage)
 
-    logutils.WriteLog(logutils.filemask.pvp, message);
+    logutils.WriteLog(logutils.filemask.pvp, message)
 end
 
 -- OnGameStart adds callback for OnGameStart global event.

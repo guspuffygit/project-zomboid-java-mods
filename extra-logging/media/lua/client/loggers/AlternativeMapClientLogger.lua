@@ -22,15 +22,24 @@ AlternativeMapClientLogger.WeaponHitThumpable = function(character, weapon, obje
         return
     end
 
-    local location = logutils.GetLocation(character);
+    local location = logutils.GetLocation(character)
 
-    local objLocation = logutils.GetLocation(object);
-    local sprite = object:getSprite();
+    local objLocation = logutils.GetLocation(object)
+    local sprite = object:getSprite()
     local spriteName = sprite:getName() or "undefined"
-    local objName = object:getName() or object:getObjectName();
+    local objName = object:getName() or object:getObjectName()
 
-    local message = logutils.GetLogLinePrefix(character, "destroyed " .. objName) .. " (" .. spriteName .. ") with " .. weapon:getName() .. " at " .. objLocation .. " (" .. location .. ")";
-    logutils.WriteLog(logutils.filemask.map_alternative, message);
+    local message = logutils.GetLogLinePrefix(character, "destroyed " .. objName)
+        .. " ("
+        .. spriteName
+        .. ") with "
+        .. weapon:getName()
+        .. " at "
+        .. objLocation
+        .. " ("
+        .. location
+        .. ")"
+    logutils.WriteLog(logutils.filemask.map_alternative, message)
 end
 
 Events.OnWeaponHitThumpable.Add(AlternativeMapClientLogger.WeaponHitThumpable)

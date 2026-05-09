@@ -5,7 +5,9 @@
 -- LogExtenderServer creates server side callback to write logs.
 --
 
-if isClient() then return end;
+if isClient() then
+    return
+end
 
 LogExtenderServer = {}
 
@@ -15,8 +17,8 @@ LogExtenderServer.onClientCommand = function(module, command, playerObj, args)
     end
 
     if command == "write" then
-        writeLog(args.mask, args.message);
+        writeLog(args.mask, args.message)
     end
 end
 
-Events.OnClientCommand.Add(LogExtenderServer.onClientCommand);
+Events.OnClientCommand.Add(LogExtenderServer.onClientCommand)

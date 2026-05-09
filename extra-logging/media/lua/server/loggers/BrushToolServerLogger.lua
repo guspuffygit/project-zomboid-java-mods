@@ -7,8 +7,8 @@
 
 local BrushToolServerLogger = {
     Original = {
-        ISBrushToolTileCursor_create = ISBrushToolTileCursor.create
-    }
+        ISBrushToolTileCursor_create = ISBrushToolTileCursor.create,
+    },
 }
 
 function BrushToolServerLogger.createBrushToolTileCursor(self, x, y, z, north, sprite)
@@ -19,13 +19,20 @@ function BrushToolServerLogger.createBrushToolTileCursor(self, x, y, z, north, s
     end
 
     local character = getPlayer()
-    local location = logutils.GetLocation(character);
-    local objLocation = tostring(x) .. ',' .. tostring(y) .. ',' .. tostring(y);
+    local location = logutils.GetLocation(character)
+    local objLocation = tostring(x) .. "," .. tostring(y) .. "," .. tostring(y)
     local texture = sprite
     local objName = "IsoThumpable"
 
-    local message = logutils.GetLogLinePrefix(character, "added " .. objName) .. " (" .. texture .. ") at " .. objLocation .. " (" .. location .. ")";
-    logutils.WriteLog(logutils.filemask.brushtool, message);
+    local message = logutils.GetLogLinePrefix(character, "added " .. objName)
+        .. " ("
+        .. texture
+        .. ") at "
+        .. objLocation
+        .. " ("
+        .. location
+        .. ")"
+    logutils.WriteLog(logutils.filemask.brushtool, message)
 end
 
-ISBrushToolTileCursor.create = BrushToolServerLogger.createBrushToolTileCursor;
+ISBrushToolTileCursor.create = BrushToolServerLogger.createBrushToolTileCursor

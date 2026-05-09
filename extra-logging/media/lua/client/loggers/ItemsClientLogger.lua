@@ -11,7 +11,7 @@ local ItemsClientLogger = {}
 -- DumpAdminItem writes admin actions with items.
 function ItemsClientLogger.DumpAdminItem(player, action, itemName, count, target)
     if player == nil then
-        return nil;
+        return nil
     end
 
     local message = player:getUsername() .. " " .. action
@@ -20,28 +20,30 @@ function ItemsClientLogger.DumpAdminItem(player, action, itemName, count, target
     message = message .. " in " .. target:getUsername() .. "'s"
     message = message .. " inventory"
 
-    logutils.WriteLog(logutils.filemask.admin, message);
+    logutils.WriteLog(logutils.filemask.admin, message)
 end
 
 -- OnAddItemsFromTable overrides original ISItemsListTable.onOptionMouseDown and
 -- ISItemsListTable.onAddItem and adds logs for additem actions.
 ItemsClientLogger.OnAddItemsFromTable = function()
-    local originalOnOptionMouseDown = ISItemsListTable.onOptionMouseDown;
-    local originalOnAddItem = ISItemsListTable.onAddItem;
-    local originalCreateChildren = ISItemsListTable.createChildren;
+    local originalOnOptionMouseDown = ISItemsListTable.onOptionMouseDown
+    local originalOnAddItem = ISItemsListTable.onAddItem
+    local originalCreateChildren = ISItemsListTable.createChildren
 
     ISItemsListTable.onOptionMouseDown = function(self, button, x, y)
-        originalOnOptionMouseDown(self, button, x, y);
+        originalOnOptionMouseDown(self, button, x, y)
 
         if button.internal == "ADDITEM" then
             return
         end
 
         local character = getSpecificPlayer(self.viewer.playerSelect.selected - 1)
-        if not character or character:isDead() then return end
+        if not character or character:isDead() then
+            return
+        end
 
-        local item = button.parent.datas.items[button.parent.datas.selected].item;
-        local count = 0;
+        local item = button.parent.datas.items[button.parent.datas.selected].item
+        local count = 0
 
         if button.internal == "ADDITEM1" then
             count = 1
@@ -62,7 +64,9 @@ ItemsClientLogger.OnAddItemsFromTable = function()
         originalOnAddItem(self, button, item)
 
         local character = getSpecificPlayer(self.viewer.playerSelect.selected - 1)
-        if not character or character:isDead() then return end
+        if not character or character:isDead() then
+            return
+        end
 
         local count = tonumber(button.parent.entry:getText())
 
@@ -73,7 +77,9 @@ ItemsClientLogger.OnAddItemsFromTable = function()
         ISItemsListTable.addItem(self, item)
 
         local character = getSpecificPlayer(self.viewer.playerSelect.selected - 1)
-        if not character or character:isDead() then return end
+        if not character or character:isDead() then
+            return
+        end
 
         ItemsClientLogger.DumpAdminItem(getPlayer(), "added", item:getFullName(), 1, character)
     end
@@ -88,19 +94,37 @@ end
 -- OnChangeItemsFromManageInventory overrides original ISPlayerStatsManageInvUI:onClick
 -- for adding logs for remove and get items actions.
 ItemsClientLogger.OnChangeItemsFromManageInventory = function()
-    local originalOnClick = ISPlayerStatsManageInvUI.onClick;
+    local originalOnClick = ISPlayerStatsManageInvUI.onClick
 
     ISPlayerStatsManageInvUI.onClick = function(self, button)
-        originalOnClick(self, button);
+        originalOnClick(self, button)
 
         if self.selectedItem then
             if button.internal == "REMOVE" then
-                ItemsClientLogger.DumpAdminItem(getPlayer(), "removed", self.selectedItem.item.fullType, 1, self.player);
+                ItemsClientLogger.DumpAdminItem(
+                    getPlayer(),
+                    "removed",
+                    self.selectedItem.item.fullType,
+                    1,
+                    self.player
+                )
             end
 
             if button.internal == "GETITEM" then
-                ItemsClientLogger.DumpAdminItem(getPlayer(), "removed", self.selectedItem.item.fullType, 1, self.player);
-                ItemsClientLogger.DumpAdminItem(getPlayer(), "added", self.selectedItem.item.fullType, 1, getPlayer());
+                ItemsClientLogger.DumpAdminItem(
+                    getPlayer(),
+                    "removed",
+                    self.selectedItem.item.fullType,
+                    1,
+                    self.player
+                )
+                ItemsClientLogger.DumpAdminItem(
+                    getPlayer(),
+                    "added",
+                    self.selectedItem.item.fullType,
+                    1,
+                    getPlayer()
+                )
             end
         end
     end

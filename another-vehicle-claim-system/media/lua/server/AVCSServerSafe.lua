@@ -1,32 +1,48 @@
 local function _toNumberOrNil(v)
-    if type(v) == "number" then return v end
+    if type(v) == "number" then
+        return v
+    end
     local n = tonumber(v)
-    if n == nil or n ~= n then return nil end
+    if n == nil or n ~= n then
+        return nil
+    end
     return n
 end
 
 local function _clampMin(n, minVal)
-    if n == nil then return nil end
-    if n < minVal then return minVal end
+    if n == nil then
+        return nil
+    end
+    if n < minVal then
+        return minVal
+    end
     return n
 end
 
 local function _fallbackWorkTimeFromPart(part)
-    if not part or not part.getTable then return nil end
+    if not part or not part.getTable then
+        return nil
+    end
     local tbl = part:getTable("uninstall")
-    if not tbl then return nil end
+    if not tbl then
+        return nil
+    end
     return _toNumberOrNil(tbl.time or tbl.workTime)
 end
 
 local function _sanitizeWorkTime(part, workTime)
     local n = _toNumberOrNil(workTime)
     n = _clampMin(n, 1)
-    if n then return n end
+    if n then
+        return n
+    end
 
     -- fallback "giusto": dallo script della parte
     n = _fallbackWorkTimeFromPart(part)
     n = _clampMin(n, 1)
-    if n then return n end
+    if n then
+        return n
+    end
 
     -- ultimo fallback: non enorme
     return 120

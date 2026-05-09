@@ -30,5 +30,8 @@ Events.OnCreatePlayer.Add(function(playerIndex, player)
     -- Force immediate max-weight recalculation from current Strength level and moodles
     player:getBodyDamage():UpdateStrength()
 
-    print("[SafeLogin] Cleared persisted cheats and recalculated carry capacity for " .. tostring(player:getUsername()))
+    print(
+        "[SafeLogin] Cleared persisted cheats and recalculated carry capacity for "
+            .. tostring(player:getUsername())
+    )
 end)

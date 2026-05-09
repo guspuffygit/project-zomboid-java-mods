@@ -7,7 +7,9 @@ local lifeboardWindow
 
 local function getTableLength(table)
     local count = 0
-    for _ in pairs(table) do count = count + 1 end
+    for _ in pairs(table) do
+        count = count + 1
+    end
     return count
 end
 
@@ -75,18 +77,28 @@ function ISLifeboardUI:initialise()
     self.zombieKillsList:addColumn(getText("IGUI_Lifeboard_ZombieKills"), LIST_WIDTH - 60)
     self:addChild(self.zombieKillsList)
 
-    self.no = ISButton:new(self.width - SIDE_MARGIN - btnWid, listY + listHeight + 5, btnWid, btnHgt, getText("UI_btn_close"), self, ISLifeboardUI.onClick)
+    self.no = ISButton:new(
+        self.width - SIDE_MARGIN - btnWid,
+        listY + listHeight + 5,
+        btnWid,
+        btnHgt,
+        getText("UI_btn_close"),
+        self,
+        ISLifeboardUI.onClick
+    )
     self.no.internal = "CLOSE"
     self.no.anchorTop = false
     self.no.anchorBottom = true
     self.no:initialise()
     self.no:instantiate()
-    self.no.borderColor = {r=0.4, g=0.4, b=0.4, a=0.9}
+    self.no.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 0.9 }
     self:addChild(self.no)
 end
 
 function ISLifeboardUI:populateList()
-    if not lifeboardWindow then return end
+    if not lifeboardWindow then
+        return
+    end
     self.daysList:clear()
     self.killsList:clear()
     self.zombieKillsList:clear()
@@ -105,7 +117,9 @@ function ISLifeboardUI:populateList()
             zombieKillsSorted[#zombieKillsSorted + 1] = player
         end
     end
-    table.sort(daysSorted, function(a, b) return (a.dayCount or 0) > (b.dayCount or 0) end)
+    table.sort(daysSorted, function(a, b)
+        return (a.dayCount or 0) > (b.dayCount or 0)
+    end)
     table.sort(killsSorted, function(a, b)
         local ak = a.killCount or 0
         local bk = b.killCount or 0
@@ -180,10 +194,19 @@ end
 
 local function drawRow(list, y, entry, valueText)
     local a = 0.9
-    list:drawRectBorder(0, (y), list:getWidth(), list.itemheight - 1, a, list.borderColor.r, list.borderColor.g, list.borderColor.b)
+    list:drawRectBorder(
+        0,
+        y,
+        list:getWidth(),
+        list.itemheight - 1,
+        a,
+        list.borderColor.r,
+        list.borderColor.g,
+        list.borderColor.b
+    )
 
     if list.selected == entry.index then
-        list:drawRect(0, (y), list:getWidth(), list.itemheight - 1, 0.3, 0.7, 0.35, 0.15)
+        list:drawRect(0, y, list:getWidth(), list.itemheight - 1, 0.3, 0.7, 0.35, 0.15)
     end
 
     list:drawText(tostring(entry.index), 3, y + 2, 1, 1, 1, a, list.font)
@@ -207,18 +230,45 @@ end
 
 function ISLifeboardUI:prerender()
     local headerY = 10
-    self:drawRect(0, 0, self.width, self.height, self.backgroundColor.a, self.backgroundColor.r, self.backgroundColor.g, self.backgroundColor.b)
-    self:drawRectBorder(0, 0, self.width, self.height, self.borderColor.a, self.borderColor.r, self.borderColor.g, self.borderColor.b)
+    self:drawRect(
+        0,
+        0,
+        self.width,
+        self.height,
+        self.backgroundColor.a,
+        self.backgroundColor.r,
+        self.backgroundColor.g,
+        self.backgroundColor.b
+    )
+    self:drawRectBorder(
+        0,
+        0,
+        self.width,
+        self.height,
+        self.borderColor.a,
+        self.borderColor.r,
+        self.borderColor.g,
+        self.borderColor.b
+    )
 
     local titleText = getText("IGUI_Lifeboard_Title")
-    self:drawText(titleText, self.width/2 - (getTextManager():MeasureStringX(UIFont.Small, titleText) / 2), headerY, 1,1,1,1, UIFont.Small)
+    self:drawText(
+        titleText,
+        self.width / 2 - (getTextManager():MeasureStringX(UIFont.Small, titleText) / 2),
+        headerY,
+        1,
+        1,
+        1,
+        1,
+        UIFont.Small
+    )
 end
 
 function ISLifeboardUI:onClick(button)
     if button.internal == "CLOSE" then
         self:close()
         lifeboardWindow = nil
-		lifeboardButton:setImage(lifeboardIcon)
+        lifeboardButton:setImage(lifeboardIcon)
     end
 end
 
@@ -228,9 +278,7 @@ function ISLifeboardUI:close()
     ISLifeboardUI.instance = nil
 end
 
-
 function ISLifeboardUI:new(x, y, width, height, admin)
-
     local o = {}
     o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
@@ -246,8 +294,8 @@ function ISLifeboardUI:new(x, y, width, height, admin)
         o:setX(o.x)
     end
 
-    o.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
-    o.backgroundColor = {r=0, g=0, b=0, a=0.8}
+    o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
+    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.8 }
     o.width = width
     o.height = height
     o.admin = admin
@@ -259,9 +307,7 @@ function ISLifeboardUI:new(x, y, width, height, admin)
 end
 
 local function onPressLifeboardBtn()
-
-	if not lifeboardWindow then
-
+    if not lifeboardWindow then
         local windowHeight = 100 + (getTableLength(LifeBoard.board) * 16)
 
         if windowHeight > 500 then
@@ -272,49 +318,56 @@ local function onPressLifeboardBtn()
         lifeboardWindow:initialise()
         lifeboardWindow:addToUIManager()
         lifeboardWindow:populateList()
-		lifeboardButton:setImage(lifeboardIconOn)
-	else
-		lifeboardWindow:close()
+        lifeboardButton:setImage(lifeboardIconOn)
+    else
+        lifeboardWindow:close()
         lifeboardWindow = nil
-		lifeboardButton:setImage(lifeboardIcon)
-	end
+        lifeboardButton:setImage(lifeboardIcon)
+    end
 end
 
 function ISEquippedItem:initialise()
-
-	local menu = OnISEquippedItemInitialize(self)
+    local menu = OnISEquippedItemInitialize(self)
 
     if getWorld():getGameMode() == "Multiplayer" then
-	local y = self.mapBtn:getY() + self.mapIconOff:getHeightOrig() + 270
-	local texWid = lifeboardIcon:getWidthOrig()
-	local texHgt = lifeboardIcon:getHeightOrig()
-	lifeboardButton = ISButton:new(5, y, texWid, texHgt, "", self, onPressLifeboardBtn)
+        local y = self.mapBtn:getY() + self.mapIconOff:getHeightOrig() + 270
+        local texWid = lifeboardIcon:getWidthOrig()
+        local texHgt = lifeboardIcon:getHeightOrig()
+        lifeboardButton = ISButton:new(5, y, texWid, texHgt, "", self, onPressLifeboardBtn)
 
-	lifeboardButton:setImage(lifeboardIcon)
-	lifeboardButton.internal = "Lifeboard"
-	lifeboardButton:initialise()
-	lifeboardButton:instantiate()
-	lifeboardButton:setDisplayBackground(false)
+        lifeboardButton:setImage(lifeboardIcon)
+        lifeboardButton.internal = "Lifeboard"
+        lifeboardButton:initialise()
+        lifeboardButton:instantiate()
+        lifeboardButton:setDisplayBackground(false)
 
-	lifeboardButton.borderColor = {r=1, g=1, b=1, a=0.1}
-	lifeboardButton:ignoreWidthChange()
-	lifeboardButton:ignoreHeightChange()
+        lifeboardButton.borderColor = { r = 1, g = 1, b = 1, a = 0.1 }
+        lifeboardButton:ignoreWidthChange()
+        lifeboardButton:ignoreHeightChange()
 
-	self:addChild(lifeboardButton)
-	self:setHeight(lifeboardButton:getBottom())
+        self:addChild(lifeboardButton)
+        self:setHeight(lifeboardButton:getBottom())
     end
 
-	return menu
+    return menu
 end
 
 local function onServerCommand(module, command, arguments)
-    if module ~= "Lifeboard" then return end
-    if command ~= "UpdateBoard" then return end
-    if not isClient() then return end
+    if module ~= "Lifeboard" then
+        return
+    end
+    if command ~= "UpdateBoard" then
+        return
+    end
+    if not isClient() then
+        return
+    end
 
     -- The server now sends the full board as args.board = [{displayName, dayCount, killCount, zombieKillCount}, ...]
     -- Rebuild LifeBoard.board in place so any captured references stay valid.
-    for k in pairs(LifeBoard.board) do LifeBoard.board[k] = nil end
+    for k in pairs(LifeBoard.board) do
+        LifeBoard.board[k] = nil
+    end
 
     if arguments and arguments.board then
         for i, entry in pairs(arguments.board) do

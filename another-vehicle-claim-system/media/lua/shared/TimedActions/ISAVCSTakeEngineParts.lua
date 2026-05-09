@@ -1,4 +1,4 @@
-require "TimedActions/ISBaseTimedAction"
+require("TimedActions/ISBaseTimedAction")
 
 ISAVCSTakeEngineParts = ISBaseTimedAction:derive("ISAVCSTakeEngineParts")
 
@@ -11,8 +11,12 @@ local function hasPermission(character, vehicle)
 end
 
 function ISAVCSTakeEngineParts:isValid()
-    if not self.part or not self.vehicle then return false end
-    if not hasPermission(self.character, self.vehicle) then return false end
+    if not self.part or not self.vehicle then
+        return false
+    end
+    if not hasPermission(self.character, self.vehicle) then
+        return false
+    end
     return true
 end
 
@@ -27,7 +31,9 @@ function ISAVCSTakeEngineParts:update()
 end
 
 function ISAVCSTakeEngineParts:start()
-    if isServer() then return end
+    if isServer() then
+        return
+    end
     if self.item then
         self.item:setJobType(getText("IGUI_TakeEngineParts"))
     end
@@ -49,12 +55,19 @@ function ISAVCSTakeEngineParts:perform()
 end
 
 function ISAVCSTakeEngineParts:complete()
-    if not isServer() then return true end
-    if not self.vehicle or not self.part then return false end
-    if not hasPermission(self.character, self.vehicle) then return false end
+    if not isServer() then
+        return true
+    end
+    if not self.vehicle or not self.part then
+        return false
+    end
+    if not hasPermission(self.character, self.vehicle) then
+        return false
+    end
 
     local cond = self.part:getCondition()
-    local skill = self.character:getPerkLevel(Perks.Mechanics) - self.vehicle:getScript():getEngineRepairLevel()
+    local skill = self.character:getPerkLevel(Perks.Mechanics)
+        - self.vehicle:getScript():getEngineRepairLevel()
     local condForPart = math.max(20 - skill, 5)
 
     local numParts = 0
@@ -74,7 +87,10 @@ function ISAVCSTakeEngineParts:complete()
 
     self.part:setCondition(0)
     self.vehicle:transmitPartCondition(self.part)
-    self.character:sendObjectChange(IsoObjectChange.MECHANIC_ACTION_DONE, { success = (numParts > 0) })
+    self.character:sendObjectChange(
+        IsoObjectChange.MECHANIC_ACTION_DONE,
+        { success = (numParts > 0) }
+    )
 
     if numParts > 0 then
         self.character:addMechanicsItem(
@@ -87,7 +103,9 @@ function ISAVCSTakeEngineParts:complete()
     end
 
     if not self.character:getMechanicsItem(self.vehicle:getMechanicalID() .. "3") then
-        self.character:getXp():AddXP(Perks.Mechanics, math.floor(cond / condForPart) / 2, false, false, true)
+        self.character
+            :getXp()
+            :AddXP(Perks.Mechanics, math.floor(cond / condForPart) / 2, false, false, true)
     end
     self.character:addMechanicsItem(
         self.vehicle:getMechanicalID() .. "3",

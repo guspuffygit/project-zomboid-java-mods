@@ -21,7 +21,9 @@ for i = 0, maxFrames - 1 do
 end
 
 local function doFoxyJumpscare()
-    if jumpscareActive then return end
+    if jumpscareActive then
+        return
+    end
 
     print("[JumpscareBan] BAN JUMPSCARE TRIGGERED!")
 
@@ -29,7 +31,15 @@ local function doFoxyJumpscare()
     if player and player:getSquare() then
         player:getSquare():playSound("JumpscareBanFoxyScream")
     else
-        getSoundManager():PlayWorldSoundWav("media/sound/fnaf-foxy-scream.ogg", false, 0, 0, 0, 1.0, true)
+        getSoundManager():PlayWorldSoundWav(
+            "media/sound/fnaf-foxy-scream.ogg",
+            false,
+            0,
+            0,
+            0,
+            1.0,
+            true
+        )
     end
 
     if not jumpscareUI then
@@ -50,11 +60,13 @@ local function doFoxyJumpscare()
 end
 
 local function tickJumpscare()
-    if not jumpscareActive then return end
+    if not jumpscareActive then
+        return
+    end
 
     jumpscareTimer = jumpscareTimer - 1
 
-    if (jumpscareTimer % animationSpeed == 0) then
+    if jumpscareTimer % animationSpeed == 0 then
         currentFrame = currentFrame + 1
         if currentFrame >= maxFrames then
             currentFrame = maxFrames - 1

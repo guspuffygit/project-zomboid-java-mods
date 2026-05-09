@@ -1,4 +1,4 @@
-require "TimedActions/ISBaseTimedAction"
+require("TimedActions/ISBaseTimedAction")
 
 -- By adding this action, we can utilize the base game log system
 ISAVCSVehicleUnclaimAction = ISBaseTimedAction:derive("ISAVCSVehicleUnclaimAction")
@@ -41,7 +41,7 @@ function ISAVCSVehicleUnclaimAction:perform()
         self.character:getInventory():AddItem("Base.AVCSClaimOrb")
     end
 
-	sendClientCommand(self.character, "AVCS", "unclaimVehicle", { AVCS.getVehicleID(self.vehicle) })
+    sendClientCommand(self.character, "AVCS", "unclaimVehicle", { AVCS.getVehicleID(self.vehicle) })
 
     if UdderlyVehicleRespawn and SandboxVars.AVCS.UdderlyRespawn then
         UdderlyVehicleRespawn.SpawnRandomVehicleSomewhere()
@@ -59,7 +59,9 @@ function ISAVCSVehicleUnclaimAction:new(character, vehicle)
     o.character = character
     o.vehicle = vehicle
     o.maxTime = 250
-    
-    if character:isTimedActionInstant() then o.maxTime = 1 end
+
+    if character:isTimedActionInstant() then
+        o.maxTime = 1
+    end
     return o
 end
