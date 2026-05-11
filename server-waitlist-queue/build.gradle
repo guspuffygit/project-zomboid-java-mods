@@ -1,5 +1,5 @@
 modInfo {
-	name = 'Server Waitlist Queue'
+	name = 'Server Waitlist Queue by Gus Puffy'
 	description = '''\
 		|Enables a server-side waitlist queue when the server is full.
 		|

@@ -5,7 +5,7 @@ application {
 }
 
 modInfo {
-	name = 'Map Meta SQLite'
+	name = 'Map Meta SQLite by Gus Puffy'
 	description = '''\
 		|Replaces map_meta.bin binary storage with a SQLite database for
 		|the world's meta grid state (rooms, buildings, safehouses, factions, etc.).
