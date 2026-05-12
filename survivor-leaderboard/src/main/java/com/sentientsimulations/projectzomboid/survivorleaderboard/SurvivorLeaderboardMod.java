@@ -77,6 +77,9 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
      */
     @SubscribeEvent
     public void onCharacterDeath(OnCharacterDeathEvent event) {
+        if (GameClient.client) {
+            return;
+        }
         if (event.character instanceof IsoAnimal) {
             return;
         }

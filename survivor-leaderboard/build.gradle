@@ -6,7 +6,7 @@ modInfo {
 	description = '''\
 		|Leaderboard for survivors
 		|
-		|Updated for 42.16.3
+		|Updated for 42.18.0
 		|
 		|Requires Storm mod loader.
 	'''.stripMargin('|')
