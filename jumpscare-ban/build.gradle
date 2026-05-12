@@ -4,12 +4,14 @@ modInfo {
 	workshopIdStage = ''
 	workshopIdProd = '3716129274'
 	description = '''\
-		|Plays the Withered Foxy jumpscare on a player's screen the moment they get banned,
-		|right before they are disconnected from the server.
-		|
-		|Inspired by Nipeng's "1/10000 Chance for Withered Foxy Jumpscare Every Second" mod.
-		|
-		|Requires Storm mod loader.
-	'''.stripMargin('|')
+		Plays the Withered Foxy jumpscare on a player's screen the moment they get banned,
+		right before they are disconnected from the server.
+		
+		Inspired by Nipeng's "1/10000 Chance for Withered Foxy Jumpscare Every Second" mod.
+		
+		Requires Storm mod loader.
+		
+		Tested and compatible with 42.18.0
+	'''.stripIndent()
 	modVersion = '1.0.0'
 }

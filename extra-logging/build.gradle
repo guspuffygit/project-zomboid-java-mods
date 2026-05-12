@@ -7,6 +7,8 @@ modInfo {
 		|Adds additional server-side logging capabilities for Project Zomboid.
 		|
 		|Requires Storm mod loader
+		|
+		|Tested and compatible with 42.18.0
 	'''.stripMargin('|')
 	modVersion = '1.0.0'
 }
