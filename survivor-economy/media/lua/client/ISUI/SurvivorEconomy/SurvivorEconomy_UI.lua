@@ -36,29 +36,41 @@ function ISSurvivorEconomyUI:initialise()
     self.balanceList:addColumn(getText("IGUI_SurvivorEconomy_Balance"), LIST_WIDTH - 120)
     self:addChild(self.balanceList)
 
-    self.no = ISButton:new(self.width - SIDE_MARGIN - btnWid, listY + listHeight + 5, btnWid, btnHgt, getText("UI_btn_close"), self, ISSurvivorEconomyUI.onClick)
+    self.no = ISButton:new(
+        self.width - SIDE_MARGIN - btnWid,
+        listY + listHeight + 5,
+        btnWid,
+        btnHgt,
+        getText("UI_btn_close"),
+        self,
+        ISSurvivorEconomyUI.onClick
+    )
     self.no.internal = "CLOSE"
     self.no.anchorTop = false
     self.no.anchorBottom = true
     self.no:initialise()
     self.no:instantiate()
-    self.no.borderColor = {r=0.4, g=0.4, b=0.4, a=0.9}
+    self.no.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 0.9 }
     self:addChild(self.no)
 end
 
 function ISSurvivorEconomyUI:populateList()
-    if not moneyWindow then return end
+    if not moneyWindow then
+        return
+    end
     self.balanceList:clear()
 
     local balances = SurvivorEconomy and SurvivorEconomy.balances or {}
     local sorted = {}
     for currency, balance in pairs(balances) do
-        sorted[#sorted + 1] = {currency = currency, balance = balance}
+        sorted[#sorted + 1] = { currency = currency, balance = balance }
     end
-    table.sort(sorted, function(a, b) return tostring(a.currency) < tostring(b.currency) end)
+    table.sort(sorted, function(a, b)
+        return tostring(a.currency) < tostring(b.currency)
+    end)
 
     if #sorted == 0 then
-        local entry = {currency = getText("IGUI_SurvivorEconomy_NoBalance"), balance = nil}
+        local entry = { currency = getText("IGUI_SurvivorEconomy_NoBalance"), balance = nil }
         self.balanceList:addItem(entry.currency, entry)
         return
     end
@@ -71,7 +83,16 @@ end
 function ISSurvivorEconomyUI:drawBalanceEntry(y, entry, alt)
     local list = self
     local a = 0.9
-    list:drawRectBorder(0, y, list:getWidth(), list.itemheight - 1, a, list.borderColor.r, list.borderColor.g, list.borderColor.b)
+    list:drawRectBorder(
+        0,
+        y,
+        list:getWidth(),
+        list.itemheight - 1,
+        a,
+        list.borderColor.r,
+        list.borderColor.g,
+        list.borderColor.b
+    )
 
     if list.selected == entry.index then
         list:drawRect(0, y, list:getWidth(), list.itemheight - 1, 0.3, 0.7, 0.35, 0.15)
@@ -90,11 +111,38 @@ end
 
 function ISSurvivorEconomyUI:prerender()
     local headerY = 10
-    self:drawRect(0, 0, self.width, self.height, self.backgroundColor.a, self.backgroundColor.r, self.backgroundColor.g, self.backgroundColor.b)
-    self:drawRectBorder(0, 0, self.width, self.height, self.borderColor.a, self.borderColor.r, self.borderColor.g, self.borderColor.b)
+    self:drawRect(
+        0,
+        0,
+        self.width,
+        self.height,
+        self.backgroundColor.a,
+        self.backgroundColor.r,
+        self.backgroundColor.g,
+        self.backgroundColor.b
+    )
+    self:drawRectBorder(
+        0,
+        0,
+        self.width,
+        self.height,
+        self.borderColor.a,
+        self.borderColor.r,
+        self.borderColor.g,
+        self.borderColor.b
+    )
 
     local titleText = getText("IGUI_SurvivorEconomy_Title")
-    self:drawText(titleText, self.width/2 - (getTextManager():MeasureStringX(UIFont.Small, titleText) / 2), headerY, 1,1,1,1, UIFont.Small)
+    self:drawText(
+        titleText,
+        self.width / 2 - (getTextManager():MeasureStringX(UIFont.Small, titleText) / 2),
+        headerY,
+        1,
+        1,
+        1,
+        1,
+        UIFont.Small
+    )
 end
 
 function ISSurvivorEconomyUI:onClick(button)
@@ -128,8 +176,8 @@ function ISSurvivorEconomyUI:new(x, y, width, height)
         o:setX(o.x)
     end
 
-    o.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
-    o.backgroundColor = {r=0, g=0, b=0, a=0.8}
+    o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
+    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.8 }
     o.width = width
     o.height = height
     o.moveWithMouse = true
@@ -168,7 +216,7 @@ function ISEquippedItem:initialise()
         moneyButton:initialise()
         moneyButton:instantiate()
         moneyButton:setDisplayBackground(false)
-        moneyButton.borderColor = {r=1, g=1, b=1, a=0.1}
+        moneyButton.borderColor = { r = 1, g = 1, b = 1, a = 0.1 }
         moneyButton:ignoreWidthChange()
         moneyButton:ignoreHeightChange()
 
@@ -188,9 +236,15 @@ local function onBalanceUpdated()
 end
 
 local function onServerCommand(module, command, arguments)
-    if module ~= "SurvivorEconomy" then return end
-    if command ~= "balanceUpdated" then return end
-    if not isClient() then return end
+    if module ~= "SurvivorEconomy" then
+        return
+    end
+    if command ~= "balanceUpdated" then
+        return
+    end
+    if not isClient() then
+        return
+    end
     onBalanceUpdated()
 end
 

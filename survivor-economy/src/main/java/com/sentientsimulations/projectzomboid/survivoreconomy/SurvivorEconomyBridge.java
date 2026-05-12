@@ -3,6 +3,10 @@ package com.sentientsimulations.projectzomboid.survivoreconomy;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.survivoreconomy.records.BountyResult;
+import com.sentientsimulations.projectzomboid.survivoreconomy.records.DiscordAccount;
+import com.sentientsimulations.projectzomboid.survivoreconomy.records.DiscordLink;
+import com.sentientsimulations.projectzomboid.survivoreconomy.records.DiscordLinkClaimResult;
+import com.sentientsimulations.projectzomboid.survivoreconomy.records.DiscordLinkCode;
 import com.sentientsimulations.projectzomboid.survivoreconomy.records.SqlExecutionResponse;
 import com.sentientsimulations.projectzomboid.survivoreconomy.records.TransactionDraft;
 import com.sentientsimulations.projectzomboid.survivoreconomy.records.TransactionEntry;
@@ -447,6 +451,362 @@ public final class SurvivorEconomyBridge {
         }
         args.rawset("balances", balancesTable);
         GameServer.sendServerCommand(player, MODULE, CMD_BALANCE_UPDATED, args);
+    }
+
+    /**
+     * Mint a new {@code DISCORD}-direction link code on behalf of a Discord user. The bot calls
+     * this when a user runs {@code /link} in chat; the returned code is shown to the user and later
+     * consumed by an in-game claim. Returns null on database error.
+     */
+    public static @Nullable DiscordLinkCode createDiscordLinkCode(
+            String discordId, @Nullable String discordUsername) {
+        if (discordId == null || discordId.isBlank()) {
+            return null;
+        }
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            DiscordLinkRepository repo = new DiscordLinkRepository(db.getConnection());
+            DiscordLinkCode code =
+                    repo.createDiscordCode(
+                            discordId,
+                            discordUsername,
+                            System.currentTimeMillis(),
+                            DiscordLinkRepository.DEFAULT_CODE_TTL_MS);
+            LOGGER.info(
+                    "[SurvivorEconomy] Minted DISCORD link code {} for discord_id={} expires_at_ms={}",
+                    code.code(),
+                    discordId,
+                    code.expiresAtMs());
+            return code;
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] Failed to mint discord link code for discord_id={}",
+                    discordId,
+                    e);
+            return null;
+        }
+    }
+
+    /**
+     * List the Discord ↔ Steam ID associations belonging to a Discord user. Returns an empty list
+     * on error or if no links exist.
+     */
+    public static List<DiscordLink> listDiscordLinks(String discordId) {
+        if (discordId == null || discordId.isBlank()) {
+            return List.of();
+        }
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            DiscordLinkRepository repo = new DiscordLinkRepository(db.getConnection());
+            return repo.listLinksForDiscord(discordId);
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] Failed to list discord links for discord_id={}",
+                    discordId,
+                    e);
+            return List.of();
+        }
+    }
+
+    /**
+     * List the Discord ↔ Steam ID associations attached to a given Steam ID. Inverse of {@link
+     * #listDiscordLinks(String)}. Returns an empty list on error or if no links exist.
+     */
+    public static List<DiscordLink> listDiscordLinksForSteamId(long steamId) {
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            DiscordLinkRepository repo = new DiscordLinkRepository(db.getConnection());
+            return repo.listLinksForSteamId(steamId);
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] Failed to list discord links for steam_id={}", steamId, e);
+            return List.of();
+        }
+    }
+
+    /**
+     * Atomically consume a {@code DISCORD}-direction code as the given player and create the
+     * resulting link. Returns the claim outcome — success carries the resolved Discord identity,
+     * failure carries a {@code FAILURE_*} reason.
+     */
+    public static DiscordLinkClaimResult claimDiscordCodeAsPlayer(
+            String code, long steamId, String username) {
+        if (code == null || code.isBlank() || username == null || username.isBlank()) {
+            return DiscordLinkClaimResult.failure(DiscordLinkClaimResult.FAILURE_NOT_FOUND);
+        }
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            DiscordLinkRepository repo = new DiscordLinkRepository(db.getConnection());
+            DiscordLinkClaimResult result =
+                    repo.consumeDiscordCodeAsPlayer(
+                            code, steamId, username, System.currentTimeMillis());
+            if (result.ok()) {
+                LOGGER.info(
+                        "[SurvivorEconomy] Claimed DISCORD link code {} discord_id={} player={} ({})",
+                        code,
+                        result.discordId(),
+                        username,
+                        steamId);
+            } else {
+                LOGGER.info(
+                        "[SurvivorEconomy] Rejected DISCORD link claim code={} reason={} player={} ({})",
+                        code,
+                        result.failureReason(),
+                        username,
+                        steamId);
+            }
+            return result;
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] claimDiscordCodeAsPlayer failed code={} player={} ({})",
+                    code,
+                    username,
+                    steamId,
+                    e);
+            return DiscordLinkClaimResult.failure(DiscordLinkClaimResult.FAILURE_NOT_FOUND);
+        }
+    }
+
+    public static final String DISCORD_TIP_TYPE = "DISCORD_TIP";
+    public static final String DISCORD_WALLET_CLAIM_TYPE = "DISCORD_WALLET_CLAIM";
+
+    static final String CMD_DISCORD_CLAIM_RESULT = "discordClaimResult";
+
+    /**
+     * Move funds from a sender's character bank account to a recipient Discord user's escrow
+     * wallet. Sender's character must be linked to {@code senderDiscordId} via {@code
+     * discord_links}. Recipient does not need to be linked at tip time — funds accumulate in escrow
+     * under the synthetic {@link DiscordPlayerIdentity} until they pull from it in-game.
+     *
+     * <p>Single {@code insertPair} → atomic debit/credit, identical guarantee to the
+     * player-to-player transfer path.
+     */
+    public static TransferResult processDiscordTip(
+            String senderDiscordId,
+            String fromUsername,
+            long fromSteamId,
+            String currency,
+            double amount,
+            String recipientDiscordId) {
+        if (senderDiscordId == null
+                || senderDiscordId.isBlank()
+                || recipientDiscordId == null
+                || recipientDiscordId.isBlank()
+                || fromUsername == null
+                || fromUsername.isBlank()
+                || currency == null
+                || currency.isBlank()) {
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+        if (!Double.isFinite(amount) || amount <= 0.0) {
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+        if (senderDiscordId.equals(recipientDiscordId)) {
+            return TransferResult.failure(TransferFailureReason.SAME_PLAYER);
+        }
+        DiscordPlayerIdentity recipient;
+        try {
+            recipient = DiscordPlayerIdentity.of(recipientDiscordId);
+        } catch (IllegalArgumentException e) {
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+        long nowMs = System.currentTimeMillis();
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            DiscordLinkRepository linkRepo = new DiscordLinkRepository(db.getConnection());
+            if (!linkRepo.isLinked(senderDiscordId, fromSteamId)) {
+                return TransferResult.failure(TransferFailureReason.SENDER_NOT_LINKED);
+            }
+            SurvivorEconomyBalanceRepository balanceRepo =
+                    new SurvivorEconomyBalanceRepository(db.getConnection());
+            double senderBalance =
+                    balanceRepo.getBalances(fromUsername, fromSteamId).getOrDefault(currency, 0.0);
+            if (senderBalance < amount) {
+                return TransferResult.failure(TransferFailureReason.INSUFFICIENT_BALANCE);
+            }
+            TransactionDraft fromDraft =
+                    TransactionDraft.basic(
+                            DISCORD_TIP_TYPE, nowMs, fromUsername, fromSteamId, currency, -amount);
+            TransactionDraft toDraft =
+                    TransactionDraft.basic(
+                            DISCORD_TIP_TYPE,
+                            nowMs,
+                            recipient.username(),
+                            recipient.steamId(),
+                            currency,
+                            amount);
+            SurvivorEconomyRepository txRepo = new SurvivorEconomyRepository(db.getConnection());
+            String eventId = txRepo.insertPair(fromDraft, toDraft);
+            LOGGER.info(
+                    "[SurvivorEconomy] Discord tip event={} from=discord:{}/{} ({}) to=discord:{} amount={} {}",
+                    eventId,
+                    senderDiscordId,
+                    fromUsername,
+                    fromSteamId,
+                    recipient.discordId(),
+                    amount,
+                    currency);
+            // Push balance update to sender's character if online; synthetic recipient never
+            // matches GameServer.Players, so the helper falls through silently.
+            pushBalanceUpdatedToOnlinePlayer(db.getConnection(), fromUsername, fromSteamId);
+            return TransferResult.success(eventId);
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] processDiscordTip failed sender={} recipient={}",
+                    senderDiscordId,
+                    recipientDiscordId,
+                    e);
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+    }
+
+    /**
+     * Pull funds from {@code fromDiscordId}'s escrow wallet into the claiming character's bank
+     * account. The character must be linked to that Discord ID. Inverse of {@link
+     * #processDiscordTip} — same {@code insertPair} primitive, just with the synthetic identity on
+     * the FROM side.
+     */
+    public static TransferResult claimDiscordWallet(
+            IsoPlayer claimer, String fromDiscordId, String currency, double amount) {
+        if (claimer == null
+                || fromDiscordId == null
+                || fromDiscordId.isBlank()
+                || currency == null
+                || currency.isBlank()) {
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+        if (!Double.isFinite(amount) || amount <= 0.0) {
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+        String username = claimer.getUsername();
+        long steamId = claimer.getSteamID();
+        if (username == null) {
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+        DiscordPlayerIdentity wallet;
+        try {
+            wallet = DiscordPlayerIdentity.of(fromDiscordId);
+        } catch (IllegalArgumentException e) {
+            sendDiscordClaimResultCommand(
+                    claimer, false, TransferFailureReason.INVALID_AMOUNT, currency, 0.0);
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+        long nowMs = System.currentTimeMillis();
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            DiscordLinkRepository linkRepo = new DiscordLinkRepository(db.getConnection());
+            if (!linkRepo.isLinked(fromDiscordId, steamId)) {
+                sendDiscordClaimResultCommand(
+                        claimer, false, TransferFailureReason.NOT_LINKED, currency, 0.0);
+                return TransferResult.failure(TransferFailureReason.NOT_LINKED);
+            }
+            SurvivorEconomyBalanceRepository balanceRepo =
+                    new SurvivorEconomyBalanceRepository(db.getConnection());
+            double walletBalance =
+                    balanceRepo
+                            .getBalances(wallet.username(), wallet.steamId())
+                            .getOrDefault(currency, 0.0);
+            if (walletBalance < amount) {
+                sendDiscordClaimResultCommand(
+                        claimer, false, TransferFailureReason.INSUFFICIENT_BALANCE, currency, 0.0);
+                return TransferResult.failure(TransferFailureReason.INSUFFICIENT_BALANCE);
+            }
+            TransactionDraft fromDraft =
+                    TransactionDraft.basic(
+                            DISCORD_WALLET_CLAIM_TYPE,
+                            nowMs,
+                            wallet.username(),
+                            wallet.steamId(),
+                            currency,
+                            -amount);
+            TransactionDraft toDraft =
+                    TransactionDraft.basic(
+                            DISCORD_WALLET_CLAIM_TYPE, nowMs, username, steamId, currency, amount);
+            SurvivorEconomyRepository txRepo = new SurvivorEconomyRepository(db.getConnection());
+            String eventId = txRepo.insertPair(fromDraft, toDraft);
+            LOGGER.info(
+                    "[SurvivorEconomy] Discord wallet claim event={} discord={} player={} ({}) amount={} {}",
+                    eventId,
+                    fromDiscordId,
+                    username,
+                    steamId,
+                    amount,
+                    currency);
+            pushBalanceUpdated(claimer, db.getConnection());
+            sendDiscordClaimResultCommand(claimer, true, null, currency, amount);
+            return TransferResult.success(eventId);
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] claimDiscordWallet failed discord={} player={} ({})",
+                    fromDiscordId,
+                    username,
+                    steamId,
+                    e);
+            sendDiscordClaimResultCommand(
+                    claimer, false, TransferFailureReason.INVALID_AMOUNT, currency, 0.0);
+            return TransferResult.failure(TransferFailureReason.INVALID_AMOUNT);
+        }
+    }
+
+    /**
+     * Every (character × currency) balance reachable through any Steam ID linked to {@code
+     * discordId}, with positive balance only. Drives the {@code /tip} account picker on the bot
+     * side.
+     */
+    public static List<DiscordAccount> listDiscordAccounts(String discordId) {
+        if (discordId == null || discordId.isBlank()) {
+            return List.of();
+        }
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            DiscordLinkRepository repo = new DiscordLinkRepository(db.getConnection());
+            return repo.listAccountsForDiscord(discordId);
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] Failed to list discord accounts for discord_id={}",
+                    discordId,
+                    e);
+            return List.of();
+        }
+    }
+
+    /**
+     * Per-currency escrow wallet balances held under the Discord user's synthetic identity. Returns
+     * an empty map if the wallet has never received a tip.
+     */
+    public static Map<String, Double> getDiscordWalletBalances(String discordId) {
+        if (discordId == null || discordId.isBlank()) {
+            return Map.of();
+        }
+        DiscordPlayerIdentity identity;
+        try {
+            identity = DiscordPlayerIdentity.of(discordId);
+        } catch (IllegalArgumentException e) {
+            return Map.of();
+        }
+        try (SurvivorEconomyDatabase db = new SurvivorEconomyDatabase(getDbPath())) {
+            SurvivorEconomyBalanceRepository balanceRepo =
+                    new SurvivorEconomyBalanceRepository(db.getConnection());
+            return balanceRepo.getBalances(identity.username(), identity.steamId());
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[SurvivorEconomy] Failed to load discord wallet for discord_id={}",
+                    discordId,
+                    e);
+            return Map.of();
+        }
+    }
+
+    private static void sendDiscordClaimResultCommand(
+            IsoPlayer player,
+            boolean ok,
+            @Nullable TransferFailureReason reason,
+            String currency,
+            double amount) {
+        if (player == null) {
+            return;
+        }
+        KahluaTable args = LuaManager.platform.newTable();
+        args.rawset("ok", ok);
+        if (reason != null) {
+            args.rawset("reason", reason.name());
+        }
+        args.rawset("currency", currency);
+        args.rawset("amount", amount);
+        GameServer.sendServerCommand(player, MODULE, CMD_DISCORD_CLAIM_RESULT, args);
     }
 
     public static Map<String, Double> getBalances(String username, long steamId) {

@@ -96,6 +96,55 @@ public class SurvivorEconomyDatabase implements AutoCloseable {
             "CREATE INDEX IF NOT EXISTS idx_econ_bal_steamid"
                     + " ON economy_balance (player_steamid)";
 
+    // ---- discord_links ----
+    // Established Discord ↔ Steam ID associations. One Discord user may link multiple Steam IDs;
+    // the PK enforces no duplicate (discord, steam) pairs. discord_username is informational and
+    // refreshed on re-link. Source of truth — the beacon bot writes through this table via the
+    // mod's HTTP API rather than persisting links locally.
+
+    private static final String CREATE_DISCORD_LINKS =
+            """
+            CREATE TABLE IF NOT EXISTS discord_links (
+                discord_id        TEXT    NOT NULL,
+                discord_username  TEXT,
+                steamid           INTEGER NOT NULL,
+                created_at_ms     INTEGER NOT NULL,
+                updated_at_ms     INTEGER NOT NULL,
+                PRIMARY KEY (discord_id, steamid)
+            )""";
+
+    private static final String CREATE_DISCORD_LINKS_STEAMID_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_discord_links_steamid" + " ON discord_links (steamid)";
+
+    // ---- discord_link_codes ----
+    // Pending claim codes. direction = 'INGAME' means the code was minted from a player's in-game
+    // action and the consumer is a Discord user (steamid + username are set at creation, discord_id
+    // + discord_username at consume). direction = 'DISCORD' is the inverse: discord_id +
+    // discord_username at creation, steamid + username at consume. consumed_at_ms is null until
+    // claimed; expired codes are kept for audit.
+
+    private static final String CREATE_DISCORD_LINK_CODES =
+            """
+            CREATE TABLE IF NOT EXISTS discord_link_codes (
+                code              TEXT    PRIMARY KEY,
+                direction         TEXT    NOT NULL CHECK(direction IN ('INGAME','DISCORD')),
+                discord_id        TEXT,
+                discord_username  TEXT,
+                steamid           INTEGER,
+                username          TEXT,
+                created_at_ms     INTEGER NOT NULL,
+                expires_at_ms     INTEGER NOT NULL,
+                consumed_at_ms    INTEGER
+            )""";
+
+    private static final String CREATE_DISCORD_LINK_CODES_DISCORD_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_discord_link_codes_discord"
+                    + " ON discord_link_codes (discord_id)";
+
+    private static final String CREATE_DISCORD_LINK_CODES_STEAMID_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_discord_link_codes_steamid"
+                    + " ON discord_link_codes (steamid)";
+
     private final Connection connection;
 
     public SurvivorEconomyDatabase(String dbPath) throws SQLException {
@@ -122,6 +171,13 @@ public class SurvivorEconomyDatabase implements AutoCloseable {
             // economy_balance
             stmt.execute(CREATE_BALANCE);
             stmt.execute(CREATE_BALANCE_STEAMID_INDEX);
+            // discord_links
+            stmt.execute(CREATE_DISCORD_LINKS);
+            stmt.execute(CREATE_DISCORD_LINKS_STEAMID_INDEX);
+            // discord_link_codes
+            stmt.execute(CREATE_DISCORD_LINK_CODES);
+            stmt.execute(CREATE_DISCORD_LINK_CODES_DISCORD_INDEX);
+            stmt.execute(CREATE_DISCORD_LINK_CODES_STEAMID_INDEX);
         }
     }
 

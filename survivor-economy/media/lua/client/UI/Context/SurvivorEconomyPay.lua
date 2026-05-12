@@ -5,14 +5,22 @@ end
 local MODULE = "SurvivorEconomy"
 
 local function readMaxDistance()
-    if SandboxVars and SandboxVars.SurvivorEconomy and SandboxVars.SurvivorEconomy.PlayerTransferMaxDistance then
+    if
+        SandboxVars
+        and SandboxVars.SurvivorEconomy
+        and SandboxVars.SurvivorEconomy.PlayerTransferMaxDistance
+    then
         return SandboxVars.SurvivorEconomy.PlayerTransferMaxDistance
     end
     return 4
 end
 
 local function readAllowTransfers()
-    if SandboxVars and SandboxVars.SurvivorEconomy and SandboxVars.SurvivorEconomy.AllowPlayerTransfers ~= nil then
+    if
+        SandboxVars
+        and SandboxVars.SurvivorEconomy
+        and SandboxVars.SurvivorEconomy.AllowPlayerTransfers ~= nil
+    then
         return SandboxVars.SurvivorEconomy.AllowPlayerTransfers
     end
     return true
@@ -64,7 +72,8 @@ end
 
 local function promptForAmount(targetPlayer, currency, balance)
     local displayName = targetPlayer:getDisplayName() or targetPlayer:getUsername()
-    local title = getText("IGUI_SurvivorEconomy_ContextTransferAmount", displayName, formatBalance(balance))
+    local title =
+        getText("IGUI_SurvivorEconomy_ContextTransferAmount", displayName, formatBalance(balance))
     local modal = ISTextBox:new(0, 0, 280, 120, title, "", nil, function(target, button)
         if button.internal ~= "OK" then
             return
@@ -96,7 +105,9 @@ local function buildSubMenu(contextMenu, targetPlayer, displayName)
             entries[#entries + 1] = { currency = currency, balance = balance }
         end
     end
-    table.sort(entries, function(a, b) return tostring(a.currency) < tostring(b.currency) end)
+    table.sort(entries, function(a, b)
+        return tostring(a.currency) < tostring(b.currency)
+    end)
 
     if #entries == 0 then
         local noFunds = subMenu:addOption(getText("IGUI_SurvivorEconomy_ContextNoFunds"), nil, nil)
@@ -135,7 +146,11 @@ local function onFillContext(playerNum, contextMenu, worldobjects, test)
     local distSq = localPlayer:DistToSquared(target)
 
     if distSq > (maxDistance * maxDistance) then
-        local option = contextMenu:addOption(getText("IGUI_SurvivorEconomy_ContextTransfer", displayName), nil, nil)
+        local option = contextMenu:addOption(
+            getText("IGUI_SurvivorEconomy_ContextTransfer", displayName),
+            nil,
+            nil
+        )
         option.notAvailable = true
         local tooltip = ISToolTip:new()
         tooltip:initialise()

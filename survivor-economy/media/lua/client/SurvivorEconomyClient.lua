@@ -1,4 +1,6 @@
-if isServer() then return end
+if isServer() then
+    return
+end
 
 local MODULE = "SurvivorEconomy"
 
@@ -89,7 +91,8 @@ local function onServerCommand(module, command, args)
             return
         end
         local rendered = math.floor(amount + 0.5)
-        local message = getText("UI_SurvivorEconomy_TransferSent", tostring(rendered), tostring(other))
+        local message =
+            getText("UI_SurvivorEconomy_TransferSent", tostring(rendered), tostring(other))
         local p = getSpecificPlayer(0)
         if p ~= nil then
             p:setHaloNote(message, 80, 160, 255, HALO_DURATION)
@@ -104,7 +107,8 @@ local function onServerCommand(module, command, args)
             return
         end
         local rendered = math.floor(amount + 0.5)
-        local message = getText("UI_SurvivorEconomy_TransferReceived", tostring(rendered), tostring(other))
+        local message =
+            getText("UI_SurvivorEconomy_TransferReceived", tostring(rendered), tostring(other))
         local p = getSpecificPlayer(0)
         if p ~= nil then
             p:setHaloNote(message, 80, 220, 80, HALO_DURATION)

@@ -26,6 +26,7 @@ public class SurvivorEconomyMod implements ZomboidMod {
                 SurvivorEconomyMod.class.getCanonicalName());
         StormEventDispatcher.registerEventHandler(this);
         StormEventDispatcher.registerEventHandler(SurvivorEconomyEndpoints.class);
+        StormEventDispatcher.registerEventHandler(DiscordLinkEndpoints.class);
         LOGGER.info("[SurvivorEconomy] Event handlers registered successfully");
     }
 
@@ -89,6 +90,10 @@ public class SurvivorEconomyMod implements ZomboidMod {
         }
         if (CMD_TRANSFER_TO_PLAYER.equals(command)) {
             handleTransferToPlayer(player, event.getArgs().orElse(null));
+            return;
+        }
+        if (CMD_CLAIM_DISCORD_WALLET.equals(command)) {
+            handleClaimDiscordWallet(player, event.getArgs().orElse(null));
         }
     }
 
@@ -111,6 +116,24 @@ public class SurvivorEconomyMod implements ZomboidMod {
         }
         SurvivorEconomyBridge.processTransfer(
                 sender, targetUsername, targetSteamId, currency, amount);
+    }
+
+    private static void handleClaimDiscordWallet(IsoPlayer claimer, KahluaTable args) {
+        if (args == null) {
+            return;
+        }
+        Object discordIdObj = args.rawget("fromDiscordId");
+        Object currencyObj = args.rawget("currency");
+        Object amountObj = args.rawget("amount");
+        if (!(discordIdObj instanceof String fromDiscordId)
+                || !(currencyObj instanceof String currency)) {
+            return;
+        }
+        Double amount = readDouble(amountObj);
+        if (amount == null) {
+            return;
+        }
+        SurvivorEconomyBridge.claimDiscordWallet(claimer, fromDiscordId, currency, amount);
     }
 
     private static @Nullable Long readLong(Object value) {
@@ -143,6 +166,7 @@ public class SurvivorEconomyMod implements ZomboidMod {
 
     static final String CMD_REQUEST_BALANCE = "requestBalance";
     static final String CMD_TRANSFER_TO_PLAYER = "transferToPlayer";
+    static final String CMD_CLAIM_DISCORD_WALLET = "claimDiscordWallet";
 
     /**
      * Server-side zombie-kill hook — Storm mirror of Lua {@code Events.OnZombieDead.Add}, with

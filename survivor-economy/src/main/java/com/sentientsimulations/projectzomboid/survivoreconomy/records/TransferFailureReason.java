@@ -11,5 +11,9 @@ public enum TransferFailureReason {
     INSUFFICIENT_BALANCE,
     TARGET_OFFLINE,
     OUT_OF_RANGE,
-    DISABLED
+    DISABLED,
+    /** Sender's chosen character is not linked to their Discord account. */
+    SENDER_NOT_LINKED,
+    /** The claiming character is not linked to the Discord wallet being pulled from. */
+    NOT_LINKED
 }
