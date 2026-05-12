@@ -563,10 +563,84 @@ public final class SurvivorEconomyBridge {
         }
     }
 
+    /**
+     * Handle a client-initiated link claim. Consumes the code on behalf of {@code player}, pushes a
+     * {@code discordLinkClaimResult} back with the outcome, and (on success) follows with a fresh
+     * {@code discordLinksUpdated} so the client UI can re-render in the linked state.
+     */
+    public static void processDiscordLinkClaim(IsoPlayer player, String code) {
+        if (player == null) {
+            return;
+        }
+        String username = player.getUsername();
+        if (username == null) {
+            sendDiscordLinkClaimResult(player, false, "NOT_FOUND", null, null);
+            return;
+        }
+        DiscordLinkClaimResult result =
+                claimDiscordCodeAsPlayer(code, player.getSteamID(), username);
+        if (!result.ok()) {
+            sendDiscordLinkClaimResult(player, false, result.failureReason(), null, null);
+            return;
+        }
+        sendDiscordLinkClaimResult(
+                player, true, null, result.discordId(), result.discordUsername());
+        pushDiscordLinksUpdated(player);
+    }
+
+    /**
+     * Read the player's current Discord links (by Steam ID) and push a {@code discordLinksUpdated}
+     * server→client command. Always pushes, even when empty, so the client can clear its cache.
+     */
+    public static void pushDiscordLinksUpdated(IsoPlayer player) {
+        if (player == null) {
+            return;
+        }
+        List<DiscordLink> links = listDiscordLinksForSteamId(player.getSteamID());
+        KahluaTable args = LuaManager.platform.newTable();
+        KahluaTable list = LuaManager.platform.newTable();
+        for (int i = 0; i < links.size(); i++) {
+            DiscordLink link = links.get(i);
+            KahluaTable entry = LuaManager.platform.newTable();
+            entry.rawset("discordId", link.discordId());
+            if (link.discordUsername() != null) {
+                entry.rawset("discordUsername", link.discordUsername());
+            }
+            list.rawset((double) (i + 1), entry);
+        }
+        args.rawset("links", list);
+        GameServer.sendServerCommand(player, MODULE, CMD_DISCORD_LINKS_UPDATED, args);
+    }
+
+    private static void sendDiscordLinkClaimResult(
+            IsoPlayer player,
+            boolean ok,
+            @Nullable String reason,
+            @Nullable String discordId,
+            @Nullable String discordUsername) {
+        if (player == null) {
+            return;
+        }
+        KahluaTable args = LuaManager.platform.newTable();
+        args.rawset("ok", ok);
+        if (reason != null) {
+            args.rawset("reason", reason);
+        }
+        if (discordId != null) {
+            args.rawset("discordId", discordId);
+        }
+        if (discordUsername != null) {
+            args.rawset("discordUsername", discordUsername);
+        }
+        GameServer.sendServerCommand(player, MODULE, CMD_DISCORD_LINK_CLAIM_RESULT, args);
+    }
+
     public static final String DISCORD_TIP_TYPE = "DISCORD_TIP";
     public static final String DISCORD_WALLET_CLAIM_TYPE = "DISCORD_WALLET_CLAIM";
 
     static final String CMD_DISCORD_CLAIM_RESULT = "discordClaimResult";
+    static final String CMD_DISCORD_LINK_CLAIM_RESULT = "discordLinkClaimResult";
+    static final String CMD_DISCORD_LINKS_UPDATED = "discordLinksUpdated";
 
     /**
      * Move funds from a sender's character bank account to a recipient Discord user's escrow

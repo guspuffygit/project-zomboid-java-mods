@@ -8,6 +8,15 @@ local HALO_DURATION = 300
 
 SurvivorEconomy = SurvivorEconomy or {}
 SurvivorEconomy.balances = SurvivorEconomy.balances or {}
+SurvivorEconomy.discordLinks = SurvivorEconomy.discordLinks or {}
+
+---@return boolean
+function SurvivorEconomy.isDiscordLinked()
+    for _ in pairs(SurvivorEconomy.discordLinks) do
+        return true
+    end
+    return false
+end
 
 ---Returns the cached balance for the given currency, or 0 if unknown. The cache is populated
 ---by the first {@code balanceUpdated} push from the server (in response to the
@@ -124,6 +133,18 @@ local function onServerCommand(module, command, args)
         if p ~= nil then
             p:setHaloNote(message, 220, 80, 80, HALO_DURATION)
         end
+    elseif command == "discordLinksUpdated" then
+        SurvivorEconomy.discordLinks = {}
+        if args ~= nil and args.links ~= nil then
+            for _, link in pairs(args.links) do
+                if link ~= nil and link.discordId ~= nil then
+                    SurvivorEconomy.discordLinks[link.discordId] = {
+                        discordId = link.discordId,
+                        discordUsername = link.discordUsername,
+                    }
+                end
+            end
+        end
     end
 end
 
@@ -142,6 +163,7 @@ local function requestInitialBalance()
 
     Events.OnTick.Remove(requestInitialBalance)
     sendClientCommand(player, MODULE, "requestBalance", {})
+    sendClientCommand(player, MODULE, "requestDiscordLinks", {})
 end
 
 Events.OnTick.Add(requestInitialBalance)

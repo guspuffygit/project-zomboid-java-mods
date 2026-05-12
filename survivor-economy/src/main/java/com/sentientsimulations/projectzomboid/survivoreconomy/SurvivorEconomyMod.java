@@ -94,7 +94,26 @@ public class SurvivorEconomyMod implements ZomboidMod {
         }
         if (CMD_CLAIM_DISCORD_WALLET.equals(command)) {
             handleClaimDiscordWallet(player, event.getArgs().orElse(null));
+            return;
         }
+        if (CMD_REQUEST_DISCORD_LINKS.equals(command)) {
+            SurvivorEconomyBridge.pushDiscordLinksUpdated(player);
+            return;
+        }
+        if (CMD_CLAIM_DISCORD_LINK.equals(command)) {
+            handleClaimDiscordLink(player, event.getArgs().orElse(null));
+        }
+    }
+
+    private static void handleClaimDiscordLink(IsoPlayer player, KahluaTable args) {
+        if (args == null) {
+            return;
+        }
+        Object codeObj = args.rawget("code");
+        if (!(codeObj instanceof String code)) {
+            return;
+        }
+        SurvivorEconomyBridge.processDiscordLinkClaim(player, code);
     }
 
     private static void handleTransferToPlayer(IsoPlayer sender, KahluaTable args) {
@@ -167,6 +186,8 @@ public class SurvivorEconomyMod implements ZomboidMod {
     static final String CMD_REQUEST_BALANCE = "requestBalance";
     static final String CMD_TRANSFER_TO_PLAYER = "transferToPlayer";
     static final String CMD_CLAIM_DISCORD_WALLET = "claimDiscordWallet";
+    static final String CMD_REQUEST_DISCORD_LINKS = "requestDiscordLinks";
+    static final String CMD_CLAIM_DISCORD_LINK = "claimDiscordLink";
 
     /**
      * Server-side zombie-kill hook — Storm mirror of Lua {@code Events.OnZombieDead.Add}, with

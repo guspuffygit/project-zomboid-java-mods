@@ -1,3 +1,5 @@
+require("ISUI/SurvivorEconomy/SurvivorEconomy_LinkUI")
+
 local OnISEquippedItemInitialize = ISEquippedItem.initialise
 
 local moneyIcon = getTexture("media/ui/Money_Icon_Off.png")
@@ -8,37 +10,21 @@ local moneyWindow
 ISSurvivorEconomyUI = ISPanel:derive("ISSurvivorEconomyUI")
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
+local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
 
-local LIST_WIDTH = 280
 local SIDE_MARGIN = 10
-local WINDOW_WIDTH = LIST_WIDTH + (SIDE_MARGIN * 2)
-local WINDOW_HEIGHT = 220
+local LINE_SPACING = 4
+local SECTION_SPACING = 12
+local WINDOW_WIDTH = 260
 
 function ISSurvivorEconomyUI:initialise()
     ISPanel.initialise(self)
     local btnWid = 80
-    local btnHgt = FONT_HGT_SMALL + 2
-
-    local headerY = 10
-    local listY = headerY + FONT_HGT_SMALL + 6
-    local listHeight = self.height - (5 + btnHgt + 5) - listY
-
-    self.balanceList = ISScrollingListBox:new(SIDE_MARGIN, listY, LIST_WIDTH, listHeight)
-    self.balanceList:initialise()
-    self.balanceList:instantiate()
-    self.balanceList.itemheight = FONT_HGT_SMALL + 2 * 2
-    self.balanceList.selected = 0
-    self.balanceList.joypadParent = self
-    self.balanceList.font = UIFont.NewSmall
-    self.balanceList.doDrawItem = self.drawBalanceEntry
-    self.balanceList.drawBorder = true
-    self.balanceList:addColumn(getText("IGUI_SurvivorEconomy_Currency"), 0)
-    self.balanceList:addColumn(getText("IGUI_SurvivorEconomy_Balance"), LIST_WIDTH - 120)
-    self:addChild(self.balanceList)
+    local btnHgt = FONT_HGT_SMALL + 6
 
     self.no = ISButton:new(
         self.width - SIDE_MARGIN - btnWid,
-        listY + listHeight + 5,
+        self.height - SIDE_MARGIN - btnHgt,
         btnWid,
         btnHgt,
         getText("UI_btn_close"),
@@ -52,14 +38,26 @@ function ISSurvivorEconomyUI:initialise()
     self.no:instantiate()
     self.no.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 0.9 }
     self:addChild(self.no)
+
+    self.linkBtn = ISButton:new(
+        SIDE_MARGIN,
+        0,
+        self.width - (SIDE_MARGIN * 2),
+        btnHgt,
+        getText("IGUI_SurvivorEconomy_LinkDiscord"),
+        self,
+        ISSurvivorEconomyUI.onClick
+    )
+    self.linkBtn.internal = "LINK"
+    self.linkBtn:initialise()
+    self.linkBtn:instantiate()
+    self.linkBtn.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 0.9 }
+    self:addChild(self.linkBtn)
+
+    self.entries = {}
 end
 
-function ISSurvivorEconomyUI:populateList()
-    if not moneyWindow then
-        return
-    end
-    self.balanceList:clear()
-
+function ISSurvivorEconomyUI:refresh()
     local balances = SurvivorEconomy and SurvivorEconomy.balances or {}
     local sorted = {}
     for currency, balance in pairs(balances) do
@@ -68,49 +66,32 @@ function ISSurvivorEconomyUI:populateList()
     table.sort(sorted, function(a, b)
         return tostring(a.currency) < tostring(b.currency)
     end)
+    self.entries = sorted
 
-    if #sorted == 0 then
-        local entry = { currency = getText("IGUI_SurvivorEconomy_NoBalance"), balance = nil }
-        self.balanceList:addItem(entry.currency, entry)
-        return
-    end
+    local linked = SurvivorEconomy and SurvivorEconomy.isDiscordLinked()
+    self.linkBtn:setVisible(not linked)
 
-    for _, entry in ipairs(sorted) do
-        self.balanceList:addItem(entry.currency, entry)
-    end
-end
+    local titleHgt = FONT_HGT_MEDIUM + 14
+    local lineCount = #sorted > 0 and #sorted or 1
+    local linesHgt = lineCount * (FONT_HGT_SMALL + LINE_SPACING)
+    local btnHgt = FONT_HGT_SMALL + 6
+    local discordHgt = linked and (FONT_HGT_SMALL + LINE_SPACING) or btnHgt
+    local totalHgt = titleHgt
+        + linesHgt
+        + SECTION_SPACING
+        + discordHgt
+        + SECTION_SPACING
+        + btnHgt
+        + SIDE_MARGIN
+    self:setHeight(totalHgt)
 
-function ISSurvivorEconomyUI:drawBalanceEntry(y, entry, alt)
-    local list = self
-    local a = 0.9
-    list:drawRectBorder(
-        0,
-        y,
-        list:getWidth(),
-        list.itemheight - 1,
-        a,
-        list.borderColor.r,
-        list.borderColor.g,
-        list.borderColor.b
-    )
-
-    if list.selected == entry.index then
-        list:drawRect(0, y, list:getWidth(), list.itemheight - 1, 0.3, 0.7, 0.35, 0.15)
-    end
-
-    local item = entry.item
-    local balanceText = ""
-    if item.balance ~= nil then
-        balanceText = "$" .. tostring(math.floor((item.balance or 0) + 0.5))
-    end
-    list:drawText(tostring(item.currency or ""), 3, y + 2, 1, 1, 1, a, list.font)
-    list:drawText(balanceText, list.columns[2].size + 3, y + 2, 1, 1, 1, a, list.font)
-
-    return y + list.itemheight
+    local discordY = titleHgt + linesHgt + SECTION_SPACING
+    self.linkBtn:setY(discordY)
+    self.discordTextY = discordY
+    self.no:setY(self.height - SIDE_MARGIN - btnHgt)
 end
 
 function ISSurvivorEconomyUI:prerender()
-    local headerY = 10
     self:drawRect(
         0,
         0,
@@ -133,16 +114,50 @@ function ISSurvivorEconomyUI:prerender()
     )
 
     local titleText = getText("IGUI_SurvivorEconomy_Title")
+    local titleY = 10
     self:drawText(
         titleText,
-        self.width / 2 - (getTextManager():MeasureStringX(UIFont.Small, titleText) / 2),
-        headerY,
+        self.width / 2 - (getTextManager():MeasureStringX(UIFont.Medium, titleText) / 2),
+        titleY,
         1,
         1,
         1,
         1,
-        UIFont.Small
+        UIFont.Medium
     )
+
+    local y = titleY + FONT_HGT_MEDIUM + 14
+    local entries = self.entries or {}
+
+    if #entries == 0 then
+        self:drawText(
+            getText("IGUI_SurvivorEconomy_NoBalance"),
+            SIDE_MARGIN,
+            y,
+            1,
+            1,
+            1,
+            0.9,
+            UIFont.Small
+        )
+    else
+        for _, entry in ipairs(entries) do
+            local rendered = math.floor((entry.balance or 0) + 0.5)
+            local line = tostring(entry.currency or "") .. ": $" .. tostring(rendered)
+            self:drawText(line, SIDE_MARGIN, y, 1, 1, 1, 0.9, UIFont.Small)
+            y = y + FONT_HGT_SMALL + LINE_SPACING
+        end
+    end
+
+    if SurvivorEconomy and SurvivorEconomy.isDiscordLinked() then
+        local displayName = nil
+        for _, link in pairs(SurvivorEconomy.discordLinks) do
+            displayName = link.discordUsername or link.discordId
+            break
+        end
+        local text = getText("IGUI_SurvivorEconomy_LinkedAs", tostring(displayName or ""))
+        self:drawText(text, SIDE_MARGIN, self.discordTextY, 0.7, 1, 0.7, 0.9, UIFont.Small)
+    end
 end
 
 function ISSurvivorEconomyUI:onClick(button)
@@ -152,6 +167,8 @@ function ISSurvivorEconomyUI:onClick(button)
         if moneyButton then
             moneyButton:setImage(moneyIcon)
         end
+    elseif button.internal == "LINK" then
+        ISSurvivorEconomyLinkUI.open()
     end
 end
 
@@ -188,10 +205,10 @@ end
 
 local function onPressMoneyBtn()
     if not moneyWindow then
-        moneyWindow = ISSurvivorEconomyUI:new(200, 50, WINDOW_WIDTH, WINDOW_HEIGHT)
+        moneyWindow = ISSurvivorEconomyUI:new(200, 50, WINDOW_WIDTH, 120)
         moneyWindow:initialise()
         moneyWindow:addToUIManager()
-        moneyWindow:populateList()
+        moneyWindow:refresh()
         moneyButton:setImage(moneyIconOn)
     else
         moneyWindow:close()
@@ -229,9 +246,9 @@ function ISEquippedItem:initialise()
     return menu
 end
 
-local function onBalanceUpdated()
+local function refreshWindow()
     if moneyWindow then
-        moneyWindow:populateList()
+        moneyWindow:refresh()
     end
 end
 
@@ -239,13 +256,12 @@ local function onServerCommand(module, command, arguments)
     if module ~= "SurvivorEconomy" then
         return
     end
-    if command ~= "balanceUpdated" then
-        return
-    end
     if not isClient() then
         return
     end
-    onBalanceUpdated()
+    if command == "balanceUpdated" or command == "discordLinksUpdated" then
+        refreshWindow()
+    end
 end
 
 Events.OnServerCommand.Add(onServerCommand)
