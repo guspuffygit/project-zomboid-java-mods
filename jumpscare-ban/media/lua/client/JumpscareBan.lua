@@ -85,6 +85,8 @@ end
 local function onServerCommand(module, command, args)
     if module == "JumpscareBan" and command == "trigger" then
         doFoxyJumpscare()
+    elseif module == "JumpscareBan" and command == "playKachow" then
+        getSoundManager():playUISound("JumpscareBanKachow")
     end
 end
 

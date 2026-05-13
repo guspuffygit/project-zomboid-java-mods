@@ -14,8 +14,6 @@ public class JumpscareBanMod implements ZomboidMod {
     public void registerEventHandlers() {
         if (StormEnv.isStormServer()) {
             LOGGER.info("Jumpscare Ban mod loaded (server)");
-        } else {
-            LOGGER.info("Jumpscare Ban mod loaded (client)");
         }
     }
 

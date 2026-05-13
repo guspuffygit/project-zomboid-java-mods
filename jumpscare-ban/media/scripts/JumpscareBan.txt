@@ -9,4 +9,30 @@ module Base
             volume = 1.0,
         }
     }
+    sound JumpscareBanKachow
+    {
+        category = Player,
+        is3D = false,
+        loop = false,
+        clip
+        {
+            file = media/sound/ka-chow.ogg,
+            volume = 1.0,
+        }
+        clip
+        {
+            file = media/sound/ka-ch-ch-ch-chow.ogg,
+            volume = 1.0,
+        }
+        clip
+        {
+            file = media/sound/ka-choooowowow.ogg,
+            volume = 1.0,
+        }
+        clip
+        {
+            file = media/sound/kkk-ca-ca-chow.ogg,
+            volume = 1.0,
+        }
+    }
 }

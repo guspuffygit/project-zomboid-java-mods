@@ -22,6 +22,7 @@ public final class JumpscareBanService {
     private static final String BAN_DESCRIPTION = "command-banid";
     private static final String COMMAND_MODULE = "JumpscareBan";
     private static final String COMMAND_NAME = "trigger";
+    private static final String KACHOW_COMMAND_NAME = "playKachow";
     private static final long KICK_DELAY_MS = 1500L;
 
     private static final ScheduledExecutorService SCHEDULER =
@@ -62,6 +63,12 @@ public final class JumpscareBanService {
         } catch (Throwable t) {
             LOGGER.warn("JumpscareBan: failed to send jumpscare command to \"{}\"", username, t);
             return false;
+        }
+
+        try {
+            GameServer.sendServerCommand(COMMAND_MODULE, KACHOW_COMMAND_NAME, null);
+        } catch (Throwable t) {
+            LOGGER.warn("JumpscareBan: failed to broadcast kachow command", t);
         }
 
         SCHEDULER.schedule(
