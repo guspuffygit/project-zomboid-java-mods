@@ -18,6 +18,11 @@ public class JumpscareBanMod implements ZomboidMod {
     }
 
     @Override
+    public List<Class<?>> getCommandClasses() {
+        return Collections.singletonList(KachowCommand.class);
+    }
+
+    @Override
     public List<StormClassTransformer> getClassTransformers() {
         if (!StormEnv.isStormServer()) {
             return Collections.emptyList();
