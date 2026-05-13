@@ -10,6 +10,7 @@ import zombie.commands.CommandName;
 import zombie.commands.RequiredCapability;
 import zombie.core.raknet.UdpConnection;
 import zombie.network.GameServer;
+import zombie.network.chat.ChatServer;
 
 @CommandName(name = "kachow")
 @CommandArgs(optional = "(.+)")
@@ -26,6 +27,7 @@ public class KachowCommand extends CommandBase {
     @Override
     protected String Command() {
         if (this.getCommandArgsCount() == 0) {
+            ChatServer.getInstance().sendServerAlertMessageToServerChat("Kachow");
             GameServer.sendServerCommand("JumpscareBan", "playKachow", null);
             return "Kachow played for all players";
         }
