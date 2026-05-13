@@ -13,6 +13,8 @@ local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
 
 local SIDE_MARGIN = 10
+local TOP_MARGIN = 10
+local TITLE_PAD_BOTTOM = 14
 local LINE_SPACING = 4
 local SECTION_SPACING = 12
 local WINDOW_WIDTH = 260
@@ -71,7 +73,7 @@ function ISSurvivorEconomyUI:refresh()
     local linked = SurvivorEconomy and SurvivorEconomy.isDiscordLinked()
     self.linkBtn:setVisible(not linked)
 
-    local titleHgt = FONT_HGT_MEDIUM + 14
+    local titleHgt = TOP_MARGIN + FONT_HGT_MEDIUM + TITLE_PAD_BOTTOM
     local lineCount = #sorted > 0 and #sorted or 1
     local linesHgt = lineCount * (FONT_HGT_SMALL + LINE_SPACING)
     local btnHgt = FONT_HGT_SMALL + 6
@@ -114,11 +116,10 @@ function ISSurvivorEconomyUI:prerender()
     )
 
     local titleText = getText("IGUI_SurvivorEconomy_Title")
-    local titleY = 10
     self:drawText(
         titleText,
         self.width / 2 - (getTextManager():MeasureStringX(UIFont.Medium, titleText) / 2),
-        titleY,
+        TOP_MARGIN,
         1,
         1,
         1,
@@ -126,7 +127,7 @@ function ISSurvivorEconomyUI:prerender()
         UIFont.Medium
     )
 
-    local y = titleY + FONT_HGT_MEDIUM + 14
+    local y = TOP_MARGIN + FONT_HGT_MEDIUM + TITLE_PAD_BOTTOM
     local entries = self.entries or {}
 
     if #entries == 0 then
