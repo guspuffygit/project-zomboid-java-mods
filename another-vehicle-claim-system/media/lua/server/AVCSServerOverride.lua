@@ -69,7 +69,7 @@ end
 
 -- =========================
 -- Third-party salvage/dismantle server-side guard
--- VRO Vehicle Salvage Overhaul: vanilla "vehicle/remove" command (audit only — local Commands table cannot be wrapped)
+-- Vanilla "vehicle/remove" is blocked in Java via LuaEventManagerVehicleRemovePatch.
 -- VLCS_HDRcade: "VLCS/DismantleVehicle" command (fully blocked via SVLCSSystem method override)
 -- =========================
 
@@ -111,27 +111,4 @@ Events.OnGameStart.Add(function()
             return AVCS.oSvlcsOnClientCommand(self, command, player, args)
         end
     end
-end)
-
-Events.OnClientCommand.Add(function(module, command, player, args)
-    if module ~= "vehicle" or command ~= "remove" then
-        return
-    end
-    if not args or not args.vehicle then
-        return
-    end
-    if _avcsServerHasPermission(player, args.vehicle) then
-        return
-    end
-    local uname = player and player:getUsername() or "?"
-    writeLog(
-        "AVCS",
-        "["
-            .. getTimestamp()
-            .. "] Warning: vehicle/remove on claimed vehicle by ["
-            .. uname
-            .. "] [veh="
-            .. tostring(args.vehicle)
-            .. "] — client-side guard expected to block; server-side blocking requires Storm patch"
-    )
 end)
