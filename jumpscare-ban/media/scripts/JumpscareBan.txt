@@ -35,4 +35,15 @@ module Base
             volume = 0.5,
         }
     }
+    sound JumpscareBanThunder
+    {
+        category = Player,
+        is3D = false,
+        loop = false,
+        clip
+        {
+            file = media/sound/big-thunda.ogg,
+            volume = 1.0,
+        }
+    }
 }

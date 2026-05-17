@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import zombie.characters.IsoPlayer;
 import zombie.core.raknet.UdpConnection;
 import zombie.network.GameServer;
+import zombie.network.chat.ChatServer;
 
 /**
  * Server-side helper invoked from {@link BanSystemPatch}. Sends the jumpscare server command to the
@@ -23,7 +24,9 @@ public final class JumpscareBanService {
     private static final String COMMAND_MODULE = "JumpscareBan";
     private static final String COMMAND_NAME = "trigger";
     private static final String KACHOW_COMMAND_NAME = "playKachow";
+    private static final String THUNDER_COMMAND_NAME = "playThunder";
     private static final long KICK_DELAY_MS = 1500L;
+    private static final long THUNDER_DELAY_MS = KICK_DELAY_MS + 3000L;
 
     private static final ScheduledExecutorService SCHEDULER =
             Executors.newSingleThreadScheduledExecutor(
@@ -65,14 +68,9 @@ public final class JumpscareBanService {
             return false;
         }
 
-        try {
-            GameServer.sendServerCommand(COMMAND_MODULE, KACHOW_COMMAND_NAME, null);
-        } catch (Throwable t) {
-            LOGGER.warn("JumpscareBan: failed to broadcast kachow command", t);
-        }
-
         SCHEDULER.schedule(
                 new DelayedKick(connection, username), KICK_DELAY_MS, TimeUnit.MILLISECONDS);
+        SCHEDULER.schedule(new DelayedThunder(), THUNDER_DELAY_MS, TimeUnit.MILLISECONDS);
         return true;
     }
 
@@ -93,6 +91,25 @@ public final class JumpscareBanService {
                 LOGGER.info("JumpscareBan: delayed kick fired for \"{}\"", username);
             } catch (Throwable t) {
                 LOGGER.error("JumpscareBan: delayed kick failed for \"{}\"", username, t);
+            }
+
+            try {
+                ChatServer.getInstance().sendServerAlertMessageToServerChat("Kachow");
+                GameServer.sendServerCommand(COMMAND_MODULE, KACHOW_COMMAND_NAME, null);
+            } catch (Throwable t) {
+                LOGGER.warn("JumpscareBan: failed to broadcast kachow command", t);
+            }
+        }
+    }
+
+    private static final class DelayedThunder implements Runnable {
+        @Override
+        public void run() {
+            try {
+                ChatServer.getInstance().sendServerAlertMessageToServerChat("THUNDER");
+                GameServer.sendServerCommand(COMMAND_MODULE, THUNDER_COMMAND_NAME, null);
+            } catch (Throwable t) {
+                LOGGER.warn("JumpscareBan: failed to broadcast thunder command", t);
             }
         }
     }
