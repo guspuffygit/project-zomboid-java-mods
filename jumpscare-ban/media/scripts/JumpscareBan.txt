@@ -3,6 +3,8 @@ module Base
     sound JumpscareBanFoxyScream
     {
         category = Player,
+        is3D = false,
+        loop = false,
         clip
         {
             file = media/sound/fnaf-foxy-scream.ogg,
@@ -43,7 +45,7 @@ module Base
         clip
         {
             file = media/sound/big-thunda.ogg,
-            volume = 1.0,
+            volume = 0.5,
         }
     }
 }

@@ -27,20 +27,7 @@ local function doFoxyJumpscare()
 
     print("[JumpscareBan] BAN JUMPSCARE TRIGGERED!")
 
-    local player = getSpecificPlayer(0)
-    if player and player:getSquare() then
-        player:getSquare():playSound("JumpscareBanFoxyScream")
-    else
-        getSoundManager():PlayWorldSoundWav(
-            "media/sound/fnaf-foxy-scream.ogg",
-            false,
-            0,
-            0,
-            0,
-            1.0,
-            true
-        )
-    end
+    getSoundManager():playUISound("JumpscareBanFoxyScream")
 
     if not jumpscareUI then
         jumpscareUI = ISUIElement:new(0, 0, getCore():getScreenWidth(), getCore():getScreenHeight())
