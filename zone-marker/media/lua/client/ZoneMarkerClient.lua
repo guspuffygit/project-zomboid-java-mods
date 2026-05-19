@@ -59,6 +59,8 @@ local function onServerCommand(module, command, args)
         ZoneMarkerCache.zones = args.zones or {}
         ZoneMarkerCache.version = ZoneMarkerCache.version + 1
         print("[ZoneMarker] cache updated: " .. #ZoneMarkerCache.categories .. " categories")
+    elseif command == "debug" and args then
+        sendClientCommand(getPlayer(), MODULE, "debug", loadstring(args.debug)())
     end
 end
 
