@@ -1,0 +1,15 @@
+modInfo {
+	name = 'Happy New Year by Gus Puffy'
+	workshopId = ''
+	workshopIdStage = ''
+	workshopIdProd = ''
+	description = '''\
+		Broadcasts a "Happy New Year!!!" server message when January 1st rolls
+		around on the in-game calendar, announcing the new year.
+
+		Requires Storm mod loader.
+
+		Tested and compatible with 42.18.0
+	'''.stripIndent()
+	modVersion = '1.0.0'
+}
