@@ -23,14 +23,15 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
     private static final String CREATE_KILLS =
             """
             CREATE TABLE IF NOT EXISTS kills (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                killer_steam_id INTEGER NOT NULL,
-                killer_username TEXT NOT NULL,
-                victim_steam_id INTEGER NOT NULL,
-                victim_username TEXT NOT NULL,
-                is_ally         INTEGER NOT NULL,
-                created_at      INTEGER NOT NULL,
-                penalty_applied INTEGER NOT NULL DEFAULT 0
+                id                            INTEGER PRIMARY KEY AUTOINCREMENT,
+                killer_steam_id               INTEGER NOT NULL,
+                killer_username               TEXT NOT NULL,
+                victim_steam_id               INTEGER NOT NULL,
+                victim_username               TEXT NOT NULL,
+                is_ally                       INTEGER NOT NULL,
+                created_at                    INTEGER NOT NULL,
+                penalty_applied               INTEGER NOT NULL DEFAULT 0,
+                repeat_victim_penalty_applied INTEGER NOT NULL DEFAULT 0
             )""";
 
     private static final String CREATE_KILLS_KILLER_INDEX =
@@ -39,6 +40,10 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
 
     private static final String CREATE_KILLS_CREATED_AT_INDEX =
             "CREATE INDEX IF NOT EXISTS idx_kills_created_at ON kills (created_at DESC)";
+
+    private static final String CREATE_KILLS_KILLER_VICTIM_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_kills_killer_victim "
+                    + "ON kills (killer_steam_id, victim_steam_id, created_at)";
 
     private final Connection connection;
 
@@ -58,6 +63,7 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
             stmt.execute(CREATE_KILLS);
             stmt.execute(CREATE_KILLS_KILLER_INDEX);
             stmt.execute(CREATE_KILLS_CREATED_AT_INDEX);
+            stmt.execute(CREATE_KILLS_KILLER_VICTIM_INDEX);
         }
     }
 
@@ -72,6 +78,13 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
             try (Statement stmt = connection.createStatement()) {
                 stmt.execute(
                         "ALTER TABLE survivors ADD COLUMN zombie_kills INTEGER NOT NULL DEFAULT 0");
+            }
+        }
+        if (!hasColumn("kills", "repeat_victim_penalty_applied")) {
+            try (Statement stmt = connection.createStatement()) {
+                stmt.execute(
+                        "ALTER TABLE kills ADD COLUMN repeat_victim_penalty_applied"
+                                + " INTEGER NOT NULL DEFAULT 0");
             }
         }
     }

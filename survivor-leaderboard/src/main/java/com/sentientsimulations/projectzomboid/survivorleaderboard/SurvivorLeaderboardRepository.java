@@ -79,6 +79,21 @@ public class SurvivorLeaderboardRepository {
     private static final String MARK_PENALTY_APPLIED =
             "UPDATE kills SET penalty_applied = 1 WHERE id = ?";
 
+    private static final String SELECT_UNAPPLIED_REPEAT_VICTIM_KILLS =
+            "SELECT id, killer_steam_id, killer_username, victim_steam_id, victim_username,"
+                    + " is_ally, created_at FROM kills"
+                    + " WHERE repeat_victim_penalty_applied = 0"
+                    + " ORDER BY created_at ASC, id ASC";
+
+    private static final String COUNT_PRECEDING_KILLS_OF_VICTIM =
+            "SELECT COUNT(*) FROM kills"
+                    + " WHERE killer_steam_id = ? AND killer_username = ?"
+                    + " AND victim_steam_id = ?"
+                    + " AND created_at >= ? AND created_at < ?";
+
+    private static final String MARK_REPEAT_VICTIM_PENALTY_APPLIED =
+            "UPDATE kills SET repeat_victim_penalty_applied = 1 WHERE id = ?";
+
     private final Connection connection;
 
     public SurvivorLeaderboardRepository(Connection connection) {
@@ -354,6 +369,73 @@ public class SurvivorLeaderboardRepository {
      */
     public int markPenaltyApplied(long killId) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(MARK_PENALTY_APPLIED)) {
+            ps.setLong(1, killId);
+            return ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Load every kill whose repeat-victim penalty has not yet been decided, oldest first. Used by
+     * the hourly processor to apply penalties in chronological order. Unlike the ally-kill query,
+     * this returns every kill regardless of {@code is_ally} — the repeat-victim rule applies to all
+     * PvP kills.
+     */
+    public List<KillLogEntry> loadUnappliedRepeatVictimKills() throws SQLException {
+        List<KillLogEntry> results = new ArrayList<>();
+        try (PreparedStatement ps =
+                        connection.prepareStatement(SELECT_UNAPPLIED_REPEAT_VICTIM_KILLS);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                results.add(
+                        new KillLogEntry(
+                                rs.getLong("id"),
+                                rs.getLong("killer_steam_id"),
+                                rs.getString("killer_username"),
+                                rs.getLong("victim_steam_id"),
+                                rs.getString("victim_username"),
+                                rs.getInt("is_ally") != 0,
+                                rs.getLong("created_at")));
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Count prior kills of the same {@code victimSteamId} by the same killer in the half-open
+     * window {@code [createdAt - windowMs, createdAt)}. The victim is identified by Steam ID alone
+     * because the same account may rejoin with a new character name after each death.
+     */
+    public int countPrecedingKillsOfVictim(
+            long killerSteamId,
+            String killerUsername,
+            long victimSteamId,
+            long createdAt,
+            long windowMs)
+            throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(COUNT_PRECEDING_KILLS_OF_VICTIM)) {
+            ps.setLong(1, killerSteamId);
+            ps.setString(2, killerUsername);
+            ps.setLong(3, victimSteamId);
+            ps.setLong(4, createdAt - windowMs);
+            ps.setLong(5, createdAt);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+                return 0;
+            }
+        }
+    }
+
+    /**
+     * Mark a specific kill row as having had its repeat-victim penalty decision applied, so the
+     * hourly processor will skip it on subsequent runs.
+     *
+     * @return number of rows updated (0 if the id no longer exists)
+     */
+    public int markRepeatVictimPenaltyApplied(long killId) throws SQLException {
+        try (PreparedStatement ps =
+                connection.prepareStatement(MARK_REPEAT_VICTIM_PENALTY_APPLIED)) {
             ps.setLong(1, killId);
             return ps.executeUpdate();
         }

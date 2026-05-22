@@ -102,12 +102,14 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
     }
 
     /**
-     * Sweep the kill log for un-decided ally kills and apply delayed penalties. Fires once per
-     * in-game hour.
+     * Sweep the kill log for un-decided ally kills and repeat-victim kills, applying delayed
+     * penalties for each. Fires once per in-game hour. The two checks are independent — a kill can
+     * trigger both penalties.
      */
     @SubscribeEvent
     public void onEveryHours(EveryHoursEvent event) {
         SurvivorLeaderboardBridge.processAllyKillPenalties();
+        SurvivorLeaderboardBridge.processRepeatVictimPenalties();
     }
 
     /** Prune banned survivors on the first tick, once ServerWorldDatabase is fully ready. */

@@ -293,6 +293,102 @@ public final class SurvivorLeaderboardBridge {
         return penalties;
     }
 
+    /** Rolling window used by the repeat-victim penalty processor. */
+    static final long REPEAT_VICTIM_KILL_WINDOW_MS = 60L * 60L * 1000L;
+
+    /** Amount deducted from a killer's {@code kill_count} per qualifying repeat-victim kill. */
+    static final int REPEAT_VICTIM_KILL_PENALTY = 8;
+
+    /**
+     * Number of prior kills of the same victim (by the same killer) within the window required to
+     * trigger the penalty. With this set to 2, the first two kills are "free" and the 3rd and every
+     * subsequent kill of the same victim inside the window contributes a penalty.
+     */
+    static final int REPEAT_VICTIM_PRIOR_THRESHOLD = 2;
+
+    /**
+     * Walk every un-decided kill (oldest first). For each one, count how many prior kills of the
+     * same {@code victim_steam_id} this killer has within the preceding {@link
+     * #REPEAT_VICTIM_KILL_WINDOW_MS}. If that count is at least {@link
+     * #REPEAT_VICTIM_PRIOR_THRESHOLD}, deduct {@link #REPEAT_VICTIM_KILL_PENALTY} from their {@code
+     * kill_count}. Mark the row applied either way so it's skipped next tick.
+     *
+     * <p>Independent of faction/safehouse — applies to every PvP kill, ally or not. Independent of
+     * the ally-kill sweep as well; a kill can trigger both penalties.
+     *
+     * @return number of penalties applied in this run
+     */
+    public static int processRepeatVictimPenalties() {
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            int penalties = processRepeatVictimPenalties(repo);
+            if (penalties > 0) {
+                broadcast(repo);
+            }
+            return penalties;
+        } catch (SQLException e) {
+            LOGGER.error("[Lifeboard] Failed to process repeat-victim penalties", e);
+            return 0;
+        }
+    }
+
+    /**
+     * Package-private overload used by the public entry point and by tests. Does not broadcast;
+     * callers are responsible for that.
+     *
+     * @return number of penalties applied
+     */
+    static int processRepeatVictimPenalties(SurvivorLeaderboardRepository repo)
+            throws SQLException {
+        List<KillLogEntry> pending = repo.loadUnappliedRepeatVictimKills();
+        if (pending.isEmpty()) {
+            return 0;
+        }
+        int penalties = 0;
+        for (KillLogEntry kill : pending) {
+            int priorCount =
+                    repo.countPrecedingKillsOfVictim(
+                            kill.killerSteamId(),
+                            kill.killerUsername(),
+                            kill.victimSteamId(),
+                            kill.createdAt(),
+                            REPEAT_VICTIM_KILL_WINDOW_MS);
+            if (priorCount >= REPEAT_VICTIM_PRIOR_THRESHOLD) {
+                int rows =
+                        repo.decrementKillCount(
+                                kill.killerSteamId(),
+                                kill.killerUsername(),
+                                REPEAT_VICTIM_KILL_PENALTY);
+                if (rows > 0) {
+                    penalties++;
+                    LOGGER.info(
+                            "[Lifeboard] Applied repeat-victim penalty -{} to {} ({}) for kill"
+                                    + " id={} (victim steamId={}, {} prior kills in window)",
+                            REPEAT_VICTIM_KILL_PENALTY,
+                            kill.killerUsername(),
+                            kill.killerSteamId(),
+                            kill.id(),
+                            kill.victimSteamId(),
+                            priorCount);
+                } else {
+                    LOGGER.info(
+                            "[Lifeboard] Repeat-victim penalty skipped, no survivor row for {} ({})"
+                                    + " kill id={}",
+                            kill.killerUsername(),
+                            kill.killerSteamId(),
+                            kill.id());
+                }
+            }
+            repo.markRepeatVictimPenaltyApplied(kill.id());
+        }
+        LOGGER.info(
+                "[Lifeboard] Repeat-victim sweep processed {} kill(s), applied {} penalty(ies)",
+                pending.size(),
+                penalties);
+        return penalties;
+    }
+
     /** Delete every entry whose Steam ID matches, then broadcast. */
     public static String deleteBySteamId(long steamId) {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
