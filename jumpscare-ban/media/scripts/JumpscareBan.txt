@@ -84,4 +84,20 @@ module Base
         clip { file = media/sound/fart-11.ogg, volume = 1.0, }
         clip { file = media/sound/fart-12.ogg, volume = 1.0, }
     }
+    sound JumpscareBanCry
+    {
+        category = Player,
+        is3D = false,
+        loop = false,
+        clip { file = media/sound/sobbing_heartfelt.ogg, volume = 1.0, }
+        clip { file = media/sound/child_sobbing.ogg, volume = 1.0, }
+    }
+    sound JumpscareBanCry3D
+    {
+        category = Player,
+        is3D = true,
+        loop = false,
+        clip { file = media/sound/sobbing_heartfelt.ogg, volume = 1.0, }
+        clip { file = media/sound/child_sobbing.ogg, volume = 1.0, }
+    }
 }

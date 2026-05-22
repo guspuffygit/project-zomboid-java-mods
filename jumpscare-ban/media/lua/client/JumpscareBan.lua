@@ -76,15 +76,29 @@ local function onServerCommand(module, command, args)
         getSoundManager():playUISound("JumpscareBanKachow")
     elseif module == "JumpscareBan" and command == "playThunder" then
         getSoundManager():playUISound("JumpscareBanThunder")
+    elseif module == "JumpscareBan" and command == "playFart" then
+        getSoundManager():playUISound("JumpscareBanFart")
     elseif module == "JumpscareBan" and command == "playFart3D" then
         local target = getPlayerByOnlineID(args.onlineID)
         if target then
-            target:playSound("JumpscareBanFart3D")
+            target:playSoundLocal("JumpscareBanFart3D")
         end
     elseif module == "JumpscareBan" and command == "showFartHalo" then
         local target = getPlayerByOnlineID(args.onlineID)
         if target then
             target:setHaloNote(args.text, 180, 220, 80, 180)
+        end
+    elseif module == "JumpscareBan" and command == "playCry" then
+        getSoundManager():playUISound("JumpscareBanCry")
+    elseif module == "JumpscareBan" and command == "playCry3D" then
+        local target = getPlayerByOnlineID(args.onlineID)
+        if target then
+            target:playSoundLocal("JumpscareBanCry3D")
+        end
+    elseif module == "JumpscareBan" and command == "showCryHalo" then
+        local target = getPlayerByOnlineID(args.onlineID)
+        if target then
+            target:setHaloNote(args.text, 100, 160, 230, 180)
         end
     end
 end

@@ -20,7 +20,7 @@ public class JumpscareBanMod implements ZomboidMod {
 
     @Override
     public List<Class<?>> getCommandClasses() {
-        return Arrays.asList(KachowCommand.class, FartCommand.class);
+        return Arrays.asList(KachowCommand.class, FartCommand.class, CryCommand.class);
     }
 
     @Override
