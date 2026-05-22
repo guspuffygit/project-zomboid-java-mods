@@ -48,4 +48,40 @@ module Base
             volume = 0.5,
         }
     }
+    sound JumpscareBanFart
+    {
+        category = Player,
+        is3D = false,
+        loop = false,
+        clip { file = media/sound/fart-01.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-02.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-03.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-04.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-05.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-06.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-07.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-08.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-09.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-10.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-11.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-12.ogg, volume = 1.0, }
+    }
+    sound JumpscareBanFart3D
+    {
+        category = Player,
+        is3D = true,
+        loop = false,
+        clip { file = media/sound/fart-01.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-02.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-03.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-04.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-05.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-06.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-07.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-08.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-09.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-10.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-11.ogg, volume = 1.0, }
+        clip { file = media/sound/fart-12.ogg, volume = 1.0, }
+    }
 }

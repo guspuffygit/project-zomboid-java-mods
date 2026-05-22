@@ -5,6 +5,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.mod.ZomboidMod;
 import io.pzstorm.storm.util.StormEnv;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class JumpscareBanMod implements ZomboidMod {
 
     @Override
     public List<Class<?>> getCommandClasses() {
-        return Collections.singletonList(KachowCommand.class);
+        return Arrays.asList(KachowCommand.class, FartCommand.class);
     }
 
     @Override

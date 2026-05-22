@@ -20,6 +20,7 @@ for i = 0, maxFrames - 1 do
     end
 end
 
+
 local function doFoxyJumpscare()
     if jumpscareActive then
         return
@@ -76,6 +77,16 @@ local function onServerCommand(module, command, args)
         getSoundManager():playUISound("JumpscareBanKachow")
     elseif module == "JumpscareBan" and command == "playThunder" then
         getSoundManager():playUISound("JumpscareBanThunder")
+    elseif module == "JumpscareBan" and command == "playFart3D" then
+        local target = getPlayerByOnlineID(args.onlineID)
+        if target then
+            target:playSound("JumpscareBanFart3D")
+        end
+    elseif module == "JumpscareBan" and command == "showFartHalo" then
+        local target = getPlayerByOnlineID(args.onlineID)
+        if target then
+            target:setHaloNote(args.text, 180, 220, 80, 180)
+        end
     end
 end
 
