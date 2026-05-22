@@ -66,11 +66,14 @@ public class FartCommand extends CommandBase {
 
         String phrase = HALO_PHRASES[ThreadLocalRandom.current().nextInt(HALO_PHRASES.length)];
 
-        KahluaTable broadcastArgs = LuaManager.platform.newTable();
-        broadcastArgs.rawset("onlineID", (double) player.getOnlineID());
-        broadcastArgs.rawset("text", phrase);
-        GameServer.sendServerCommand("JumpscareBan", "playFart3D", broadcastArgs);
-        GameServer.sendServerCommand("JumpscareBan", "showFartHalo", broadcastArgs);
+        KahluaTable haloArgs = LuaManager.platform.newTable();
+        haloArgs.rawset("onlineID", (double) player.getOnlineID());
+        haloArgs.rawset("text", phrase);
+        GameServer.sendServerCommand("JumpscareBan", "showFartHalo", haloArgs);
+
+        KahluaTable fartArgs = LuaManager.platform.newTable();
+        fartArgs.rawset("onlineID", (double) player.getOnlineID());
+        GameServer.sendServerCommand(player, "JumpscareBan", "playFart3D", fartArgs);
 
         return "Fart played for " + player.getUsername();
     }
