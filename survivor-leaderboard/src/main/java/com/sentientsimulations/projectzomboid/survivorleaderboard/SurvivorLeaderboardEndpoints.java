@@ -7,6 +7,7 @@ import com.sentientsimulations.projectzomboid.survivorleaderboard.records.KillLo
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.KillerDTO;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SqlExecutionResponse;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorDTO;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorRecord;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorLeaderboardResponse;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZombieKillerDTO;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZombieLeaderboardResponse;
@@ -127,6 +128,70 @@ public class SurvivorLeaderboardEndpoints {
                         SqlExecutionResponse.error("Invalid steamId: must be numeric.")));
     }
 
+    /**
+     * Admin endpoint: overwrite a player's kill count to the supplied absolute value. All three
+     * params are required ({@code steamId}, {@code username}, {@code killCount}); negative values
+     * are permitted so admins can mirror the ally-grief penalty convention. Upserts the row if no
+     * survivor entry exists yet.
+     */
+    @HttpEndpoint(path = "/leaderboard/killcount", method = "POST")
+    public static void setKillCount(HttpRequestEvent event) throws IOException {
+        Map<String, String> params = event.getQueryParams();
+        String username = parseUsernameParam(params.get("username"));
+        if (username == null) {
+            event.sendJson(
+                    400,
+                    MAPPER.writeValueAsString(
+                            SqlExecutionResponse.error("Missing required param: username.")));
+            return;
+        }
+        Long steamId;
+        try {
+            steamId = parseSteamIdParam(params.get("steamId"));
+        } catch (NumberFormatException e) {
+            sendInvalidSteamId(event);
+            return;
+        }
+        if (steamId == null) {
+            event.sendJson(
+                    400,
+                    MAPPER.writeValueAsString(
+                            SqlExecutionResponse.error("Missing required param: steamId.")));
+            return;
+        }
+        Integer killCount;
+        try {
+            killCount = parseKillCountParam(params.get("killCount"));
+        } catch (NumberFormatException e) {
+            event.sendJson(
+                    400,
+                    MAPPER.writeValueAsString(
+                            SqlExecutionResponse.error("Invalid killCount: must be an integer.")));
+            return;
+        }
+        if (killCount == null) {
+            event.sendJson(
+                    400,
+                    MAPPER.writeValueAsString(
+                            SqlExecutionResponse.error("Missing required param: killCount.")));
+            return;
+        }
+
+        SurvivorRecord updated =
+                SurvivorLeaderboardBridge.setKillCount(steamId, username, killCount);
+        if (updated == null) {
+            event.sendJson(
+                    500,
+                    MAPPER.writeValueAsString(
+                            SqlExecutionResponse.error("Failed to update kill count.")));
+            return;
+        }
+        event.sendJson(
+                200,
+                MAPPER.writeValueAsString(
+                        new KillerDTO(updated.username(), updated.killCount(), updated.steamId())));
+    }
+
     @HttpEndpoint(path = "/leaderboard/sql")
     public static void sql(HttpRequestEvent event) throws IOException {
         String sql = event.getRequestBodyAsString();
@@ -194,5 +259,20 @@ public class SurvivorLeaderboardEndpoints {
             return null;
         }
         return Long.parseLong(trimmed);
+    }
+
+    /**
+     * null/blank → null (param missing). A non-blank value that is not a valid {@code int} throws
+     * {@link NumberFormatException} so callers can return 400. Negative values are permitted.
+     */
+    static @Nullable Integer parseKillCountParam(@Nullable String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        return Integer.parseInt(trimmed);
     }
 }

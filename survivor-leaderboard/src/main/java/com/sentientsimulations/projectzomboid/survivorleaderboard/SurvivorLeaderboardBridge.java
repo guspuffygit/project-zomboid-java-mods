@@ -389,6 +389,59 @@ public final class SurvivorLeaderboardBridge {
         return penalties;
     }
 
+    /**
+     * Overwrite a player's {@code kill_count} to an absolute value. Upserts the row if absent so an
+     * admin can pre-set a score for a player who hasn't yet appeared on the board. Broadcasts on
+     * success.
+     *
+     * @return the updated record, or null if the database operation failed
+     */
+    public static @Nullable SurvivorRecord setKillCount(
+            long steamId, String username, int killCount) {
+        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
+            SurvivorLeaderboardRepository repo =
+                    new SurvivorLeaderboardRepository(db.getConnection());
+            SurvivorRecord record = setKillCount(repo, steamId, username, killCount);
+            if (record != null) {
+                broadcast(repo);
+            }
+            return record;
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "[Lifeboard] Failed to setKillCount steamId={} username={}",
+                    steamId,
+                    username,
+                    e);
+            return null;
+        }
+    }
+
+    /**
+     * Package-private overload used by the public entry point and by tests. Does not broadcast;
+     * callers are responsible for that.
+     *
+     * @return the updated record, or null if the update affected 0 rows
+     */
+    static @Nullable SurvivorRecord setKillCount(
+            SurvivorLeaderboardRepository repo, long steamId, String username, int killCount)
+            throws SQLException {
+        repo.insertSurvivor(steamId, username);
+        int rows = repo.updateKillCount(steamId, username, killCount);
+        if (rows == 0) {
+            LOGGER.warn(
+                    "[Lifeboard] setKillCount affected 0 rows for steamId={} username={}",
+                    steamId,
+                    username);
+            return null;
+        }
+        LOGGER.info(
+                "[Lifeboard] setKillCount steamId={} username={} -> {}",
+                steamId,
+                username,
+                killCount);
+        return repo.findByPlayer(steamId, username);
+    }
+
     /** Delete every entry whose Steam ID matches, then broadcast. */
     public static String deleteBySteamId(long steamId) {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {

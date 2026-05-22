@@ -24,6 +24,9 @@ public class SurvivorLeaderboardRepository {
     private static final String INCREMENT_KILL_COUNT =
             "UPDATE survivors SET kill_count = kill_count + 1 WHERE steam_id = ? AND username = ?";
 
+    private static final String UPDATE_KILL_COUNT =
+            "UPDATE survivors SET kill_count = ? WHERE steam_id = ? AND username = ?";
+
     private static final String RESET_KILL_COUNT_IF_POSITIVE =
             "UPDATE survivors SET kill_count = 0"
                     + " WHERE steam_id = ? AND username = ? AND kill_count > 0";
@@ -150,6 +153,22 @@ public class SurvivorLeaderboardRepository {
     }
 
     /**
+     * Overwrite {@code kill_count} to an absolute value. Used by the admin endpoint to correct
+     * scores. Negative values are permitted, matching the convention used by the ally-grief
+     * penalty.
+     *
+     * @return number of rows updated (0 if the row is absent)
+     */
+    public int updateKillCount(long steamId, String username, int killCount) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(UPDATE_KILL_COUNT)) {
+            ps.setInt(1, killCount);
+            ps.setLong(2, steamId);
+            ps.setString(3, username);
+            return ps.executeUpdate();
+        }
+    }
+
+    /**
      * Reset {@code kill_count} to 0 only when it is currently positive. Negative values (earned
      * from ally-grief penalties) are preserved so a penalized player cannot wipe their debt by
      * dying.
@@ -209,6 +228,19 @@ public class SurvivorLeaderboardRepository {
      */
     public List<SurvivorRecord> loadAllOrdered() throws SQLException {
         return querySurvivors(SELECT_SURVIVORS_BASE, null, ORDER_BY_DAYS, null, null);
+    }
+
+    /**
+     * Look up a single survivor by exact (steamId, username) match. Unlike {@link
+     * #loadAllOrderedFiltered} this does not filter on activity, so freshly-inserted rows with
+     * {@code day_count = 0} are returned.
+     *
+     * @return the matching record, or null if no such row exists
+     */
+    public @Nullable SurvivorRecord findByPlayer(long steamId, String username) throws SQLException {
+        List<SurvivorRecord> records =
+                querySurvivors(SELECT_SURVIVORS_BASE, null, ORDER_BY_DAYS, username, steamId);
+        return records.isEmpty() ? null : records.get(0);
     }
 
     public List<SurvivorRecord> loadAllOrderedByKills() throws SQLException {

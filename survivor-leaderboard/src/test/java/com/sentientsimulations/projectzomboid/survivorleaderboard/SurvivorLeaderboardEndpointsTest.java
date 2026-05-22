@@ -116,4 +116,35 @@ class SurvivorLeaderboardEndpointsTest {
                 NumberFormatException.class,
                 () -> SurvivorLeaderboardEndpoints.parseSteamIdParam("12.5"));
     }
+
+    @Test
+    void parseKillCountParam_nullOrBlankReturnsNull() {
+        assertNull(SurvivorLeaderboardEndpoints.parseKillCountParam(null));
+        assertNull(SurvivorLeaderboardEndpoints.parseKillCountParam(""));
+        assertNull(SurvivorLeaderboardEndpoints.parseKillCountParam("   "));
+    }
+
+    @Test
+    void parseKillCountParam_validIntReturnsValue() {
+        assertEquals(0, SurvivorLeaderboardEndpoints.parseKillCountParam("0"));
+        assertEquals(42, SurvivorLeaderboardEndpoints.parseKillCountParam("42"));
+        assertEquals(42, SurvivorLeaderboardEndpoints.parseKillCountParam("  42  "));
+    }
+
+    @Test
+    void parseKillCountParam_negativeAllowed() {
+        // Negative values mirror the ally-grief penalty convention — admins must be able to set
+        // them too.
+        assertEquals(-5, SurvivorLeaderboardEndpoints.parseKillCountParam("-5"));
+    }
+
+    @Test
+    void parseKillCountParam_invalidThrows() {
+        assertThrows(
+                NumberFormatException.class,
+                () -> SurvivorLeaderboardEndpoints.parseKillCountParam("abc"));
+        assertThrows(
+                NumberFormatException.class,
+                () -> SurvivorLeaderboardEndpoints.parseKillCountParam("3.5"));
+    }
 }
