@@ -20,7 +20,6 @@ for i = 0, maxFrames - 1 do
     end
 end
 
-
 local function doFoxyJumpscare()
     if jumpscareActive then
         return
