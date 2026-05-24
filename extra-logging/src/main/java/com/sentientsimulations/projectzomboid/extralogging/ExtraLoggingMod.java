@@ -2,12 +2,15 @@ package com.sentientsimulations.projectzomboid.extralogging;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.extralogging.containerhistory.ContainerHistoryHandler;
+import com.sentientsimulations.projectzomboid.extralogging.containerhistory.QueryContainerHistoryHandler;
 import com.sentientsimulations.projectzomboid.extralogging.patch.*;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import io.pzstorm.storm.event.packet.*;
+import io.pzstorm.storm.event.zomboid.OnItemTransferCompletedEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
 import io.pzstorm.storm.util.StormEnv;
 import java.util.ArrayList;
@@ -21,6 +24,7 @@ public class ExtraLoggingMod implements ZomboidMod {
         if (StormEnv.isStormServer()) {
             LOGGER.debug("Registering event handler for {}", ExtraLoggingMod.class.getName());
             StormEventDispatcher.registerEventHandler(this);
+            StormEventDispatcher.registerEventHandler(QueryContainerHistoryHandler.class);
         }
     }
 
@@ -136,5 +140,12 @@ public class ExtraLoggingMod implements ZomboidMod {
     @SubscribeEvent
     public void onPlayerHitVehicle(PlayerHitVehiclePacketEvent event) {
         VehicleEventHandler.onPlayerHitVehicle(event);
+    }
+
+    // Container history
+
+    @SubscribeEvent
+    public void onItemTransferCompleted(OnItemTransferCompletedEvent event) {
+        ContainerHistoryHandler.onItemTransferCompleted(event);
     }
 }

@@ -237,7 +237,8 @@ public class SurvivorLeaderboardRepository {
      *
      * @return the matching record, or null if no such row exists
      */
-    public @Nullable SurvivorRecord findByPlayer(long steamId, String username) throws SQLException {
+    public @Nullable SurvivorRecord findByPlayer(long steamId, String username)
+            throws SQLException {
         List<SurvivorRecord> records =
                 querySurvivors(SELECT_SURVIVORS_BASE, null, ORDER_BY_DAYS, username, steamId);
         return records.isEmpty() ? null : records.get(0);

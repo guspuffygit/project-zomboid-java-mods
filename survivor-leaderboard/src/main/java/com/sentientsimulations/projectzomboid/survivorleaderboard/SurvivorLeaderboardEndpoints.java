@@ -7,8 +7,8 @@ import com.sentientsimulations.projectzomboid.survivorleaderboard.records.KillLo
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.KillerDTO;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SqlExecutionResponse;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorDTO;
-import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorRecord;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorLeaderboardResponse;
+import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorRecord;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZombieKillerDTO;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.ZombieLeaderboardResponse;
 import io.pzstorm.storm.http.HttpEndpoint;

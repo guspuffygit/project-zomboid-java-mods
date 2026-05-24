@@ -14,9 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Integration test for {@link
- * SurvivorLeaderboardBridge#setKillCount(SurvivorLeaderboardRepository, long, String, int)} — the
- * admin-endpoint backing method that overwrites a player's kill_count.
+ * Integration test for {@link SurvivorLeaderboardBridge#setKillCount(SurvivorLeaderboardRepository,
+ * long, String, int)} — the admin-endpoint backing method that overwrites a player's kill_count.
  */
 class SurvivorLeaderboardSetKillCountTest {
 
