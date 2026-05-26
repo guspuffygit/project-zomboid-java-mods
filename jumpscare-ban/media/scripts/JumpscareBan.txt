@@ -37,6 +37,32 @@ module Base
             volume = 0.5,
         }
     }
+    sound JumpscareBanKachow3D
+    {
+        category = Player,
+        is3D = true,
+        loop = false,
+        clip
+        {
+            file = media/sound/ka-chow.ogg,
+            volume = 0.5,
+        }
+        clip
+        {
+            file = media/sound/ka-ch-ch-ch-chow.ogg,
+            volume = 0.5,
+        }
+        clip
+        {
+            file = media/sound/ka-choooowowow.ogg,
+            volume = 0.5,
+        }
+        clip
+        {
+            file = media/sound/kkk-ca-ca-chow.ogg,
+            volume = 0.5,
+        }
+    }
     sound JumpscareBanThunder
     {
         category = Player,

@@ -69,37 +69,40 @@ local function tickJumpscare()
     end
 end
 
+-- Plays a positional 3D sound at a player's location via a free world emitter
+-- instead of the player's own character emitter. CharacterSoundEmitter refuses
+-- to play any sound on a *remote* character that is invisible, and god mode sets
+-- players invisible -- so target:playSoundLocal(...) is silent on every bystander's
+-- client whenever the target has god mode on. A free emitter is a plain
+-- FMODSoundEmitter with no such guard; IsoWorld ticks it for 3D positioning and
+-- recycles it once the sound finishes.
+local function playSound3DOnPlayer(onlineID, soundName)
+    local target = getPlayerByOnlineID(onlineID)
+    if not target then
+        return
+    end
+
+    local emitter = getWorld():getFreeEmitter(target:getX(), target:getY(), target:getZ())
+    emitter:playSoundImpl(soundName, false, nil)
+end
+
 local function onServerCommand(module, command, args)
     if module == "JumpscareBan" and command == "trigger" then
         doFoxyJumpscare()
     elseif module == "JumpscareBan" and command == "playKachow" then
         getSoundManager():playUISound("JumpscareBanKachow")
+    elseif module == "JumpscareBan" and command == "playKachow3D" then
+        playSound3DOnPlayer(args.onlineID, "JumpscareBanKachow3D")
     elseif module == "JumpscareBan" and command == "playThunder" then
         getSoundManager():playUISound("JumpscareBanThunder")
     elseif module == "JumpscareBan" and command == "playFart" then
         getSoundManager():playUISound("JumpscareBanFart")
     elseif module == "JumpscareBan" and command == "playFart3D" then
-        local target = getPlayerByOnlineID(args.onlineID)
-        if target then
-            target:playSoundLocal("JumpscareBanFart3D")
-        end
-    elseif module == "JumpscareBan" and command == "showFartHalo" then
-        local target = getPlayerByOnlineID(args.onlineID)
-        if target then
-            target:setHaloNote(args.text, 180, 220, 80, 180)
-        end
+        playSound3DOnPlayer(args.onlineID, "JumpscareBanFart3D")
     elseif module == "JumpscareBan" and command == "playCry" then
         getSoundManager():playUISound("JumpscareBanCry")
     elseif module == "JumpscareBan" and command == "playCry3D" then
-        local target = getPlayerByOnlineID(args.onlineID)
-        if target then
-            target:playSoundLocal("JumpscareBanCry3D")
-        end
-    elseif module == "JumpscareBan" and command == "showCryHalo" then
-        local target = getPlayerByOnlineID(args.onlineID)
-        if target then
-            target:setHaloNote(args.text, 100, 160, 230, 180)
-        end
+        playSound3DOnPlayer(args.onlineID, "JumpscareBanCry3D")
     end
 end
 

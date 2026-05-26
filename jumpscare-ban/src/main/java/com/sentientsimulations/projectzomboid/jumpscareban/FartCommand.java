@@ -1,5 +1,6 @@
 package com.sentientsimulations.projectzomboid.jumpscareban;
 
+import io.pzstorm.storm.halo.StormHalo;
 import java.util.concurrent.ThreadLocalRandom;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;
@@ -68,9 +69,9 @@ public class FartCommand extends CommandBase {
 
         KahluaTable args = LuaManager.platform.newTable();
         args.rawset("onlineID", (double) player.getOnlineID());
-        args.rawset("text", phrase);
         GameServer.sendServerCommand("JumpscareBan", "playFart3D", args);
-        GameServer.sendServerCommand("JumpscareBan", "showFartHalo", args);
+
+        StormHalo.setHalo(player, phrase, 180, 220, 80);
 
         return "Fart played for " + player.getUsername();
     }

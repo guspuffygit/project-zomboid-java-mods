@@ -1,5 +1,6 @@
 package com.sentientsimulations.projectzomboid.jumpscareban;
 
+import io.pzstorm.storm.halo.StormHalo;
 import java.util.concurrent.ThreadLocalRandom;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;
@@ -68,9 +69,9 @@ public class CryCommand extends CommandBase {
 
         KahluaTable args = LuaManager.platform.newTable();
         args.rawset("onlineID", (double) player.getOnlineID());
-        args.rawset("text", phrase);
         GameServer.sendServerCommand("JumpscareBan", "playCry3D", args);
-        GameServer.sendServerCommand("JumpscareBan", "showCryHalo", args);
+
+        StormHalo.setHalo(player, phrase, 100, 160, 230);
 
         return "Cry played for " + player.getUsername();
     }

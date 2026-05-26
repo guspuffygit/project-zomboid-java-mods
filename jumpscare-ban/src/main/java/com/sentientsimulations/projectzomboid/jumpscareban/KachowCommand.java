@@ -1,5 +1,9 @@
 package com.sentientsimulations.projectzomboid.jumpscareban;
 
+import io.pzstorm.storm.halo.StormHalo;
+import java.util.concurrent.ThreadLocalRandom;
+import se.krka.kahlua.vm.KahluaTable;
+import zombie.Lua.LuaManager;
 import zombie.characters.Capability;
 import zombie.characters.IsoPlayer;
 import zombie.characters.Role;
@@ -20,6 +24,29 @@ import zombie.network.chat.ChatServer;
 @RequiredCapability(requiredCapability = Capability.DebugConsole)
 public class KachowCommand extends CommandBase {
 
+    private static final String[] HALO_PHRASES = {
+        "KA-CHOW!",
+        "ka-chow",
+        "ka-ch-ch-chow",
+        "kachoooow",
+        "ka-CHOW",
+        "kkk-ca-chow",
+        "ka-chigga",
+        "speed!",
+        "vroooom",
+        "lightning!",
+        "ka-chow-chow",
+        "zoooom",
+        "kaCHOW!",
+        "screeech",
+        "nyooom",
+        "ka-pow",
+        "floor it!",
+        "ka-chowza",
+        "kachow~",
+        "BRRRM",
+    };
+
     public KachowCommand(String username, Role userRole, String command, UdpConnection connection) {
         super(username, userRole, command, connection);
     }
@@ -38,7 +65,14 @@ public class KachowCommand extends CommandBase {
             return "Player not found: " + targetUsername;
         }
 
-        GameServer.sendServerCommand(player, "JumpscareBan", "playKachow", null);
+        String phrase = HALO_PHRASES[ThreadLocalRandom.current().nextInt(HALO_PHRASES.length)];
+
+        KahluaTable args = LuaManager.platform.newTable();
+        args.rawset("onlineID", (double) player.getOnlineID());
+        GameServer.sendServerCommand("JumpscareBan", "playKachow3D", args);
+
+        StormHalo.setHalo(player, phrase, 230, 60, 50);
+
         return "Kachow played for " + player.getUsername();
     }
 }
