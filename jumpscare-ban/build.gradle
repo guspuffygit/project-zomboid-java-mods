@@ -3,15 +3,21 @@ modInfo {
 	workshopId = '3715980159'
 	workshopIdStage = ''
 	workshopIdProd = '3716129274'
-	description = '''\
-		Plays the Withered Foxy jumpscare on a player's screen the moment they get banned,
-		right before they are disconnected from the server.
-		
-		Inspired by Nipeng's "1/10000 Chance for Withered Foxy Jumpscare Every Second" mod.
-		
-		Requires Storm mod loader.
-		
-		Tested and compatible with 42.18.0
-	'''.stripIndent()
+	description = '''Plays the Withered Foxy jumpscare full-screen on a player's client the instant they get banned.
+
+Once the banned player is gone, the server gives them a send-off for everyone still online: it announces "Kachow" in chat with a Lightning McQueen sound, then a few seconds later announces "THUNDER" with a matching thunderclap.
+
+Also adds three extra admin debug commands:
+- /kachow [username] - Lightning McQueen's "Ka-chow!"
+- /fart [username] - exactly what it sounds like
+- /cry [username] - waaaah
+
+Omit the username to play the sound for everyone on the server. Pass a username to play a 3D positional sound at that player's location and float a random text bubble over their head.
+
+Inspired by Nipeng's "1/10000 Chance for Withered Foxy Jumpscare Every Second" mod.
+
+Requires Storm mod loader.
+
+Tested and compatible with 42.18.0'''
 	modVersion = '1.0.0'
 }

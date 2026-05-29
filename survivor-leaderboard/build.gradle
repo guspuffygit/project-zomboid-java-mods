@@ -3,11 +3,9 @@ modInfo {
 	workshopId = '3705341237'
 	workshopIdStage = '3705342130'
 	workshopIdProd = '3686333544'
-	description = '''\
-		|Leaderboard for survivors
-		|
-		|Updated for 42.18.0
-		|
-		|Requires Storm mod loader.
-	'''.stripMargin('|')
+	description = '''Leaderboard for survivors
+
+Updated for 42.18.0
+
+Requires Storm mod loader.'''
 }
