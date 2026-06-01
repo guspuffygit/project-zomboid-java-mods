@@ -13,3 +13,6 @@ modInfo {
 	'''.stripIndent()
 	modVersion = '1.0.0'
 }
+
+uploadWorkshop.enabled = false
+deployMod.enabled = false

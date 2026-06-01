@@ -10,3 +10,6 @@ modInfo {
 		If the player moves before the timer expires, protection is cancelled immediately.
 	'''.stripIndent()
 }
+
+uploadWorkshop.enabled = false
+deployMod.enabled = false
