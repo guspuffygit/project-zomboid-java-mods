@@ -1,21 +1,79 @@
-
 modInfo {
 	name = 'Another Vehicle Claim System b42 port by Gus Puffy & NiteMan'
 	workshopId = '3677939958'
 	workshopIdStage = '3694328666'
 	workshopIdProd = '3672982692'
-	description = '''\
-		Another Vehicle Claim System ported to b42.
+	description = '''[h1]Another Vehicle Claim System — Build 42[/h1]
+Lock down your ride on multiplayer servers. Another Vehicle Claim System (AVCS) lets survivors claim vehicles as their own, so nobody else can drive off, strip the parts, siphon the gas, or loot the trunk of a car that isn't theirs. This is the Build 42 port, maintained by Gus Puffy & NiteMan.
 
-		Shows AVCS claimed cars on the global map and mini map. Toggleable on the map view.
+[b]No Storm Mod loader required[/b] — the mod and its map view run on vanilla clients and servers.
 
-		No Storm Mod loader required.
+[hr][/hr]
 
-		Tested and compatible with 42.18.0
+[h1]Claiming a Vehicle[/h1]
+[list]
+[*]Right-click a vehicle and choose [b]Claim Vehicle[/b] to make it yours.
+[*]Claiming uses a craftable [b]Vehicle Ownership Title[/b] — built from paper, a pen, tape, glue, and paperclips. Requiring a title is optional, and it can be one-time-use or refunded when you unclaim.
+[*]Hold up to a configurable number of claims at once (default 5; admins are unlimited).
+[*]Claim for yourself, your [b]Safehouse[/b], or your [b]Faction[/b] so the right people share access.
+[/list]
 
-		3/12/2026 - Fixed a bug that would prevent mechanic XP gain when removing a vehicle part
-		3/16/2026 - Fixed a bug that would allow trailers without trunks to be looted. Allow opening trunk now controls access to allow another player to loot the inside or outside of a car. Someone can be a passenger without being able to loot the car.
-		3/22/2026 - Removed Storm dependency for map rendering. Map view now works with vanilla client via pure Lua.
-		4/28/2026 - Recipe for car claim does not consume the entire bottle of glue.
-	'''.stripIndent()
+[hr][/hr]
+
+[h1]Fine-Grained Permissions[/h1]
+As the owner you decide exactly what everyone else may do with your vehicle. Each permission is a per-car toggle:
+[list]
+[*]Drive it, or ride along as a passenger
+[*]Open the trunk and loot cargo
+[*]Uninstall parts, or take engine parts
+[*]Siphon fuel
+[*]Attach or detach for towing
+[*]Inflate or deflate the tires
+[/list]
+Faction and safehouse members can be granted access as a group — each toggleable in the sandbox settings.
+
+[hr][/hr]
+
+[h1]Vehicle Managers[/h1]
+[list]
+[*][b]Claimed Vehicles Manager[/b] — browse your Personal, Safehouse, and Faction vehicles, see each car's owner, last known location, and expiry date, and unclaim or edit permissions from one window.
+[*][b]Admin Vehicles Manager[/b] — staff can search every claim on the server, jump to a claim's safehouse or faction, edit public permissions, or delete a claim outright.
+[/list]
+
+[hr][/hr]
+
+[h1]On the Map[/h1]
+Claimed vehicles show up as colored markers with name labels on the world map (and the in-game minimap): [b]green[/b] for personal, [b]gold[/b] for safehouse, [b]blue[/b] for faction. Toggle them with the [b]Claimed Vehicles[/b] filter in the map options. Rendering is pure Lua, so it works on any vanilla client.
+
+[hr][/hr]
+
+[h1]Anti-Theft & Anti-Grief[/h1]
+[list]
+[*]Non-owners are blocked from driving, looting, part-stripping, siphoning, and towing claimed vehicles.
+[*]Claimed vehicles can't be towed — or used to tow — which shuts down theft-by-towing.
+[*]Optional server-side verification on claim and unclaim to resist hackers and desync.
+[*]Running a Storm server? AVCS adds an extra server-side guard that blocks unauthorized vehicle-removal commands, using the same owner / faction / safehouse rules.
+[/list]
+
+[hr][/hr]
+
+[h1]Server Options[/h1]
+[list]
+[*]Inactive claims expire automatically after a configurable timeout (hours since the owner last logged in; default 240).
+[*]Vehicle locations are tracked server-side and reflected in the managers and on the map.
+[*]Optional [b]Udderly Respawn[/b] integration spawns a fresh random car into the world whenever one is claimed.
+[*]Register the trunk containers of modded vehicles so they are protected too.
+[*]Rebuild-database option to recover from save inconsistencies.
+[/list]
+
+[hr][/hr]
+
+Available in English, Italian, and Portuguese (Brazil).
+
+Tested and compatible with 42.18.0
+
+3/12/2026 - Fixed a bug that would prevent mechanic XP gain when removing a vehicle part
+3/16/2026 - Fixed a bug that would allow trailers without trunks to be looted. Allow opening trunk now controls access to allow another player to loot the inside or outside of a car. Someone can be a passenger without being able to loot the car.
+3/22/2026 - Removed Storm dependency for map rendering. Map view now works with vanilla client via pure Lua.
+4/28/2026 - Recipe for car claim does not consume the entire bottle of glue.'''
 }

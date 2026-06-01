@@ -3,9 +3,69 @@ modInfo {
 	workshopId = '3705341237'
 	workshopIdStage = '3705342130'
 	workshopIdProd = '3686333544'
-	description = '''Leaderboard for survivors
+	description = '''[h1]Survivor Leaderboard[/h1]
+A live, server-wide leaderboard for multiplayer Project Zomboid. It ranks every survivor by days alive, PvP kills, and zombie kills — with built-in anti-grief penalties that quietly punish team-killing and victim-farming.
 
-Updated for 42.18.0
+[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] The scoring, database, and web API all run server-side; the in-game board is pure Lua, so connecting players just need the mod. Built for dedicated / multiplayer servers.
 
-Requires Storm mod loader.'''
+[hr][/hr]
+
+[h1]The Board[/h1]
+[list]
+[*]Open it from the leaderboard button on your equipped-item HUD panel (multiplayer only) — the icon lights up while it's open.
+[*]Three rankings side by side: [b]Days[/b], [b]Kills[/b], and [b]Zombies[/b], each showing Place, Player, and score.
+[*][b]Updates live[/b] — the board is pushed to every connected client the moment something changes, so a fresh kill or penalty shows up without reopening it.
+[*]Every character is scored on its own, so alts on the same Steam account never share scores, and a new character only appears once it has something to rank.
+[/list]
+
+[hr][/hr]
+
+[h1]How Scores Work[/h1]
+[list]
+[*][b]Days[/b] — in-game days your current character has survived.
+[*][b]Zombies[/b] — that character's total zombie kills.
+[*][b]Kills[/b] — confirmed PvP kills, credited to the real attacker when a player dies.
+[*]Dying resets a positive kill score back to zero and clears your kill history — a new life starts clean — but any negative score from a penalty is kept.
+[/list]
+
+[hr][/hr]
+
+[h1]Anti-Grief Penalties[/h1]
+Team-killers and spawn-campers don't get away clean:
+[list]
+[*][b]Ally-kill penalty[/b] — your first kill of a teammate (same faction, or same safehouse) within an hour is free; every ally kill after that quietly costs you [b]-8[/b] kills.
+[*][b]Repeat-victim penalty[/b] — hunting the same player over and over? The third and every further kill of the same victim within an hour costs another [b]-8[/b]. The victim is tracked by Steam account, so respawning or changing character name won't reset the count.
+[*]The two penalties stack — a single grief kill can trip both at once.
+[/list]
+[i]Penalties land on a delay — a sweep that runs every in-game hour — so a griefer can never tell which kill dropped their score.[/i] Kill counts can go negative and stay there until honest kills earn them back.
+
+[hr][/hr]
+
+[h1]Bans & Cleanup[/h1]
+[list]
+[*]Ban a Steam ID and all of its characters — board entries and kill log alike — are removed immediately.
+[*]On every server start the board is swept against the ban list, so anyone banned while the server was down is cleared too.
+[/list]
+
+[hr][/hr]
+
+[h1]Admin & HTTP API[/h1]
+[list]
+[*]Stored in SQLite inside your save, so the board survives server restarts.
+[*]Optional HTTP/JSON API (via Storm) exposing the top survivors, killers, zombie-killers, and the full PvP kill log — each filterable by player and result limit. Ideal for web overlays, Discord bots, or stream dashboards.
+[*]Admin endpoints to set a player's kill score outright or run raw queries against the board.
+[/list]
+
+[hr][/hr]
+
+[h1]Server Options[/h1]
+[list]
+[*][b]Update Frequency[/b] — how often each client reports its days-survived and zombie-kill totals, from 1 to 43200 in-game minutes (default 60). PvP kills, penalties, and bans always update the board immediately, regardless of this setting.
+[/list]
+
+[hr][/hr]
+
+Tested and compatible with 42.18.0
+
+5/29/2026 - Added a Zombies-killed board and a repeat-victim anti-farm penalty.'''
 }
