@@ -88,7 +88,7 @@ public class SafehouseEventHandler {
                     event.steamId,
                     event.username,
                     event.getSafehouse().getOwner(),
-                    event.getInvited(),
+                    event.getPacket().getUsername(),
                     event.getSafehouse().getX(),
                     event.getSafehouse().getY(),
                     event.getSafehouse().getX2(),
