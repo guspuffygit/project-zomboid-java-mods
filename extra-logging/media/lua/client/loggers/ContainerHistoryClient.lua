@@ -4,15 +4,6 @@
 -- queryContainerHistory client command to the server (handled by the extra-logging
 -- mod's QueryContainerHistoryHandler) and displays the resulting transfer rows.
 --
--- TEMPORARILY DISABLED: the server-side SQLite container history is off, so the
--- UI would only show a perpetual "Loading..." spinner. Re-enable by removing the
--- early return below (and the corresponding server-side wiring in
--- ExtraLoggingMod.java).
---
-
-if true then
-    return
-end
 
 local MODULE = "ExtraLogging"
 local QUERY_COMMAND = "queryContainerHistory"
