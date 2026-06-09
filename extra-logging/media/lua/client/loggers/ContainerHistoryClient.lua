@@ -102,6 +102,13 @@ local function isWorldContainerRef(ref)
     return ref:sub(1, 7) == "object:" or ref:sub(1, 10) == "worlditem:"
 end
 
+local function isPlayerAdmin()
+    if not isClient() then
+        return true
+    end
+    return getAccessLevel() == "admin"
+end
+
 ---------------------------------------------------------------------------
 -- History window
 ---------------------------------------------------------------------------
@@ -291,6 +298,9 @@ end
 ---------------------------------------------------------------------------
 
 function ContainerHistory.requestHistory(containerRef)
+    if not isPlayerAdmin() then
+        return
+    end
     local character = getSpecificPlayer(0)
     if character == nil then
         return
@@ -302,6 +312,9 @@ function ContainerHistory.requestHistory(containerRef)
 end
 
 function ContainerHistory.openWindowForCurrent(inventoryPage)
+    if not isPlayerAdmin() then
+        return
+    end
     local pane = inventoryPage.inventoryPane
     if pane == nil or pane.inventory == nil then
         return
@@ -362,6 +375,10 @@ function ISInventoryPage:prerender()
     _originalPrerender(self)
 
     if self.containerHistoryBtn == nil then
+        return
+    end
+    if not isPlayerAdmin() then
+        self.containerHistoryBtn:setVisible(false)
         return
     end
     local pane = self.inventoryPane
