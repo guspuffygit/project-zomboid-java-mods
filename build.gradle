@@ -194,16 +194,20 @@ subprojects { subproj ->
 		inputs.property('description', info.description.orElse(''))
 		inputs.property('tags', info.workshopTags.orElse('Build 42'))
 		inputs.property('visibility', getWorkshopVisibility())
+		inputs.property('modId', info.id.orElse("${subproj.name}-b42${getEnvSuffix()}"))
 
 		doLast {
 			def file = outputFile.get().asFile
 			file.parentFile.mkdirs()
 
-			def formattedDescription = info.description.getOrElse("").trim().split('\n').join('\ndescription=')
+			def workshopId = info.workshopId.getOrElse('')
+			def modId = info.id.getOrElse("${subproj.name}-b42${getEnvSuffix()}")
+			def descriptionWithFooter = info.description.getOrElse("").trim() + "\n\n[hr][/hr]\nWorkshop ID: ${workshopId}\nMod ID: ${modId}"
+			def formattedDescription = descriptionWithFooter.split('\n').join('\ndescription=')
 
 			file.text = [
 					"version=2",
-					"id=${info.workshopId.getOrElse('')}",
+					"id=${workshopId}",
 					"title=${info.workshopTitle.getOrElse(info.name.get())}",
 					"description=${formattedDescription}",
 					"tags=${info.workshopTags.getOrElse('Build 42')}",

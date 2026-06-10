@@ -3,18 +3,25 @@ modInfo {
 	workshopId = '3686692295'
 	workshopIdStage = '3694329365'
 	workshopIdProd = '3686768770'
-	description = '''\
-		|Allows server admins to define and manage colored zone overlays on the world map.
-		|
-		|Zones are organized into categories with custom colors and can be added, removed, and toggled at runtime. Each category appears as a filter toggle on the map options panel.
-		|
-		|All zone management is done through an in-game UI in the zone editor panel:
-		|- Create and remove zone categories with custom RGBA colors
-		|- Draw zones directly on the map by clicking and dragging
-		|- View, select, and remove zones from a scrollable list
-		|
-		|Zone data is stored server-side in a SQLite database and synced to clients automatically.
-		|
-		|Requires Storm mod loader.
-	'''.stripMargin('|')
+	description = '''Allows server admins to define and manage colored zone overlays on the world map.
+
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]
+
+Zones are organized into categories with custom colors and can be added, removed, and toggled at runtime. Each category appears as a filter toggle on the map options panel.
+
+All zone management is done through an in-game UI in the zone editor panel:
+- Create and remove zone categories with custom RGBA colors
+- Draw zones directly on the map by clicking and dragging
+- View, select, and remove zones from a scrollable list
+
+Zone data is stored server-side in a SQLite database and synced to clients automatically.
+
+Requires Storm mod loader.
+
+Tested and compatible with 42.19.0'''
 }

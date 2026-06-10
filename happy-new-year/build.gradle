@@ -3,14 +3,19 @@ modInfo {
 	workshopId = ''
 	workshopIdStage = ''
 	workshopIdProd = ''
-	description = '''\
-		Broadcasts a "Happy New Year!!!" server message when January 1st rolls
-		around on the in-game calendar, announcing the new year.
+	description = '''Broadcasts a "Happy New Year!!!" server message when January 1st rolls
+around on the in-game calendar, announcing the new year.
 
-		Requires Storm mod loader.
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
 
-		Tested and compatible with 42.18.0
-	'''.stripIndent()
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]
+
+Requires Storm mod loader.
+
+Tested and compatible with 42.19.0'''
 	modVersion = '1.0.0'
 }
 

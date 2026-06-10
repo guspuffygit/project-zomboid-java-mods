@@ -6,8 +6,11 @@ modInfo {
 	description = '''[h1]Another Vehicle Claim System — Build 42[/h1]
 Lock down your ride on multiplayer servers. Another Vehicle Claim System (AVCS) lets survivors claim vehicles as their own, so nobody else can drive off, strip the parts, siphon the gas, or loot the trunk of a car that isn't theirs. This is the Build 42 port, maintained by Gus Puffy & NiteMan.
 
-[b]No Storm Mod loader required[/b] — the mod and its map view run on vanilla clients and servers.
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
 
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
 [hr][/hr]
 
 [h1]Claiming a Vehicle[/h1]
@@ -70,7 +73,7 @@ Claimed vehicles show up as colored markers with name labels on the world map (a
 
 Available in English, Italian, and Portuguese (Brazil).
 
-Tested and compatible with 42.18.0
+Tested and compatible with 42.19.0
 
 3/12/2026 - Fixed a bug that would prevent mechanic XP gain when removing a vehicle part
 3/16/2026 - Fixed a bug that would allow trailers without trunks to be looted. Allow opening trunk now controls access to allow another player to loot the inside or outside of a car. Someone can be a passenger without being able to loot the car.

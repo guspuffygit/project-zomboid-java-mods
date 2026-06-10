@@ -6,10 +6,15 @@ application {
 
 modInfo {
 	name = 'Map Meta SQLite by Gus Puffy'
-	description = '''\
-		|Replaces map_meta.bin binary storage with a SQLite database for
-		|the world's meta grid state (rooms, buildings, safehouses, factions, etc.).
-	'''.stripMargin('|')
+	description = '''Replaces map_meta.bin binary storage with a SQLite database for
+the world's meta grid state (rooms, buildings, safehouses, factions, etc.).
+
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]'''
 	modVersion = '1.0.0'
 	workshopId = '3686714710'
 	workshopIdProd = '3686199425'

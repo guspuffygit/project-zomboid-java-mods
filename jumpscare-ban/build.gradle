@@ -5,6 +5,13 @@ modInfo {
 	workshopIdProd = '3716129274'
 	description = '''Plays the Withered Foxy jumpscare full-screen on a player's client the instant they get banned.
 
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]
+
 Once the banned player is gone, the server gives them a send-off for everyone still online: it announces "Kachow" in chat with a Lightning McQueen sound, then a few seconds later announces "THUNDER" with a matching thunderclap.
 
 Also adds three extra admin debug commands:
@@ -12,12 +19,13 @@ Also adds three extra admin debug commands:
 - /fart [username] - exactly what it sounds like
 - /cry [username] - waaaah
 
-Omit the username to play the sound for everyone on the server. Pass a username to play a 3D positional sound at that player's location and float a random text bubble over their head.
+If you don't specify a username, everyone on the server will hear the sound effect.
+Specify a username to play a 3D positional sound at that player's location and float a random text bubble over their head.
 
 Inspired by Nipeng's "1/10000 Chance for Withered Foxy Jumpscare Every Second" mod.
 
 Requires Storm mod loader.
 
-Tested and compatible with 42.18.0'''
+Tested and compatible with 42.19.0'''
 	modVersion = '1.0.0'
 }

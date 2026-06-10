@@ -3,9 +3,14 @@ modInfo {
 	name = 'Gus Puffy Shoutcast Streamer by Gus Puffy'
 	workshopId = '3676488932'
 	workshopIdProd = '3672982574'
-	description = '''\
-		Allows Gus Puffy to stream audio from shoutcast for a DJ set in game.
-	'''.stripIndent()
+	description = '''Allows Gus Puffy to stream audio from shoutcast for a DJ set in game.
+
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]'''
 }
 
 uploadWorkshop.enabled = false

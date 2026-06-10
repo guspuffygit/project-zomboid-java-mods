@@ -3,9 +3,14 @@ modInfo {
 	name = 'Mouse Vehicle Steering by Gus Puffy'
 	workshopId = '3676488009'
 	workshopIdProd = '3672982483'
-	description = '''\
-		Steer vehicles in the direction that you point your mouse.
-	'''.stripIndent()
+	description = '''Steer vehicles in the direction that you point your mouse.
+
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]'''
 }
 
 uploadWorkshop.enabled = false

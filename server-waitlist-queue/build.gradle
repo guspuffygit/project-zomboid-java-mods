@@ -1,15 +1,20 @@
 modInfo {
 	name = 'Server Waitlist Queue by Gus Puffy'
-	description = '''\
-		|Enables a server-side waitlist queue when the server is full.
-		|
-		|Instead of immediately rejecting players with "ServerFull", players are placed
-		|into the existing LoginQueue and shown their position while waiting for a slot.
-		|
-		|Fully backwards compatible with vanilla (unmodified) clients.
-		|
-		|Requires LoginQueueEnabled=true in server options.
-	'''.stripMargin('|')
+	description = '''Enables a server-side waitlist queue when the server is full.
+
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]
+
+Instead of immediately rejecting players with "ServerFull", players are placed
+into the existing LoginQueue and shown their position while waiting for a slot.
+
+Fully backwards compatible with vanilla (unmodified) clients.
+
+Requires LoginQueueEnabled=true in server options.'''
 	modVersion = '1.0.0'
 	workshopId = '3682731461'
 	workshopIdProd = '3682732041'

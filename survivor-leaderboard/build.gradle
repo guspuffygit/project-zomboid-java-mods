@@ -9,6 +9,11 @@ A live, server-wide leaderboard for multiplayer Project Zomboid. It ranks every 
 [b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] The scoring, database, and web API all run server-side; the in-game board is pure Lua, so connecting players just need the mod. Built for dedicated / multiplayer servers.
 
 [hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]
 
 [h1]The Board[/h1]
 [list]
@@ -65,7 +70,7 @@ Team-killers and spawn-campers don't get away clean:
 
 [hr][/hr]
 
-Tested and compatible with 42.18.0
+Tested and compatible with 42.19.0
 
 5/29/2026 - Added a Zombies-killed board and a repeat-victim anti-farm penalty.'''
 }

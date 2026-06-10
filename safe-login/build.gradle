@@ -4,11 +4,16 @@ modInfo {
 	workshopId = '3691404212'
 	workshopIdStage = '3694330363'
 	workshopIdProd = '3691517016'
-	description = '''\
-		Protects players for up to 10 seconds after spawning with invisibility and god mode.
+	description = '''Protects players for up to 10 seconds after spawning with invisibility and god mode.
 
-		If the player moves before the timer expires, protection is cancelled immediately.
-	'''.stripIndent()
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]
+
+If the player moves before the timer expires, protection is cancelled immediately.'''
 }
 
 uploadWorkshop.enabled = false

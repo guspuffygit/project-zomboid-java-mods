@@ -5,8 +5,15 @@ modInfo {
 	workshopIdProd = '3692065551'
 	description = '''Adds additional server-side logging capabilities for Project Zomboid.
 
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[hr][/hr]
+
 Requires Storm mod loader
 
-Tested and compatible with 42.18.0'''
+Tested and compatible with 42.19.0'''
 	modVersion = '1.0.0'
 }
