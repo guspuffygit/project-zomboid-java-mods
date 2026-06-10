@@ -1,0 +1,67 @@
+VERSION = 1,
+
+option SurvivorLootRespawn.LootRespawnType
+{
+  type = enum,
+  numValues = 2,
+  default = 2,
+
+  page = SurvivorLootRespawn,
+  translation = SurvivorLootRespawn_LootRespawnType,
+  valueTranslation = SurvivorLootRespawn_LootRespawnType,
+}
+
+option SurvivorLootRespawn.HoursTillMaxRespawnChance
+{
+  type = integer,
+  min = 1,
+  max = 9999,
+  default = 96,
+
+  page = SurvivorLootRespawn,
+  translation = SurvivorLootRespawn_HoursTillMaxRespawnChance,
+}
+
+option SurvivorLootRespawn.MaxRespawnChance
+{
+  type = integer,
+  min = 0,
+  max = 100,
+  default = 100,
+
+  page = SurvivorLootRespawn,
+  translation = SurvivorLootRespawn_MaxRespawnChance,
+}
+
+option SurvivorLootRespawn.MinRespawnChance
+{
+  type = integer,
+  min = 0,
+  max = 100,
+  default = 0,
+
+  page = SurvivorLootRespawn,
+  translation = SurvivorLootRespawn_MinRespawnChance,
+}
+
+option SurvivorLootRespawn.ContainerQuietPeriodHours
+{
+  type = integer,
+  min = 0,
+  max = 9998,
+  default = 0,
+
+  page = SurvivorLootRespawn,
+  translation = SurvivorLootRespawn_ContainerQuietPeriodHours,
+}
+
+option SurvivorLootRespawn.CurveSteepness
+{
+  type = double,
+  min = 1.001,
+  max = 2.0,
+  default = 1.05,
+
+  page = SurvivorLootRespawn,
+  translation = SurvivorLootRespawn_CurveSteepness,
+}
