@@ -57,7 +57,7 @@ public final class HourlyRespawnRollHandler {
             }
         }
         LOGGER.debug(
-                "Loot respawn roll at worldAgeHours={}: rolled={}, queued={}",
+                "(SurvivorLootRespawn) Loot respawn roll at worldAgeHours={}: rolled={}, queued={}",
                 worldAgeHours,
                 rolling.size(),
                 queued);

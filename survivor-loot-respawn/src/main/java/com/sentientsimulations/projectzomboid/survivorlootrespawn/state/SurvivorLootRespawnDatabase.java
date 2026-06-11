@@ -46,7 +46,8 @@ public final class SurvivorLootRespawnDatabase {
 
         File dbFile = ZomboidFileSystem.instance.getFileInCurrentSave(DB_FILENAME);
         String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
-        LOGGER.info("Opening survivor-loot-respawn SQLite db at {}", dbFile.getAbsolutePath());
+        LOGGER.info(
+                "(SurvivorLootRespawn) Opening SQLite db at {}", dbFile.getAbsolutePath());
 
         connection = DriverManager.getConnection(url);
         try (Statement stmt = connection.createStatement()) {
@@ -67,7 +68,7 @@ public final class SurvivorLootRespawnDatabase {
                 connection.close();
             }
         } catch (SQLException e) {
-            LOGGER.warn("Error closing survivor-loot-respawn db", e);
+            LOGGER.warn("(SurvivorLootRespawn) Error closing db", e);
         }
         connection = null;
     }

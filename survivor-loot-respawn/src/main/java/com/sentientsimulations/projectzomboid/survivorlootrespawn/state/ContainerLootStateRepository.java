@@ -42,6 +42,16 @@ public final class ContainerLootStateRepository {
              WHERE square_x = ? AND square_y = ? AND square_z = ?
                AND respawn_queued_at_hours IS NOT NULL""";
 
+    private static final String SELECT_QUEUED_IN_CHUNK_SQL =
+            """
+            SELECT square_x, square_y, square_z, container_type, container_index,
+                   looted_game_hours, item_count, respawn_queued_at_hours,
+                   last_username, last_steam_id
+              FROM container_loot_state
+             WHERE square_x >= ? AND square_x < ?
+               AND square_y >= ? AND square_y < ?
+               AND respawn_queued_at_hours IS NOT NULL""";
+
     private static final String MARK_QUEUED_SQL =
             """
             UPDATE container_loot_state
@@ -74,7 +84,7 @@ public final class ContainerLootStateRepository {
             }
         } catch (SQLException e) {
             LOGGER.error(
-                    "Failed to upsert container loot state at x={} y={} z={} type={} idx={}",
+                    "(SurvivorLootRespawn) Failed to upsert container loot state at x={} y={} z={} type={} idx={}",
                     s.squareX(),
                     s.squareY(),
                     s.squareZ(),
@@ -99,7 +109,36 @@ public final class ContainerLootStateRepository {
                 }
             }
         } catch (SQLException e) {
-            LOGGER.error("Failed to select rolling container loot states", e);
+            LOGGER.error("(SurvivorLootRespawn) Failed to select rolling container loot states", e);
+        }
+        return out;
+    }
+
+    public static List<ContainerLootState> selectQueuedInChunk(int chunkWX, int chunkWY) {
+        int worldX0 = chunkWX * 8;
+        int worldX1 = worldX0 + 8;
+        int worldY0 = chunkWY * 8;
+        int worldY1 = worldY0 + 8;
+        List<ContainerLootState> out = new ArrayList<>();
+        try {
+            Connection c = SurvivorLootRespawnDatabase.getConnection();
+            try (PreparedStatement ps = c.prepareStatement(SELECT_QUEUED_IN_CHUNK_SQL)) {
+                ps.setInt(1, worldX0);
+                ps.setInt(2, worldX1);
+                ps.setInt(3, worldY0);
+                ps.setInt(4, worldY1);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        out.add(read(rs));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error(
+                    "(SurvivorLootRespawn) Failed to select queued container loot states in chunk wx={} wy={}",
+                    chunkWX,
+                    chunkWY,
+                    e);
         }
         return out;
     }
@@ -120,7 +159,11 @@ public final class ContainerLootStateRepository {
             }
         } catch (SQLException e) {
             LOGGER.error(
-                    "Failed to select queued container loot states at x={} y={} z={}", x, y, z, e);
+                    "(SurvivorLootRespawn) Failed to select queued container loot states at x={} y={} z={}",
+                    x,
+                    y,
+                    z,
+                    e);
         }
         return out;
     }
@@ -140,7 +183,7 @@ public final class ContainerLootStateRepository {
             }
         } catch (SQLException e) {
             LOGGER.error(
-                    "Failed to mark container loot state queued at x={} y={} z={} type={} idx={}",
+                    "(SurvivorLootRespawn) Failed to mark container loot state queued at x={} y={} z={} type={} idx={}",
                     x,
                     y,
                     z,
@@ -163,7 +206,7 @@ public final class ContainerLootStateRepository {
             }
         } catch (SQLException e) {
             LOGGER.error(
-                    "Failed to delete container loot state at x={} y={} z={} type={} idx={}",
+                    "(SurvivorLootRespawn) Failed to delete container loot state at x={} y={} z={} type={} idx={}",
                     x,
                     y,
                     z,

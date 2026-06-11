@@ -38,7 +38,7 @@ public final class ContainerLootedHandler {
         int containerIndex = computeContainerIndex(sq, container);
         if (containerIndex < 0) {
             LOGGER.warn(
-                    "container looted but not found in square objects: type={} at x={} y={} z={}",
+                    "(SurvivorLootRespawn) container looted but not found in square objects: type={} at x={} y={} z={}",
                     container.getType(),
                     sq.getX(),
                     sq.getY(),
