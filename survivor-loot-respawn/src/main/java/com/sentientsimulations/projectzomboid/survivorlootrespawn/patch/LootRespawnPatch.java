@@ -21,9 +21,7 @@ public class LootRespawnPatch extends StormClassTransformer {
         return builder.visit(
                         Advice.to(GetRespawnIntervalAdvice.class)
                                 .on(ElementMatchers.named("getRespawnInterval")))
-                .visit(
-                        Advice.to(ChunkLoadedAdvice.class)
-                                .on(ElementMatchers.named("chunkLoaded")));
+                .visit(Advice.to(ChunkLoadedAdvice.class).on(ElementMatchers.named("chunkLoaded")));
     }
 
     public static class GetRespawnIntervalAdvice {

@@ -45,6 +45,11 @@ public final class ChunkLoadedRespawnHandler {
             return 0;
         }
 
+        int hoursTillMax = SurvivorLootRespawnConfig.getHoursTillMaxRespawnChance();
+        int maxChance = SurvivorLootRespawnConfig.getMaxRespawnChance();
+        int minChance = SurvivorLootRespawnConfig.getMinRespawnChance();
+        double steepness = SurvivorLootRespawnConfig.getCurveSteepness();
+
         int respawned = 0;
         for (ContainerLootState s : queued) {
             FillResult result = respawnQueued(chunk, s);
@@ -59,13 +64,19 @@ public final class ChunkLoadedRespawnHandler {
                     respawned++;
                 }
             }
+            double hoursLootedToQueued = s.respawnQueuedAtHours() - s.lootedGameHours();
+            double chance =
+                    HourlyRespawnRollHandler.computeChance(
+                            hoursLootedToQueued, hoursTillMax, minChance, maxChance, steepness);
             LOGGER.debug(
-                    "(SurvivorLootRespawn) Container x={} y={} z={} type={} idx={}: {}",
+                    "(SurvivorLootRespawn) Container x={} y={} z={} type={} idx={} queued={} rolled={}: {}",
                     s.squareX(),
                     s.squareY(),
                     s.squareZ(),
                     s.containerType(),
                     s.containerIndex(),
+                    String.format("%.2f", hoursLootedToQueued),
+                    String.format("%.2f%%", chance),
                     result);
         }
         LOGGER.debug(
