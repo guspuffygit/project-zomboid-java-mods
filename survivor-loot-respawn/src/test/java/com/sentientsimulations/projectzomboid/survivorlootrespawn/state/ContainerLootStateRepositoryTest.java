@@ -1,0 +1,207 @@
+package com.sentientsimulations.projectzomboid.survivorlootrespawn.state;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+class ContainerLootStateRepositoryTest {
+
+    private static final String CREATE_TABLE_SQL =
+            """
+            CREATE TABLE container_loot_state (
+                square_x         INTEGER NOT NULL,
+                square_y         INTEGER NOT NULL,
+                square_z         INTEGER NOT NULL,
+                container_type   TEXT    NOT NULL,
+                container_index  INTEGER NOT NULL,
+                looted_game_hours       REAL    NOT NULL,
+                item_count              INTEGER NOT NULL,
+                respawn_queued_at_hours REAL,
+                last_username           TEXT,
+                last_steam_id           TEXT,
+                PRIMARY KEY (square_x, square_y, square_z, container_type, container_index)
+            ) WITHOUT ROWID""";
+
+    private Connection conn;
+    private Connection originalConn;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        conn = DriverManager.getConnection("jdbc:sqlite::memory:");
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(CREATE_TABLE_SQL);
+        }
+        originalConn = swapDatabaseConnection(conn);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        swapDatabaseConnection(originalConn);
+        if (conn != null) {
+            conn.close();
+        }
+    }
+
+    @Test
+    void selectRollingReturnsRowsLootedBeforeQuietPeriodEnd() {
+        insert(1, 1, 0, "fridge", 0, /* looted */ 100.0, 5, null);
+        insert(2, 2, 0, "counter", 0, /* looted */ 150.0, 3, null);
+        insert(3, 3, 0, "crate", 0, /* looted */ 199.0, 1, null);
+
+        List<ContainerLootState> out =
+                ContainerLootStateRepository.selectRolling(/* world */ 200.0, /* quiet */ 50);
+
+        Set<Integer> xs = out.stream().map(ContainerLootState::squareX).collect(Collectors.toSet());
+        assertEquals(Set.of(1, 2), xs, "only rows quiet-period-old or older are eligible");
+    }
+
+    @Test
+    void quietPeriodBoundaryIsInclusive() {
+        insert(10, 10, 0, "fridge", 0, /* looted */ 100.0, 0, null);
+
+        List<ContainerLootState> out =
+                ContainerLootStateRepository.selectRolling(/* world */ 200.0, /* quiet */ 100);
+
+        assertEquals(1, out.size(), "row looted exactly at quiet-period boundary must be eligible");
+    }
+
+    @Test
+    void quietPeriodZeroEligibleForAllUnqueuedRows() {
+        insert(1, 1, 0, "fridge", 0, 50.0, 0, null);
+        insert(2, 2, 0, "counter", 0, 199.9, 0, null);
+
+        List<ContainerLootState> out =
+                ContainerLootStateRepository.selectRolling(/* world */ 200.0, /* quiet */ 0);
+
+        assertEquals(2, out.size());
+    }
+
+    @Test
+    void queuedRowsExcludedRegardlessOfQuietPeriod() {
+        insert(1, 1, 0, "fridge", 0, /* looted */ 100.0, 5, /* queued */ 150.0);
+        insert(2, 2, 0, "counter", 0, /* looted */ 100.0, 5, null);
+
+        List<ContainerLootState> out =
+                ContainerLootStateRepository.selectRolling(/* world */ 200.0, /* quiet */ 0);
+
+        assertEquals(1, out.size());
+        assertEquals(2, out.getFirst().squareX(), "queued row must be filtered out");
+        assertNull(out.getFirst().respawnQueuedAtHours());
+    }
+
+    @Test
+    void selectRollingReadsAllColumns() {
+        insert(7, 8, 1, "crate", 2, /* looted */ 42.5, 9, null, "alice", "76561197960265729");
+
+        List<ContainerLootState> out = ContainerLootStateRepository.selectRolling(100.0, 0);
+
+        assertEquals(1, out.size());
+        ContainerLootState s = out.getFirst();
+        assertEquals(7, s.squareX());
+        assertEquals(8, s.squareY());
+        assertEquals(1, s.squareZ());
+        assertEquals("crate", s.containerType());
+        assertEquals(2, s.containerIndex());
+        assertEquals(42.5, s.lootedGameHours());
+        assertEquals(9, s.itemCount());
+        assertNull(s.respawnQueuedAtHours());
+        assertEquals("alice", s.lastUsername());
+        assertEquals("76561197960265729", s.lastSteamId());
+    }
+
+    @Test
+    void markQueuedSetsTimestampAndExcludesRowFromSelectRolling() {
+        insert(5, 5, 0, "fridge", 0, /* looted */ 100.0, 0, null);
+
+        ContainerLootStateRepository.markQueued(5, 5, 0, "fridge", 0, /* queued */ 175.0);
+
+        List<ContainerLootState> rolling =
+                ContainerLootStateRepository.selectRolling(/* world */ 200.0, /* quiet */ 0);
+        assertTrue(rolling.isEmpty(), "row should no longer be eligible to roll after queueing");
+
+        List<ContainerLootState> queued =
+                ContainerLootStateRepository.selectQueuedForSquare(5, 5, 0);
+        assertEquals(1, queued.size());
+        assertNotNull(queued.getFirst().respawnQueuedAtHours());
+        assertEquals(175.0, queued.getFirst().respawnQueuedAtHours(), 1e-9);
+    }
+
+    private void insert(
+            int x,
+            int y,
+            int z,
+            String type,
+            int index,
+            double lootedHours,
+            int itemCount,
+            Double queuedHours) {
+        insert(x, y, z, type, index, lootedHours, itemCount, queuedHours, null, null);
+    }
+
+    private void insert(
+            int x,
+            int y,
+            int z,
+            String type,
+            int index,
+            double lootedHours,
+            int itemCount,
+            Double queuedHours,
+            String username,
+            String steamId) {
+        String sql =
+                "INSERT INTO container_loot_state ("
+                        + "square_x, square_y, square_z, container_type, container_index, "
+                        + "looted_game_hours, item_count, respawn_queued_at_hours, "
+                        + "last_username, last_steam_id) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, x);
+            ps.setInt(2, y);
+            ps.setInt(3, z);
+            ps.setString(4, type);
+            ps.setInt(5, index);
+            ps.setDouble(6, lootedHours);
+            ps.setInt(7, itemCount);
+            if (queuedHours == null) {
+                ps.setNull(8, java.sql.Types.REAL);
+            } else {
+                ps.setDouble(8, queuedHours);
+            }
+            if (username == null) {
+                ps.setNull(9, java.sql.Types.VARCHAR);
+            } else {
+                ps.setString(9, username);
+            }
+            if (steamId == null) {
+                ps.setNull(10, java.sql.Types.VARCHAR);
+            } else {
+                ps.setString(10, steamId);
+            }
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("test insert failed", e);
+        }
+    }
+
+    private static Connection swapDatabaseConnection(Connection replacement) throws Exception {
+        Field f = SurvivorLootRespawnDatabase.class.getDeclaredField("connection");
+        f.setAccessible(true);
+        Connection prev = (Connection) f.get(null);
+        f.set(null, replacement);
+        return prev;
+    }
+}

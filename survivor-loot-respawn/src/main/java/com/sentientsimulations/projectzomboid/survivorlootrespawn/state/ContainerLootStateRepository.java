@@ -30,7 +30,8 @@ public final class ContainerLootStateRepository {
                    looted_game_hours, item_count, respawn_queued_at_hours,
                    last_username, last_steam_id
               FROM container_loot_state
-             WHERE respawn_queued_at_hours IS NULL""";
+             WHERE respawn_queued_at_hours IS NULL
+               AND looted_game_hours <= ? - ?""";
 
     private static final String SELECT_QUEUED_FOR_SQUARE_SQL =
             """
@@ -83,14 +84,18 @@ public final class ContainerLootStateRepository {
         }
     }
 
-    public static List<ContainerLootState> selectRolling() {
+    public static List<ContainerLootState> selectRolling(
+            double worldAgeHours, int quietPeriodHours) {
         List<ContainerLootState> out = new ArrayList<>();
         try {
             Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(SELECT_ROLLING_SQL);
-                    ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    out.add(read(rs));
+            try (PreparedStatement ps = c.prepareStatement(SELECT_ROLLING_SQL)) {
+                ps.setDouble(1, worldAgeHours);
+                ps.setInt(2, quietPeriodHours);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        out.add(read(rs));
+                    }
                 }
             }
         } catch (SQLException e) {
