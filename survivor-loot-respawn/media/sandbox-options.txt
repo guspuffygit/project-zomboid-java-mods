@@ -59,7 +59,7 @@ option SurvivorLootRespawn.CurveSteepness
 {
   type = double,
   min = 1.001,
-  max = 2.0,
+  max = 1.7976931348623157E308,
   default = 1.05,
 
   page = SurvivorLootRespawn,

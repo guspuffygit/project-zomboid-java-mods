@@ -1,17 +1,17 @@
 {
   "Sandbox_SurvivorLootRespawn": "Survivor Loot Respawn",
   "Sandbox_SurvivorLootRespawn_LootRespawnType": "Loot respawn type",
-  "Sandbox_SurvivorLootRespawn_LootRespawnType_tooltip": "How container loot respawn chance is computed over time. Vanilla disables this mod and falls back to the base game's loot respawn behavior. Exponential uses the curve f(t) = B + (M - B) * (b^t - 1) / (b^T - 1), where t is hours since the container was last looted, T is the hours till max respawn chance, M is the max respawn chance, B is the min respawn chance, and b is the curve steepness.",
+  "Sandbox_SurvivorLootRespawn_LootRespawnType_tooltip": "How container loot respawn chance is computed over time. Vanilla disables this mod and falls back to the base game's loot respawn behavior. Exponential uses the curve f(t) = B + (M - B) * (b^t - 1) / (b^T - 1), where t is game hours since the container was last looted, T is the game hours till max respawn chance, M is the max respawn chance, B is the min respawn chance, and b is the curve steepness.",
   "Sandbox_SurvivorLootRespawn_LootRespawnType_option1": "Vanilla (disable mod)",
   "Sandbox_SurvivorLootRespawn_LootRespawnType_option2": "Exponential",
-  "Sandbox_SurvivorLootRespawn_HoursTillMaxRespawnChance": "Hours till max loot respawn chance",
-  "Sandbox_SurvivorLootRespawn_HoursTillMaxRespawnChance_tooltip": "Hours of in-game time after a container is looted before the per-roll respawn chance reaches its maximum value. T in the curve formula. Must be greater than the container quiet period.",
+  "Sandbox_SurvivorLootRespawn_HoursTillMaxRespawnChance": "Game hours till max loot respawn chance",
+  "Sandbox_SurvivorLootRespawn_HoursTillMaxRespawnChance_tooltip": "Game hours after a container is looted before the per-roll respawn chance reaches its maximum value. T in the curve formula. Must be greater than the container quiet period.",
   "Sandbox_SurvivorLootRespawn_MaxRespawnChance": "Max loot respawn chance (%)",
   "Sandbox_SurvivorLootRespawn_MaxRespawnChance_tooltip": "Maximum per-roll percent chance a container respawns its loot once its respawn timer fully matures. M in the curve formula. Must be higher than the min loot respawn chance.",
   "Sandbox_SurvivorLootRespawn_MinRespawnChance": "Min loot respawn chance (%)",
   "Sandbox_SurvivorLootRespawn_MinRespawnChance_tooltip": "Floor per-roll percent chance a container respawns loot once the quiet period has ended. B in the curve formula. Set to 0 to disable any chance of early respawns.",
-  "Sandbox_SurvivorLootRespawn_ContainerQuietPeriodHours": "Container quiet period (hours)",
-  "Sandbox_SurvivorLootRespawn_ContainerQuietPeriodHours_tooltip": "Hours after a container is looted during which no respawn can occur. Set to 0 to allow respawns immediately at the min chance. Must be lower than the hours till max loot respawn chance.",
+  "Sandbox_SurvivorLootRespawn_ContainerQuietPeriodHours": "Container quiet period (game hours)",
+  "Sandbox_SurvivorLootRespawn_ContainerQuietPeriodHours_tooltip": "Game hours after a container is looted during which no respawn can occur. Set to 0 to allow respawns immediately at the min chance. Must be lower than the game hours till max loot respawn chance.",
   "Sandbox_SurvivorLootRespawn_CurveSteepness": "Curve steepness (b)",
   "Sandbox_SurvivorLootRespawn_CurveSteepness_tooltip": "Base of the exponential in the respawn curve f(t) = B + (M - B) * (b^t - 1) / (b^T - 1). Values close to 1 produce a near-linear ramp; higher values back-load the curve (very low chance for most of T, sharp rise near the max-time mark). 1.05 gives a moderate back-loaded curve."
 }
