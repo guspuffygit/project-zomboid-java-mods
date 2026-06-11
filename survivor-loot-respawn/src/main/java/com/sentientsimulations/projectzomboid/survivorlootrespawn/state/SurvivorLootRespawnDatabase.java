@@ -22,10 +22,7 @@ public final class SurvivorLootRespawnDatabase {
                 container_type   TEXT    NOT NULL,
                 container_index  INTEGER NOT NULL,
                 looted_game_hours       REAL    NOT NULL,
-                item_count              INTEGER NOT NULL,
                 respawn_queued_at_hours REAL,
-                last_username           TEXT,
-                last_steam_id           TEXT,
                 PRIMARY KEY (square_x, square_y, square_z, container_type, container_index)
             ) WITHOUT ROWID""";
 

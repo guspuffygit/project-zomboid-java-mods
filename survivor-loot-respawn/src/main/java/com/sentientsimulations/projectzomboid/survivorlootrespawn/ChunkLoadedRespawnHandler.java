@@ -7,6 +7,7 @@ import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.Containe
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
 import java.util.ArrayList;
 import java.util.List;
+import zombie.GameTime;
 import zombie.SandboxOptions;
 import zombie.inventory.InventoryItem;
 import zombie.inventory.ItemContainer;
@@ -14,6 +15,8 @@ import zombie.inventory.ItemPickerJava;
 import zombie.iso.IsoChunk;
 import zombie.iso.IsoGridSquare;
 import zombie.iso.IsoObject;
+import zombie.iso.objects.IsoDeadBody;
+import zombie.iso.objects.IsoThumpable;
 import zombie.network.GameServer;
 import zombie.network.PacketTypes;
 import zombie.network.packets.INetworkPacket;
@@ -32,7 +35,78 @@ public final class ChunkLoadedRespawnHandler {
         if (!(chunkObj instanceof IsoChunk chunk)) {
             return;
         }
+        discoverChunk(chunk);
         processChunk(chunk);
+    }
+
+    public static int discoverChunk(IsoChunk chunk) {
+        if (chunk == null) {
+            return 0;
+        }
+        int maxItems = SandboxOptions.instance.maxItemsForLootRespawn.getValue();
+        double gameHours = GameTime.getInstance().getWorldAgeHours();
+        int discovered = 0;
+        for (int z = chunk.minLevel; z <= chunk.maxLevel; z++) {
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 8; x++) {
+                    IsoGridSquare sq = chunk.getGridSquare(x, y, z);
+                    if (sq == null) {
+                        continue;
+                    }
+                    discovered += discoverSquare(sq, maxItems, gameHours);
+                }
+            }
+        }
+        if (discovered > 0) {
+            LOGGER.debug(
+                    "(SurvivorLootRespawn) Container discovery in chunk wx={} wy={}: discovered={}",
+                    chunk.wx,
+                    chunk.wy,
+                    discovered);
+        }
+        return discovered;
+    }
+
+    private static int discoverSquare(IsoGridSquare sq, int maxItems, double gameHours) {
+        int discovered = 0;
+        int idx = 0;
+        for (IsoObject obj : sq.getObjects()) {
+            if (obj instanceof IsoThumpable || obj instanceof IsoDeadBody) {
+                idx += obj.getContainerCount();
+                continue;
+            }
+            int count = obj.getContainerCount();
+            for (int i = 0; i < count; i++) {
+                ItemContainer container = obj.getContainerByIndex(i);
+                if (container == null) {
+                    idx++;
+                    continue;
+                }
+                if (!container.isExplored() || !container.isHasBeenLooted()) {
+                    idx++;
+                    continue;
+                }
+                if (container.getItems() == null) {
+                    idx++;
+                    continue;
+                }
+                if (container.getItems().size() >= maxItems) {
+                    idx++;
+                    continue;
+                }
+                if (ContainerLootStateRepository.insertIfMissing(
+                        sq.getX(),
+                        sq.getY(),
+                        sq.getZ(),
+                        container.getType(),
+                        idx,
+                        gameHours)) {
+                    discovered++;
+                }
+                idx++;
+            }
+        }
+        return discovered;
     }
 
     public static int processChunk(IsoChunk chunk) {

@@ -11,24 +11,19 @@ import java.util.List;
 
 public final class ContainerLootStateRepository {
 
-    private static final String UPSERT_SQL =
+    private static final String INSERT_IF_MISSING_SQL =
             """
             INSERT INTO container_loot_state (
                 square_x, square_y, square_z, container_type, container_index,
-                looted_game_hours, item_count, respawn_queued_at_hours,
-                last_username, last_steam_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
+                looted_game_hours, respawn_queued_at_hours
+            ) VALUES (?, ?, ?, ?, ?, ?, NULL)
             ON CONFLICT(square_x, square_y, square_z, container_type, container_index)
-            DO UPDATE SET
-                item_count    = excluded.item_count,
-                last_username = excluded.last_username,
-                last_steam_id = excluded.last_steam_id""";
+            DO NOTHING""";
 
     private static final String SELECT_ROLLING_SQL =
             """
             SELECT square_x, square_y, square_z, container_type, container_index,
-                   looted_game_hours, item_count, respawn_queued_at_hours,
-                   last_username, last_steam_id
+                   looted_game_hours, respawn_queued_at_hours
               FROM container_loot_state
              WHERE respawn_queued_at_hours IS NULL
                AND looted_game_hours <= ? - ?""";
@@ -36,8 +31,7 @@ public final class ContainerLootStateRepository {
     private static final String SELECT_QUEUED_FOR_SQUARE_SQL =
             """
             SELECT square_x, square_y, square_z, container_type, container_index,
-                   looted_game_hours, item_count, respawn_queued_at_hours,
-                   last_username, last_steam_id
+                   looted_game_hours, respawn_queued_at_hours
               FROM container_loot_state
              WHERE square_x = ? AND square_y = ? AND square_z = ?
                AND respawn_queued_at_hours IS NOT NULL""";
@@ -45,8 +39,7 @@ public final class ContainerLootStateRepository {
     private static final String SELECT_QUEUED_IN_CHUNK_SQL =
             """
             SELECT square_x, square_y, square_z, container_type, container_index,
-                   looted_game_hours, item_count, respawn_queued_at_hours,
-                   last_username, last_steam_id
+                   looted_game_hours, respawn_queued_at_hours
               FROM container_loot_state
              WHERE square_x >= ? AND square_x < ?
                AND square_y >= ? AND square_y < ?
@@ -67,30 +60,34 @@ public final class ContainerLootStateRepository {
 
     private ContainerLootStateRepository() {}
 
-    public static void upsert(ContainerLootState s) {
+    public static boolean insertIfMissing(
+            int x,
+            int y,
+            int z,
+            String containerType,
+            int containerIndex,
+            double lootedGameHours) {
         try {
             Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(UPSERT_SQL)) {
-                ps.setInt(1, s.squareX());
-                ps.setInt(2, s.squareY());
-                ps.setInt(3, s.squareZ());
-                ps.setString(4, s.containerType());
-                ps.setInt(5, s.containerIndex());
-                ps.setDouble(6, s.lootedGameHours());
-                ps.setInt(7, s.itemCount());
-                ps.setString(8, s.lastUsername());
-                ps.setString(9, s.lastSteamId());
-                ps.executeUpdate();
+            try (PreparedStatement ps = c.prepareStatement(INSERT_IF_MISSING_SQL)) {
+                ps.setInt(1, x);
+                ps.setInt(2, y);
+                ps.setInt(3, z);
+                ps.setString(4, containerType);
+                ps.setInt(5, containerIndex);
+                ps.setDouble(6, lootedGameHours);
+                return ps.executeUpdate() > 0;
             }
         } catch (SQLException e) {
             LOGGER.error(
-                    "(SurvivorLootRespawn) Failed to upsert container loot state at x={} y={} z={} type={} idx={}",
-                    s.squareX(),
-                    s.squareY(),
-                    s.squareZ(),
-                    s.containerType(),
-                    s.containerIndex(),
+                    "(SurvivorLootRespawn) Failed to insert container loot state at x={} y={} z={} type={} idx={}",
+                    x,
+                    y,
+                    z,
+                    containerType,
+                    containerIndex,
                     e);
+            return false;
         }
     }
 
@@ -219,14 +216,6 @@ public final class ContainerLootStateRepository {
     private static ContainerLootState read(ResultSet rs) throws SQLException {
         double queued = rs.getDouble("respawn_queued_at_hours");
         Double queuedBoxed = rs.wasNull() ? null : queued;
-        String username = rs.getString("last_username");
-        if (rs.wasNull()) {
-            username = null;
-        }
-        String steamId = rs.getString("last_steam_id");
-        if (rs.wasNull()) {
-            steamId = null;
-        }
         return new ContainerLootState(
                 rs.getInt("square_x"),
                 rs.getInt("square_y"),
@@ -234,9 +223,6 @@ public final class ContainerLootStateRepository {
                 rs.getString("container_type"),
                 rs.getInt("container_index"),
                 rs.getDouble("looted_game_hours"),
-                rs.getInt("item_count"),
-                queuedBoxed,
-                username,
-                steamId);
+                queuedBoxed);
     }
 }

@@ -7,7 +7,4 @@ public record ContainerLootState(
         String containerType,
         int containerIndex,
         double lootedGameHours,
-        int itemCount,
-        Double respawnQueuedAtHours,
-        String lastUsername,
-        String lastSteamId) {}
+        Double respawnQueuedAtHours) {}
