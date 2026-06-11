@@ -11,7 +11,9 @@ public final class HourlyRespawnRollHandler {
 
     @SubscribeEvent
     public static void onEveryHour(EveryHoursEvent event) {
-        Thread thread = new Thread(HourlyRespawnRollHandler::rollContainers, "SurvivorLootRespawn-HourlyRoll");
+        Thread thread =
+                new Thread(
+                        HourlyRespawnRollHandler::rollContainers, "SurvivorLootRespawn-HourlyRoll");
         thread.setDaemon(true);
         thread.start();
     }

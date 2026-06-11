@@ -43,7 +43,8 @@ public final class SurvivorLootRespawnConfig {
     private SurvivorLootRespawnConfig() {}
 
     public static LootRespawnType getLootRespawnType() {
-        return LootRespawnType.fromValue(readInt("LootRespawnType", DEFAULT_LOOT_RESPAWN_TYPE.value()));
+        return LootRespawnType.fromValue(
+                readInt("LootRespawnType", DEFAULT_LOOT_RESPAWN_TYPE.value()));
     }
 
     public static boolean isModEnabled() {
@@ -87,7 +88,8 @@ public final class SurvivorLootRespawnConfig {
     }
 
     private static ConfigOption lookup(String shortName) {
-        SandboxOptions.SandboxOption opt = SandboxOptions.instance.getOptionByName(PREFIX + shortName);
+        SandboxOptions.SandboxOption opt =
+                SandboxOptions.instance.getOptionByName(PREFIX + shortName);
         return opt == null ? null : opt.asConfigOption();
     }
 }
