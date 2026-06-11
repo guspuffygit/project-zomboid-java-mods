@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.patch.LootRespawnPatch;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.mod.ZomboidMod;
@@ -22,6 +23,9 @@ public class SurvivorLootRespawnMod implements ZomboidMod {
 
     @Override
     public List<StormClassTransformer> getClassTransformers() {
-        return Collections.emptyList();
+        if (!StormEnv.isStormServer()) {
+            return Collections.emptyList();
+        }
+        return List.of(new LootRespawnPatch());
     }
 }
