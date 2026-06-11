@@ -3,6 +3,7 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.SurvivorLootRespawnDatabase;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.packet.RemoveInventoryItemFromContainerPacketEvent;
 import io.pzstorm.storm.event.zomboid.OnContainerLootedEvent;
@@ -79,10 +80,17 @@ public final class ContainerLootedHandler {
             return;
         }
 
+        int sqX = sq.getX();
+        int sqY = sq.getY();
+        int sqZ = sq.getZ();
+        String type = container.getType();
+        int idx = containerIndex;
         double gameHours = GameTime.getInstance().getWorldAgeHours();
 
-        ContainerLootStateRepository.insertIfMissing(
-                sq.getX(), sq.getY(), sq.getZ(), container.getType(), containerIndex, gameHours);
+        SurvivorLootRespawnDatabase.submit(
+                () ->
+                        ContainerLootStateRepository.insertIfMissing(
+                                sqX, sqY, sqZ, type, idx, gameHours));
     }
 
     private static int computeContainerIndex(IsoGridSquare sq, ItemContainer target) {

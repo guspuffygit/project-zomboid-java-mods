@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import zombie.ZomboidFileSystem;
 
 public final class SurvivorLootRespawnDatabase {
@@ -33,8 +35,29 @@ public final class SurvivorLootRespawnDatabase {
                 WHERE respawn_queued_at_hours IS NOT NULL""";
 
     private static Connection connection;
+    private static ExecutorService executor;
 
     private SurvivorLootRespawnDatabase() {}
+
+    public static synchronized void submit(Runnable task) {
+        if (executor == null) {
+            executor =
+                    Executors.newSingleThreadExecutor(
+                            r -> {
+                                Thread t = new Thread(r, "SurvivorLootRespawn-DB");
+                                t.setDaemon(true);
+                                return t;
+                            });
+        }
+        executor.execute(
+                () -> {
+                    try {
+                        task.run();
+                    } catch (Throwable e) {
+                        LOGGER.error("(SurvivorLootRespawn) DB executor task failed", e);
+                    }
+                });
+    }
 
     public static synchronized Connection getConnection() throws SQLException {
         if (connection != null && !connection.isClosed()) {
@@ -56,6 +79,10 @@ public final class SurvivorLootRespawnDatabase {
     }
 
     public static synchronized void close() {
+        if (executor != null) {
+            executor.shutdown();
+            executor = null;
+        }
         if (connection == null) {
             return;
         }

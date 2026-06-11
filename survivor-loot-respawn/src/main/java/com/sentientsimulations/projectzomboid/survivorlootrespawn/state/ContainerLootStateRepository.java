@@ -58,55 +58,107 @@ public final class ContainerLootStateRepository {
              WHERE square_x = ? AND square_y = ? AND square_z = ?
                AND container_type = ? AND container_index = ?""";
 
+    public record InsertRow(
+            int squareX,
+            int squareY,
+            int squareZ,
+            String containerType,
+            int containerIndex,
+            double lootedGameHours) {}
+
     private ContainerLootStateRepository() {}
 
     public static boolean insertIfMissing(
-            int x,
-            int y,
-            int z,
-            String containerType,
-            int containerIndex,
-            double lootedGameHours) {
-        try {
-            Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(INSERT_IF_MISSING_SQL)) {
-                ps.setInt(1, x);
-                ps.setInt(2, y);
-                ps.setInt(3, z);
-                ps.setString(4, containerType);
-                ps.setInt(5, containerIndex);
-                ps.setDouble(6, lootedGameHours);
-                return ps.executeUpdate() > 0;
+            int x, int y, int z, String containerType, int containerIndex, double lootedGameHours) {
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                try (PreparedStatement ps = c.prepareStatement(INSERT_IF_MISSING_SQL)) {
+                    ps.setInt(1, x);
+                    ps.setInt(2, y);
+                    ps.setInt(3, z);
+                    ps.setString(4, containerType);
+                    ps.setInt(5, containerIndex);
+                    ps.setDouble(6, lootedGameHours);
+                    return ps.executeUpdate() > 0;
+                }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to insert container loot state at x={} y={} z={} type={} idx={}",
+                        x,
+                        y,
+                        z,
+                        containerType,
+                        containerIndex,
+                        e);
+                return false;
             }
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "(SurvivorLootRespawn) Failed to insert container loot state at x={} y={} z={} type={} idx={}",
-                    x,
-                    y,
-                    z,
-                    containerType,
-                    containerIndex,
-                    e);
-            return false;
+        }
+    }
+
+    public static int batchInsertIfMissing(List<InsertRow> rows) {
+        if (rows.isEmpty()) {
+            return 0;
+        }
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                boolean prevAutoCommit = c.getAutoCommit();
+                c.setAutoCommit(false);
+                try (PreparedStatement ps = c.prepareStatement(INSERT_IF_MISSING_SQL)) {
+                    for (InsertRow r : rows) {
+                        ps.setInt(1, r.squareX());
+                        ps.setInt(2, r.squareY());
+                        ps.setInt(3, r.squareZ());
+                        ps.setString(4, r.containerType());
+                        ps.setInt(5, r.containerIndex());
+                        ps.setDouble(6, r.lootedGameHours());
+                        ps.addBatch();
+                    }
+                    int[] counts = ps.executeBatch();
+                    c.commit();
+                    int inserted = 0;
+                    for (int n : counts) {
+                        if (n > 0) {
+                            inserted++;
+                        }
+                    }
+                    return inserted;
+                } catch (SQLException e) {
+                    c.rollback();
+                    throw e;
+                } finally {
+                    c.setAutoCommit(prevAutoCommit);
+                }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to batch insert {} container loot states",
+                        rows.size(),
+                        e);
+                return 0;
+            }
         }
     }
 
     public static List<ContainerLootState> selectRolling(
             double worldAgeHours, int quietPeriodHours) {
         List<ContainerLootState> out = new ArrayList<>();
-        try {
-            Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(SELECT_ROLLING_SQL)) {
-                ps.setDouble(1, worldAgeHours);
-                ps.setInt(2, quietPeriodHours);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        out.add(read(rs));
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                try (PreparedStatement ps = c.prepareStatement(SELECT_ROLLING_SQL)) {
+                    ps.setDouble(1, worldAgeHours);
+                    ps.setInt(2, quietPeriodHours);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            out.add(read(rs));
+                        }
                     }
                 }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to select rolling container loot states", e);
             }
-        } catch (SQLException e) {
-            LOGGER.error("(SurvivorLootRespawn) Failed to select rolling container loot states", e);
         }
         return out;
     }
@@ -117,99 +169,143 @@ public final class ContainerLootStateRepository {
         int worldY0 = chunkWY * 8;
         int worldY1 = worldY0 + 8;
         List<ContainerLootState> out = new ArrayList<>();
-        try {
-            Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(SELECT_QUEUED_IN_CHUNK_SQL)) {
-                ps.setInt(1, worldX0);
-                ps.setInt(2, worldX1);
-                ps.setInt(3, worldY0);
-                ps.setInt(4, worldY1);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        out.add(read(rs));
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                try (PreparedStatement ps = c.prepareStatement(SELECT_QUEUED_IN_CHUNK_SQL)) {
+                    ps.setInt(1, worldX0);
+                    ps.setInt(2, worldX1);
+                    ps.setInt(3, worldY0);
+                    ps.setInt(4, worldY1);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            out.add(read(rs));
+                        }
                     }
                 }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to select queued container loot states in chunk wx={} wy={}",
+                        chunkWX,
+                        chunkWY,
+                        e);
             }
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "(SurvivorLootRespawn) Failed to select queued container loot states in chunk wx={} wy={}",
-                    chunkWX,
-                    chunkWY,
-                    e);
         }
         return out;
     }
 
     public static List<ContainerLootState> selectQueuedForSquare(int x, int y, int z) {
         List<ContainerLootState> out = new ArrayList<>();
-        try {
-            Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(SELECT_QUEUED_FOR_SQUARE_SQL)) {
-                ps.setInt(1, x);
-                ps.setInt(2, y);
-                ps.setInt(3, z);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        out.add(read(rs));
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                try (PreparedStatement ps = c.prepareStatement(SELECT_QUEUED_FOR_SQUARE_SQL)) {
+                    ps.setInt(1, x);
+                    ps.setInt(2, y);
+                    ps.setInt(3, z);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            out.add(read(rs));
+                        }
                     }
                 }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to select queued container loot states at x={} y={} z={}",
+                        x,
+                        y,
+                        z,
+                        e);
             }
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "(SurvivorLootRespawn) Failed to select queued container loot states at x={} y={} z={}",
-                    x,
-                    y,
-                    z,
-                    e);
         }
         return out;
     }
 
     public static void markQueued(
             int x, int y, int z, String containerType, int containerIndex, double gameHours) {
-        try {
-            Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(MARK_QUEUED_SQL)) {
-                ps.setDouble(1, gameHours);
-                ps.setInt(2, x);
-                ps.setInt(3, y);
-                ps.setInt(4, z);
-                ps.setString(5, containerType);
-                ps.setInt(6, containerIndex);
-                ps.executeUpdate();
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                try (PreparedStatement ps = c.prepareStatement(MARK_QUEUED_SQL)) {
+                    ps.setDouble(1, gameHours);
+                    ps.setInt(2, x);
+                    ps.setInt(3, y);
+                    ps.setInt(4, z);
+                    ps.setString(5, containerType);
+                    ps.setInt(6, containerIndex);
+                    ps.executeUpdate();
+                }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to mark container loot state queued at x={} y={} z={} type={} idx={}",
+                        x,
+                        y,
+                        z,
+                        containerType,
+                        containerIndex,
+                        e);
             }
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "(SurvivorLootRespawn) Failed to mark container loot state queued at x={} y={} z={} type={} idx={}",
-                    x,
-                    y,
-                    z,
-                    containerType,
-                    containerIndex,
-                    e);
+        }
+    }
+
+    public static void batchMarkQueued(List<ContainerLootState> rows, double gameHours) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                boolean prevAutoCommit = c.getAutoCommit();
+                c.setAutoCommit(false);
+                try (PreparedStatement ps = c.prepareStatement(MARK_QUEUED_SQL)) {
+                    for (ContainerLootState s : rows) {
+                        ps.setDouble(1, gameHours);
+                        ps.setInt(2, s.squareX());
+                        ps.setInt(3, s.squareY());
+                        ps.setInt(4, s.squareZ());
+                        ps.setString(5, s.containerType());
+                        ps.setInt(6, s.containerIndex());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                    c.commit();
+                } catch (SQLException e) {
+                    c.rollback();
+                    throw e;
+                } finally {
+                    c.setAutoCommit(prevAutoCommit);
+                }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to batch mark {} container loot states queued",
+                        rows.size(),
+                        e);
+            }
         }
     }
 
     public static void delete(int x, int y, int z, String containerType, int containerIndex) {
-        try {
-            Connection c = SurvivorLootRespawnDatabase.getConnection();
-            try (PreparedStatement ps = c.prepareStatement(DELETE_SQL)) {
-                ps.setInt(1, x);
-                ps.setInt(2, y);
-                ps.setInt(3, z);
-                ps.setString(4, containerType);
-                ps.setInt(5, containerIndex);
-                ps.executeUpdate();
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                try (PreparedStatement ps = c.prepareStatement(DELETE_SQL)) {
+                    ps.setInt(1, x);
+                    ps.setInt(2, y);
+                    ps.setInt(3, z);
+                    ps.setString(4, containerType);
+                    ps.setInt(5, containerIndex);
+                    ps.executeUpdate();
+                }
+            } catch (SQLException e) {
+                LOGGER.error(
+                        "(SurvivorLootRespawn) Failed to delete container loot state at x={} y={} z={} type={} idx={}",
+                        x,
+                        y,
+                        z,
+                        containerType,
+                        containerIndex,
+                        e);
             }
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "(SurvivorLootRespawn) Failed to delete container loot state at x={} y={} z={} type={} idx={}",
-                    x,
-                    y,
-                    z,
-                    containerType,
-                    containerIndex,
-                    e);
         }
     }
 

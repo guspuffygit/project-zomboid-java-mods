@@ -149,7 +149,8 @@ class ContainerLootStateRepositoryTest {
         assertEquals("fridge", s.containerType());
         assertEquals(2, s.containerIndex());
         assertEquals(123.5, s.lootedGameHours());
-        assertNull(s.respawnQueuedAtHours(), "newly tracked rows enter normal roll cycle, not queued");
+        assertNull(
+                s.respawnQueuedAtHours(), "newly tracked rows enter normal roll cycle, not queued");
     }
 
     @Test
@@ -160,11 +161,14 @@ class ContainerLootStateRepositoryTest {
                 ContainerLootStateRepository.insertIfMissing(1, 1, 0, "fridge", 0, 999.0);
 
         assertFalse(inserted, "existing row must not be overwritten");
-        List<ContainerLootState> queued = ContainerLootStateRepository.selectQueuedForSquare(1, 1, 0);
+        List<ContainerLootState> queued =
+                ContainerLootStateRepository.selectQueuedForSquare(1, 1, 0);
         assertEquals(1, queued.size());
         ContainerLootState s = queued.getFirst();
         assertEquals(
-                100.0, s.lootedGameHours(), "looted_game_hours must not be overwritten by re-insert");
+                100.0,
+                s.lootedGameHours(),
+                "looted_game_hours must not be overwritten by re-insert");
         assertEquals(
                 150.0,
                 s.respawnQueuedAtHours(),
@@ -172,13 +176,7 @@ class ContainerLootStateRepositoryTest {
     }
 
     private void insert(
-            int x,
-            int y,
-            int z,
-            String type,
-            int index,
-            double lootedHours,
-            Double queuedHours) {
+            int x, int y, int z, String type, int index, double lootedHours, Double queuedHours) {
         String sql =
                 "INSERT INTO container_loot_state ("
                         + "square_x, square_y, square_z, container_type, container_index, "

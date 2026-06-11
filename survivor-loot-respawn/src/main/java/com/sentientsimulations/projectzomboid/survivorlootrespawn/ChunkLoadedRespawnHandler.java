@@ -5,6 +5,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.config.SurvivorLootRespawnConfig;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootState;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository.InsertRow;
 import java.util.ArrayList;
 import java.util.List;
 import zombie.GameTime;
@@ -45,7 +46,7 @@ public final class ChunkLoadedRespawnHandler {
         }
         int maxItems = SandboxOptions.instance.maxItemsForLootRespawn.getValue();
         double gameHours = GameTime.getInstance().getWorldAgeHours();
-        int discovered = 0;
+        List<InsertRow> rows = new ArrayList<>();
         for (int z = chunk.minLevel; z <= chunk.maxLevel; z++) {
             for (int y = 0; y < 8; y++) {
                 for (int x = 0; x < 8; x++) {
@@ -53,10 +54,11 @@ public final class ChunkLoadedRespawnHandler {
                     if (sq == null) {
                         continue;
                     }
-                    discovered += discoverSquare(sq, maxItems, gameHours);
+                    collectSquare(sq, maxItems, gameHours, rows);
                 }
             }
         }
+        int discovered = ContainerLootStateRepository.batchInsertIfMissing(rows);
         if (discovered > 0) {
             LOGGER.debug(
                     "(SurvivorLootRespawn) Container discovery in chunk wx={} wy={}: discovered={}",
@@ -67,8 +69,8 @@ public final class ChunkLoadedRespawnHandler {
         return discovered;
     }
 
-    private static int discoverSquare(IsoGridSquare sq, int maxItems, double gameHours) {
-        int discovered = 0;
+    private static void collectSquare(
+            IsoGridSquare sq, int maxItems, double gameHours, List<InsertRow> rows) {
         int idx = 0;
         for (IsoObject obj : sq.getObjects()) {
             if (obj instanceof IsoThumpable || obj instanceof IsoDeadBody) {
@@ -94,19 +96,17 @@ public final class ChunkLoadedRespawnHandler {
                     idx++;
                     continue;
                 }
-                if (ContainerLootStateRepository.insertIfMissing(
-                        sq.getX(),
-                        sq.getY(),
-                        sq.getZ(),
-                        container.getType(),
-                        idx,
-                        gameHours)) {
-                    discovered++;
-                }
+                rows.add(
+                        new InsertRow(
+                                sq.getX(),
+                                sq.getY(),
+                                sq.getZ(),
+                                container.getType(),
+                                idx,
+                                gameHours));
                 idx++;
             }
         }
-        return discovered;
     }
 
     public static int processChunk(IsoChunk chunk) {

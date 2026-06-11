@@ -7,6 +7,7 @@ import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.Containe
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.EveryHoursEvent;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import zombie.GameTime;
@@ -40,27 +41,21 @@ public final class HourlyRespawnRollHandler {
             return;
         }
 
-        int queued = 0;
+        List<ContainerLootState> winners = new ArrayList<>();
         for (ContainerLootState s : rolling) {
             double hoursSinceLooted = worldAgeHours - s.lootedGameHours();
             double chance =
                     computeChance(hoursSinceLooted, hoursTillMax, minChance, maxChance, steepness);
             if (ThreadLocalRandom.current().nextDouble() * 100.0 < chance) {
-                ContainerLootStateRepository.markQueued(
-                        s.squareX(),
-                        s.squareY(),
-                        s.squareZ(),
-                        s.containerType(),
-                        s.containerIndex(),
-                        worldAgeHours);
-                queued++;
+                winners.add(s);
             }
         }
+        ContainerLootStateRepository.batchMarkQueued(winners, worldAgeHours);
         LOGGER.debug(
                 "(SurvivorLootRespawn) Loot respawn roll at worldAgeHours={}: rolled={}, queued={}",
                 worldAgeHours,
                 rolling.size(),
-                queued);
+                winners.size());
     }
 
     static double computeChance(
