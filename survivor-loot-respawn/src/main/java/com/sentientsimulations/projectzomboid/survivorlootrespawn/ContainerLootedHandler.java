@@ -16,6 +16,7 @@ import zombie.iso.objects.IsoDeadBody;
 import zombie.iso.objects.IsoThumpable;
 import zombie.network.fields.ContainerID;
 import zombie.network.packets.RemoveInventoryItemFromContainerPacket;
+import zombie.util.list.PZArrayList;
 
 public final class ContainerLootedHandler {
 
@@ -95,7 +96,9 @@ public final class ContainerLootedHandler {
 
     private static int computeContainerIndex(IsoGridSquare sq, ItemContainer target) {
         int idx = 0;
-        for (IsoObject obj : sq.getObjects()) {
+        PZArrayList<IsoObject> objects = sq.getObjects();
+        for (int oi = 0; oi < objects.size(); oi++) {
+            IsoObject obj = objects.get(oi);
             int count = obj.getContainerCount();
             for (int i = 0; i < count; i++) {
                 if (obj.getContainerByIndex(i) == target) {

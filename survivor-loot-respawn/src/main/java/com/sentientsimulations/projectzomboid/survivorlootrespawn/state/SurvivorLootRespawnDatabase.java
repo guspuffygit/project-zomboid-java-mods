@@ -13,7 +13,7 @@ import zombie.ZomboidFileSystem;
 
 public final class SurvivorLootRespawnDatabase {
 
-    private static final String DB_FILENAME = "survivor-loot-respawn.db";
+    private static final String DB_FILENAME = "survivor_loot_respawn.db";
 
     private static final String CREATE_CONTAINER_LOOT_STATE =
             """
@@ -66,7 +66,6 @@ public final class SurvivorLootRespawnDatabase {
 
         File dbFile = ZomboidFileSystem.instance.getFileInCurrentSave(DB_FILENAME);
         String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
-        LOGGER.info("(SurvivorLootRespawn) Opening SQLite db at {}", dbFile.getAbsolutePath());
 
         connection = DriverManager.getConnection(url);
         try (Statement stmt = connection.createStatement()) {

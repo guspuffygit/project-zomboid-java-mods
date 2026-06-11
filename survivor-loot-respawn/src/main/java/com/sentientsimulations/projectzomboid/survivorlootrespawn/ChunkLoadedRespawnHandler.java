@@ -21,6 +21,7 @@ import zombie.iso.objects.IsoThumpable;
 import zombie.network.GameServer;
 import zombie.network.PacketTypes;
 import zombie.network.packets.INetworkPacket;
+import zombie.util.list.PZArrayList;
 
 public final class ChunkLoadedRespawnHandler {
 
@@ -72,7 +73,9 @@ public final class ChunkLoadedRespawnHandler {
     private static void collectSquare(
             IsoGridSquare sq, int maxItems, double gameHours, List<InsertRow> rows) {
         int idx = 0;
-        for (IsoObject obj : sq.getObjects()) {
+        PZArrayList<IsoObject> objects = sq.getObjects();
+        for (int oi = 0; oi < objects.size(); oi++) {
+            IsoObject obj = objects.get(oi);
             if (obj instanceof IsoThumpable || obj instanceof IsoDeadBody) {
                 idx += obj.getContainerCount();
                 continue;
@@ -174,7 +177,9 @@ public final class ChunkLoadedRespawnHandler {
         }
 
         int idx = 0;
-        for (IsoObject obj : sq.getObjects()) {
+        PZArrayList<IsoObject> objects = sq.getObjects();
+        for (int oi = 0; oi < objects.size(); oi++) {
+            IsoObject obj = objects.get(oi);
             int count = obj.getContainerCount();
             for (int i = 0; i < count; i++) {
                 if (idx == s.containerIndex()) {

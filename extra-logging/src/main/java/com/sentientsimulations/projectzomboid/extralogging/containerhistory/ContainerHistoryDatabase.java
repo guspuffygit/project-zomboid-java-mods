@@ -44,7 +44,6 @@ public final class ContainerHistoryDatabase {
 
         File dbFile = ZomboidFileSystem.instance.getFileInCurrentSave(DB_FILENAME);
         String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
-        LOGGER.info("Opening container-history SQLite db at {}", dbFile.getAbsolutePath());
 
         connection = DriverManager.getConnection(url);
         try (Statement stmt = connection.createStatement()) {
