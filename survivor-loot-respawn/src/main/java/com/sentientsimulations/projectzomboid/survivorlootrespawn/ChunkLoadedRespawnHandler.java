@@ -3,6 +3,7 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.config.SurvivorLootRespawnConfig;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.metrics.SurvivorLootRespawnMetrics;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootState;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository.InsertRow;
@@ -25,26 +26,34 @@ import zombie.util.list.PZArrayList;
 
 public final class ChunkLoadedRespawnHandler {
 
+    static final int MAX_FILL_NOTHING_RETRIES = 3;
+
     private ChunkLoadedRespawnHandler() {}
 
     public static void onChunkLoaded(Object chunkObj) {
-        if (!SurvivorLootRespawnConfig.isModEnabled()) {
-            return;
+        try {
+            if (!SurvivorLootRespawnConfig.isModEnabled()) {
+                return;
+            }
+            if (!GameServer.server) {
+                return;
+            }
+            if (!(chunkObj instanceof IsoChunk chunk)) {
+                return;
+            }
+            discoverChunk(chunk);
+            processChunk(chunk);
+        } catch (Throwable t) {
+            SurvivorLootRespawnMetrics.recordOnChunkLoadedError();
+            LOGGER.error("(SurvivorLootRespawn) onChunkLoaded failed", t);
         }
-        if (!GameServer.server) {
-            return;
-        }
-        if (!(chunkObj instanceof IsoChunk chunk)) {
-            return;
-        }
-        discoverChunk(chunk);
-        processChunk(chunk);
     }
 
     public static int discoverChunk(IsoChunk chunk) {
         if (chunk == null) {
             return 0;
         }
+        long startNanos = System.nanoTime();
         int maxItems = SandboxOptions.instance.maxItemsForLootRespawn.getValue();
         double gameHours = GameTime.getInstance().getWorldAgeHours();
         List<InsertRow> rows = new ArrayList<>();
@@ -60,6 +69,9 @@ public final class ChunkLoadedRespawnHandler {
             }
         }
         int discovered = ContainerLootStateRepository.batchInsertIfMissing(rows);
+        SurvivorLootRespawnMetrics.recordDiscoveryInserted(discovered);
+        SurvivorLootRespawnMetrics.observeChunkDiscoverSeconds(
+                (System.nanoTime() - startNanos) / 1e9);
         if (discovered > 0) {
             LOGGER.debug(
                     "(SurvivorLootRespawn) Container discovery in chunk wx={} wy={}: discovered={}",
@@ -84,18 +96,27 @@ public final class ChunkLoadedRespawnHandler {
             for (int i = 0; i < count; i++) {
                 ItemContainer container = obj.getContainerByIndex(i);
                 if (container == null) {
+                    SurvivorLootRespawnMetrics.recordDiscoverySkipped("null");
                     idx++;
                     continue;
                 }
-                if (!container.isExplored() || !container.isHasBeenLooted()) {
+                if (!container.isExplored()) {
+                    SurvivorLootRespawnMetrics.recordDiscoverySkipped("unexplored");
+                    idx++;
+                    continue;
+                }
+                if (!container.isHasBeenLooted()) {
+                    SurvivorLootRespawnMetrics.recordDiscoverySkipped("not_looted");
                     idx++;
                     continue;
                 }
                 if (container.getItems() == null) {
+                    SurvivorLootRespawnMetrics.recordDiscoverySkipped("no_items");
                     idx++;
                     continue;
                 }
                 if (container.getItems().size() >= maxItems) {
+                    SurvivorLootRespawnMetrics.recordDiscoverySkipped("full");
                     idx++;
                     continue;
                 }
@@ -116,9 +137,12 @@ public final class ChunkLoadedRespawnHandler {
         if (chunk == null) {
             return 0;
         }
+        long startNanos = System.nanoTime();
         List<ContainerLootState> queued =
                 ContainerLootStateRepository.selectQueuedInChunk(chunk.wx, chunk.wy);
         if (queued.isEmpty()) {
+            SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
+                    (System.nanoTime() - startNanos) / 1e9);
             return 0;
         }
 
@@ -130,14 +154,38 @@ public final class ChunkLoadedRespawnHandler {
         int respawned = 0;
         for (ContainerLootState s : queued) {
             FillResult result = respawnQueued(chunk, s);
-            if (result.shouldDelete) {
+            FillResult effective = result;
+            if (result == FillResult.RETRY_FILL_ADDED_NOTHING) {
+                SurvivorLootRespawnMetrics.recordFillAddedNothing(s.containerType());
+                int newCount = s.fillAddedNothingCount() + 1;
+                if (newCount >= MAX_FILL_NOTHING_RETRIES) {
+                    effective = FillResult.DELETE_FILL_GIVE_UP;
+                    SurvivorLootRespawnMetrics.recordFillGiveUp(s.containerType());
+                    LOGGER.debug(
+                            "(SurvivorLootRespawn) fill_added_nothing retry cap reached at x={} y={} z={} type={} idx={}, evicting row",
+                            s.squareX(),
+                            s.squareY(),
+                            s.squareZ(),
+                            s.containerType(),
+                            s.containerIndex());
+                } else {
+                    ContainerLootStateRepository.incrementFillAddedNothing(
+                            s.squareX(),
+                            s.squareY(),
+                            s.squareZ(),
+                            s.containerType(),
+                            s.containerIndex());
+                }
+            }
+            SurvivorLootRespawnMetrics.recordRespawnResult(effective.name().toLowerCase());
+            if (effective.shouldDelete) {
                 ContainerLootStateRepository.delete(
                         s.squareX(),
                         s.squareY(),
                         s.squareZ(),
                         s.containerType(),
                         s.containerIndex());
-                if (result == FillResult.RESPAWNED) {
+                if (effective == FillResult.RESPAWNED) {
                     respawned++;
                 }
             }
@@ -154,8 +202,10 @@ public final class ChunkLoadedRespawnHandler {
                     s.containerIndex(),
                     String.format("%.2f", hoursLootedToQueued),
                     String.format("%.2f%%", chance),
-                    result);
+                    effective);
         }
+        SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
+                (System.nanoTime() - startNanos) / 1e9);
         LOGGER.debug(
                 "(SurvivorLootRespawn) Loot respawn for chunk wx={} wy={}: queued={}, respawned={}",
                 chunk.wx,
@@ -237,7 +287,7 @@ public final class ChunkLoadedRespawnHandler {
         return FillResult.RESPAWNED;
     }
 
-    private enum FillResult {
+    enum FillResult {
         RETRY_OUT_OF_BOUNDS(false),
         RETRY_NO_ITEMS_LIST(false),
         RETRY_FILL_ADDED_NOTHING(false),
@@ -246,6 +296,7 @@ public final class ChunkLoadedRespawnHandler {
         DELETE_CONTAINER_NULL(true),
         DELETE_INDEX_NOT_FOUND(true),
         DELETE_TYPE_CHANGED(true),
+        DELETE_FILL_GIVE_UP(true),
         RESPAWNED(true);
 
         final boolean shouldDelete;

@@ -3,6 +3,7 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.config.SurvivorLootRespawnConfig;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.metrics.SurvivorLootRespawnMetrics;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootState;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
 import io.pzstorm.storm.event.core.SubscribeEvent;
@@ -29,6 +30,7 @@ public final class HourlyRespawnRollHandler {
     }
 
     private static void rollContainers(double worldAgeHours) {
+        long startNanos = System.nanoTime();
         int hoursTillMax = SurvivorLootRespawnConfig.getHoursTillMaxRespawnChance();
         int maxChance = SurvivorLootRespawnConfig.getMaxRespawnChance();
         int minChance = SurvivorLootRespawnConfig.getMinRespawnChance();
@@ -37,25 +39,32 @@ public final class HourlyRespawnRollHandler {
 
         List<ContainerLootState> rolling =
                 ContainerLootStateRepository.selectRolling(worldAgeHours, quietPeriod);
-        if (rolling.isEmpty()) {
-            return;
-        }
 
         List<ContainerLootState> winners = new ArrayList<>();
         for (ContainerLootState s : rolling) {
             double hoursSinceLooted = worldAgeHours - s.lootedGameHours();
             double chance =
                     computeChance(hoursSinceLooted, hoursTillMax, minChance, maxChance, steepness);
-            if (ThreadLocalRandom.current().nextDouble() * 100.0 < chance) {
+            boolean won = ThreadLocalRandom.current().nextDouble() * 100.0 < chance;
+            SurvivorLootRespawnMetrics.recordRoll(won, chance);
+            if (won) {
                 winners.add(s);
             }
         }
-        ContainerLootStateRepository.batchMarkQueued(winners, worldAgeHours);
+        if (!winners.isEmpty()) {
+            ContainerLootStateRepository.batchMarkQueued(winners, worldAgeHours);
+        }
+        SurvivorLootRespawnMetrics.observeHourlyRollSeconds((System.nanoTime() - startNanos) / 1e9);
         LOGGER.debug(
-                "(SurvivorLootRespawn) Loot respawn roll at worldAgeHours={}: rolled={}, queued={}",
+                "(SurvivorLootRespawn) Hourly roll fired at worldAgeHours={}: eligible={}, queued={} (hoursTillMax={}, max={}%, min={}%, quiet={}h, steepness={})",
                 worldAgeHours,
                 rolling.size(),
-                winners.size());
+                winners.size(),
+                hoursTillMax,
+                maxChance,
+                minChance,
+                quietPeriod,
+                steepness);
     }
 
     static double computeChance(

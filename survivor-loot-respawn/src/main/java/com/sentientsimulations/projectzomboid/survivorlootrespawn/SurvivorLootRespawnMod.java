@@ -20,6 +20,7 @@ public class SurvivorLootRespawnMod implements ZomboidMod {
         LOGGER.debug(
                 "(SurvivorLootRespawn) Registering event handler for {}",
                 SurvivorLootRespawnMod.class.getName());
+        StormEventDispatcher.registerEventHandler(StartupConfigLogger.class);
         StormEventDispatcher.registerEventHandler(ContainerLootedHandler.class);
         StormEventDispatcher.registerEventHandler(HourlyRespawnRollHandler.class);
         StormEventDispatcher.registerEventHandler(EveryTenMinutesRespawnHandler.class);

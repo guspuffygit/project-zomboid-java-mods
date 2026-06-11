@@ -3,6 +3,9 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.config.SurvivorLootRespawnConfig;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.metrics.SurvivorLootRespawnMetrics;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.SurvivorLootRespawnDatabase;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.EveryTenMinutesEvent;
 import zombie.iso.IsoChunk;
@@ -15,7 +18,9 @@ public final class EveryTenMinutesRespawnHandler {
 
     @SubscribeEvent
     public static void onEveryTenMinutes(EveryTenMinutesEvent event) {
-        if (!SurvivorLootRespawnConfig.isModEnabled()) {
+        boolean enabled = SurvivorLootRespawnConfig.isModEnabled();
+        SurvivorLootRespawnMetrics.setModEnabled(enabled);
+        if (!enabled) {
             return;
         }
         if (!GameServer.server) {
@@ -25,6 +30,7 @@ public final class EveryTenMinutesRespawnHandler {
             return;
         }
 
+        long startNanos = System.nanoTime();
         int chunksScanned = 0;
         int respawned = 0;
         for (int i = 0; i < ServerMap.instance.loadedCells.size(); i++) {
@@ -43,11 +49,18 @@ public final class EveryTenMinutesRespawnHandler {
                 }
             }
         }
-        if (respawned > 0) {
-            LOGGER.debug(
-                    "(SurvivorLootRespawn) Loot respawn sweep (every 10 min): chunks={}, respawned={}",
-                    chunksScanned,
-                    respawned);
-        }
+        SurvivorLootRespawnMetrics.observeTenMinSweepSeconds(
+                (System.nanoTime() - startNanos) / 1e9);
+        LOGGER.debug(
+                "(SurvivorLootRespawn) 10-minute sweep fired: chunks={}, respawned={}",
+                chunksScanned,
+                respawned);
+        SurvivorLootRespawnDatabase.submit(
+                () -> {
+                    SurvivorLootRespawnMetrics.setRowsTracked(
+                            ContainerLootStateRepository.countTotal());
+                    SurvivorLootRespawnMetrics.setRowsQueued(
+                            ContainerLootStateRepository.countQueued());
+                });
     }
 }

@@ -30,6 +30,7 @@ class ContainerLootStateRepositoryTest {
                 container_index  INTEGER NOT NULL,
                 looted_game_hours       REAL    NOT NULL,
                 respawn_queued_at_hours REAL,
+                fill_added_nothing_count INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (square_x, square_y, square_z, container_type, container_index)
             ) WITHOUT ROWID""";
 
@@ -175,13 +176,78 @@ class ContainerLootStateRepositoryTest {
                 "respawn_queued_at_hours must not be overwritten by re-insert");
     }
 
+    @Test
+    void readPopulatesFillAddedNothingCount() {
+        insert(1, 1, 0, "fridge", 0, 100.0, null, 2);
+
+        List<ContainerLootState> out = ContainerLootStateRepository.selectRolling(200.0, 0);
+
+        assertEquals(1, out.size());
+        assertEquals(2, out.getFirst().fillAddedNothingCount());
+    }
+
+    @Test
+    void insertIfMissingDefaultsFillAddedNothingCountToZero() {
+        ContainerLootStateRepository.insertIfMissing(1, 1, 0, "fridge", 0, 100.0);
+
+        List<ContainerLootState> out = ContainerLootStateRepository.selectRolling(200.0, 0);
+        assertEquals(1, out.size());
+        assertEquals(
+                0,
+                out.getFirst().fillAddedNothingCount(),
+                "newly tracked rows must start at zero retry count");
+    }
+
+    @Test
+    void incrementFillAddedNothingIncrementsColumn() {
+        insert(1, 1, 0, "fridge", 0, 100.0, null, 0);
+
+        ContainerLootStateRepository.incrementFillAddedNothing(1, 1, 0, "fridge", 0);
+        ContainerLootStateRepository.incrementFillAddedNothing(1, 1, 0, "fridge", 0);
+
+        List<ContainerLootState> out = ContainerLootStateRepository.selectRolling(200.0, 0);
+        assertEquals(1, out.size());
+        assertEquals(2, out.getFirst().fillAddedNothingCount());
+    }
+
+    @Test
+    void incrementFillAddedNothingNoopsOnMissingRow() {
+        ContainerLootStateRepository.incrementFillAddedNothing(99, 99, 0, "missing", 0);
+        assertEquals(0L, ContainerLootStateRepository.countTotal());
+    }
+
+    @Test
+    void countTotalAndQueuedReflectTableContents() {
+        assertEquals(0L, ContainerLootStateRepository.countTotal());
+        assertEquals(0L, ContainerLootStateRepository.countQueued());
+
+        insert(1, 1, 0, "fridge", 0, 100.0, null);
+        insert(2, 2, 0, "counter", 0, 100.0, 150.0);
+        insert(3, 3, 0, "crate", 0, 100.0, 175.0);
+
+        assertEquals(3L, ContainerLootStateRepository.countTotal());
+        assertEquals(2L, ContainerLootStateRepository.countQueued());
+    }
+
     private void insert(
             int x, int y, int z, String type, int index, double lootedHours, Double queuedHours) {
+        insert(x, y, z, type, index, lootedHours, queuedHours, 0);
+    }
+
+    private void insert(
+            int x,
+            int y,
+            int z,
+            String type,
+            int index,
+            double lootedHours,
+            Double queuedHours,
+            int fillAddedNothingCount) {
         String sql =
                 "INSERT INTO container_loot_state ("
                         + "square_x, square_y, square_z, container_type, container_index, "
-                        + "looted_game_hours, respawn_queued_at_hours) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        + "looted_game_hours, respawn_queued_at_hours, fill_added_nothing_count) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, x);
             ps.setInt(2, y);
@@ -194,6 +260,7 @@ class ContainerLootStateRepositoryTest {
             } else {
                 ps.setDouble(7, queuedHours);
             }
+            ps.setInt(8, fillAddedNothingCount);
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("test insert failed", e);

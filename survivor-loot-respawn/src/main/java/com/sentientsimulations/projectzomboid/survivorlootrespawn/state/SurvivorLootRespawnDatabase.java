@@ -5,6 +5,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +26,7 @@ public final class SurvivorLootRespawnDatabase {
                 container_index  INTEGER NOT NULL,
                 looted_game_hours       REAL    NOT NULL,
                 respawn_queued_at_hours REAL,
+                fill_added_nothing_count INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (square_x, square_y, square_z, container_type, container_index)
             ) WITHOUT ROWID""";
 
@@ -33,6 +35,10 @@ public final class SurvivorLootRespawnDatabase {
             CREATE INDEX IF NOT EXISTS idx_container_loot_state_queued
                 ON container_loot_state(square_x, square_y, square_z)
                 WHERE respawn_queued_at_hours IS NOT NULL""";
+
+    private static final String ADD_FILL_ADDED_NOTHING_COUNT_COLUMN =
+            "ALTER TABLE container_loot_state"
+                    + " ADD COLUMN fill_added_nothing_count INTEGER NOT NULL DEFAULT 0";
 
     private static Connection connection;
     private static ExecutorService executor;
@@ -73,8 +79,28 @@ public final class SurvivorLootRespawnDatabase {
             stmt.execute("PRAGMA synchronous=NORMAL");
             stmt.execute(CREATE_CONTAINER_LOOT_STATE);
             stmt.execute(CREATE_QUEUED_INDEX);
+            migrateAddFillAddedNothingCountIfMissing(stmt);
         }
         return connection;
+    }
+
+    private static void migrateAddFillAddedNothingCountIfMissing(Statement stmt)
+            throws SQLException {
+        boolean exists = false;
+        try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(container_loot_state)")) {
+            while (rs.next()) {
+                if ("fill_added_nothing_count".equals(rs.getString("name"))) {
+                    exists = true;
+                    break;
+                }
+            }
+        }
+        if (!exists) {
+            stmt.execute(ADD_FILL_ADDED_NOTHING_COUNT_COLUMN);
+            LOGGER.info(
+                    "(SurvivorLootRespawn) Migrated container_loot_state: added"
+                            + " fill_added_nothing_count column.");
+        }
     }
 
     public static synchronized void close() {

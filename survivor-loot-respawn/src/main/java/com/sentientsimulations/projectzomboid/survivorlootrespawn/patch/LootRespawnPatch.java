@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn.patch;
 
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.ChunkLoadedRespawnHandler;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.config.SurvivorLootRespawnConfig;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.metrics.SurvivorLootRespawnMetrics;
 import io.pzstorm.storm.core.StormClassTransformer;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.dynamic.ClassFileLocator;
@@ -33,6 +34,7 @@ public class LootRespawnPatch extends StormClassTransformer {
             }
             if (SurvivorLootRespawnConfig.isModEnabled()) {
                 interval = 0;
+                SurvivorLootRespawnMetrics.recordPatchIntercept();
             }
         }
     }

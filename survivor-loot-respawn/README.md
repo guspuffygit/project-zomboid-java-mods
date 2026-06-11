@@ -62,24 +62,25 @@ The cap and the quiet period are far stronger levers than `H` itself.
 
 ```
 src/main/java/com/sentientsimulations/projectzomboid/survivorlootrespawn/
-├── SurvivorLootRespawnMod.java          # Storm entry point; server-only via StormEnv.isStormServer()
-├── ContainerLootedHandler.java          # OnContainerLootedEvent → upsert into DB
-├── HourlyRespawnRollHandler.java        # EveryHoursEvent → roll eligible rows, mark queued
-├── EveryTenMinutesRespawnHandler.java   # EveryTenMinutesEvent → sweep loaded chunks
-├── ChunkLoadedRespawnHandler.java       # chunkLoaded patch target; fills queued containers
-├── patch/LootRespawnPatch.java          # Disables vanilla LootRespawn; hooks chunkLoaded
+├── SurvivorLootRespawnMod.java           # Storm entry point; server-only via StormEnv.isStormServer()
+├── ContainerLootedHandler.java           # OnContainerLootedEvent + RemoveInventoryItemFromContainerPacketEvent → insert into DB
+├── HourlyRespawnRollHandler.java         # EveryHoursEvent → roll eligible rows, mark queued
+├── EveryTenMinutesRespawnHandler.java    # EveryTenMinutesEvent → sweep loaded chunks, update gauges
+├── ChunkLoadedRespawnHandler.java        # chunkLoaded patch target; fills queued containers
+├── patch/LootRespawnPatch.java           # Disables vanilla LootRespawn; hooks chunkLoaded
 ├── config/SurvivorLootRespawnConfig.java # Sandbox-option readers
+├── metrics/SurvivorLootRespawnMetrics.java # Prometheus instruments (counters, histograms, gauges)
 └── state/
-    ├── ContainerLootState.java          # Record type
+    ├── ContainerLootState.java           # Record type
     ├── ContainerLootStateRepository.java # SQL (no business logic)
-    └── SurvivorLootRespawnDatabase.java  # JDBC connection + schema
+    └── SurvivorLootRespawnDatabase.java  # JDBC connection + schema + migrations
 ```
 
 The mod is **server-only**. `SurvivorLootRespawnMod.registerEventHandlers` and `getClassTransformers` both early-return on the client JVM via `StormEnv.isStormServer()`. Connecting clients do not need to install the mod.
 
 ## Database
 
-SQLite file: `<save>/survivor-loot-respawn.db`. WAL mode, `synchronous=NORMAL`. Single connection shared across the JVM (the mod is server-side only, so contention is bounded).
+SQLite file: `<save>/survivor_loot_respawn.db`. WAL mode, `synchronous=NORMAL`. Single connection shared across the JVM (the mod is server-side only, so contention is bounded). The schema migrates forward in place — `SurvivorLootRespawnDatabase.getConnection` runs `CREATE TABLE IF NOT EXISTS` and a `PRAGMA table_info` check that adds `fill_added_nothing_count` to pre-existing tables.
 
 ### `container_loot_state`
 
@@ -89,18 +90,23 @@ SQLite file: `<save>/survivor-loot-respawn.db`. WAL mode, `synchronous=NORMAL`. 
 | container_type            | TEXT    | `ItemContainer.getType()` (e.g. `crate`, `fridge`)     |
 | container_index           | INTEGER | Ordinal position among containers on the square's `IsoObject`s — disambiguates multi-container squares |
 | looted_game_hours         | REAL    | `GameTime.getWorldAgeHours()` at loot time             |
-| item_count                | INTEGER | Items left after the loot event                        |
 | respawn_queued_at_hours   | REAL    | Set when an hourly roll wins; `NULL` while still rolling |
-| last_username, last_steam_id | TEXT | Last player to loot it (diagnostic only)               |
+| fill_added_nothing_count  | INTEGER | Number of times `ItemPickerJava.fillContainer` ran but added no items for this row. Hits the retry cap (`ChunkLoadedRespawnHandler.MAX_FILL_NOTHING_RETRIES = 3`) → row evicted with `result=delete_fill_give_up`. |
 
-Primary key: `(square_x, square_y, square_z, container_type, container_index)`. Partial index `idx_container_loot_state_queued` on the same key, filtered to rows where `respawn_queued_at_hours IS NOT NULL`, to make chunk-load lookups O(queued) instead of O(table).
+Primary key: `(square_x, square_y, square_z, container_type, container_index)`, `WITHOUT ROWID`. Partial index `idx_container_loot_state_queued` on the same key, filtered to rows where `respawn_queued_at_hours IS NOT NULL`, to make chunk-load lookups O(queued) instead of O(table).
 
 ## Event flow
 
 ### `OnContainerLootedEvent` (Storm) — `ContainerLootedHandler.onContainerLooted`
-- Skips containers attached to `IsoThumpable` (player-built furniture) and containers already at or above `SandboxOptions.maxItemsForLootRespawn`.
+- Fires when items move out of a container via Storm's UUID transfer path (player → inventory, container → container).
+- Skips containers attached to `IsoThumpable` (player-built furniture) or `IsoDeadBody`, and containers already at or above `SandboxOptions.maxItemsForLootRespawn`.
 - Computes `container_index` by walking `sq.getObjects()` and counting containers in declaration order.
-- Upserts the row with the current `worldAgeHours`. Existing `respawn_queued_at_hours` is preserved (the `ON CONFLICT … DO UPDATE` clause only overwrites `item_count`, `last_username`, `last_steam_id`).
+- Inserts the row with `INSERT … ON CONFLICT DO NOTHING`, so existing `looted_game_hours` / `respawn_queued_at_hours` / `fill_added_nothing_count` are never overwritten by a re-loot.
+
+### `RemoveInventoryItemFromContainerPacketEvent` (Storm) — `ContainerLootedHandler.onItemRemovedFromContainer`
+- Catches the floor-drop and dead-body paths that bypass `OnContainerLootedEvent` — vanilla routes those through `RemoveInventoryItemFromContainerPacket` instead of the Storm transfer handler.
+- Filters out packets whose `isInventory()` is true (those are player inventory swaps, not container loots) and packets without a valid `ContainerID`.
+- Otherwise calls the same `handleLooted` path as the Storm event.
 
 ### `EveryHoursEvent` — `HourlyRespawnRollHandler.onEveryHour`
 - Runs on a daemon thread so the SQL doesn't block the game thread.
@@ -112,11 +118,13 @@ Primary key: `(square_x, square_y, square_z, container_type, container_index)`. 
 - Necessary because a container can be marked queued *after* its chunk was loaded — the `chunkLoaded` advice would never fire for that chunk again until reload.
 
 ### `chunkLoaded` (advised on `zombie.LootRespawn.chunkLoaded`)
-- `ChunkLoadedRespawnHandler.onChunkLoaded` runs on chunk load.
+- `ChunkLoadedRespawnHandler.onChunkLoaded` runs on chunk load. The whole body is wrapped in `try/catch (Throwable)` — Byte Buddy's `@Advice.OnMethodExit(suppress = Throwable.class)` would otherwise swallow every failure silently, so the explicit catch logs the error and increments `survivor_loot_respawn_on_chunk_loaded_errors_total`.
+- Two phases run per chunk: **discover** (insert pre-existing explored+looted containers the mod hasn't tracked yet) and **process** (refill queued rows).
 - For each queued row in the chunk: locate the original `IsoObject` + `ItemContainer` by walking the square's objects and matching `container_index` and `container_type`. If the container is gone, type-changed, or already full, the row is deleted and never re-attempted. If found and fillable, `ItemPickerJava.fillContainer(container, null)` is invoked; newly added items have `setAge(0.0F)` so they look fresh, and an `AddInventoryItemToContainer` packet is broadcast to relative players.
+- If `fillContainer` returns with no new items (no loot distribution for the container type, or rolls all came up zero), the row's `fill_added_nothing_count` is incremented. After `MAX_FILL_NOTHING_RETRIES = 3` consecutive empty fills the row is evicted with result `delete_fill_give_up` to prevent a permanent retry leak.
 
 ### `zombie.LootRespawn.getRespawnInterval` (advised)
-- Forced to return `0` whenever the mod is enabled, disabling vanilla loot respawn entirely. Without this the two systems would double up.
+- Forced to return `0` whenever the mod is enabled, disabling vanilla loot respawn entirely. Without this the two systems would double up. Each intercept increments `survivor_loot_respawn_vanilla_interval_intercepted_total` — useful to confirm the patch is actually applied in a running server.
 
 ## Sandbox options
 
@@ -130,6 +138,51 @@ Under the **Survivor Loot Respawn** sandbox page. All read via `SandboxOptions.i
 | `MinRespawnChance`           | integer | 0…100, default **0**     | `min` in the formula. A non-zero floor *speeds up* respawns dramatically — every roll gets a guaranteed chance. |
 | `ContainerQuietPeriodHours`  | integer | 0…9998, default **0**    | `quiet` in the formula. Hours after looting during which the row is excluded from rolls.                  |
 | `CurveSteepness`             | double  | 1.001…2.0, default **1.05** | `s` in the formula. Closer to 1 is nearly linear; closer to 2 pushes more chance to the end of the window. |
+
+## Metrics
+
+The mod registers Prometheus instruments with Storm's shared `StormPrometheus.registry()`. To actually scrape them, launch the server with `-DprometheusPort=<port>` (see Storm's CLAUDE.md for the launch flags). Without that flag the collectors still register safely but nothing is exposed.
+
+All instruments are prefixed `survivor_loot_respawn_*` so they group together at `/metrics`. Defined in `metrics/SurvivorLootRespawnMetrics.java`.
+
+### Counters
+
+| Name | Labels | Description |
+|------|--------|-------------|
+| `survivor_loot_respawn_looted_observed_total` | `path` = `event` \| `packet` | Loot events received. `event` = `OnContainerLootedEvent` (Storm transfer); `packet` = `RemoveInventoryItemFromContainerPacketEvent` (floor drop, dead body). |
+| `survivor_loot_respawn_looted_tracked_total` | `outcome` = `inserted` \| `duplicate` \| `skipped_no_grid` \| `skipped_thumpable_deadbody` \| `skipped_full` \| `skipped_index_not_found` | Result of attempting to track a looted container in the DB. |
+| `survivor_loot_respawn_discovery_inserted_total` | — | Rows inserted by chunk-load discovery (containers found explored & looted before the mod started tracking them). |
+| `survivor_loot_respawn_discovery_skipped_total` | `reason` = `null` \| `unexplored` \| `not_looted` \| `no_items` \| `full` | Containers seen during chunk-load discovery but filtered out before insert. |
+| `survivor_loot_respawn_rolls_total` | `outcome` = `won` \| `lost` | Per-container hourly roll outcomes. |
+| `survivor_loot_respawn_result_total` | `result` = `respawned` \| `retry_*` \| `delete_*` | One increment per queued row processed in `processChunk`; mirrors the `FillResult` enum (lowercased). |
+| `survivor_loot_respawn_fill_added_nothing_total` | `container_type` | Times `fillContainer` returned with no new items for a queued container. Repeated hits for the same type point at an empty / broken loot distribution. |
+| `survivor_loot_respawn_fill_give_up_total` | `container_type` | Queued rows evicted after exceeding the retry cap. |
+| `survivor_loot_respawn_vanilla_interval_intercepted_total` | — | Times `LootRespawnPatch` forced `LootRespawn.getRespawnInterval` to 0. |
+| `survivor_loot_respawn_on_chunk_loaded_errors_total` | — | Unhandled exceptions caught inside the `onChunkLoaded` try/catch. The Byte Buddy advice suppresses throwables, so without this counter failures would be invisible. |
+| `survivor_loot_respawn_db_errors_total` | `op` (`insert`, `batch_insert`, `select_rolling`, `select_queued_chunk`, `select_queued_square`, `mark_queued`, `batch_mark_queued`, `delete`, `increment_fill_added_nothing`, `count_total`, `count_queued`) | SQL exceptions raised by the repository. |
+
+### Histograms (native-only — bucket-free, dynamic resolution)
+
+| Name | Description |
+|------|-------------|
+| `survivor_loot_respawn_chunk_process_duration_seconds` | Time to walk one chunk's queued rows and attempt to fill them. Fires on every chunk load and during the 10-minute sweep. |
+| `survivor_loot_respawn_chunk_discover_duration_seconds` | Time to walk one chunk's squares and batch-insert any explored, looted containers not yet tracked. |
+| `survivor_loot_respawn_hourly_roll_duration_seconds` | Time for the hourly roll cycle: select eligible rows, compute chance, batch-mark winners as queued. |
+| `survivor_loot_respawn_tenmin_sweep_duration_seconds` | Time for the 10-minute fallback sweep over every loaded chunk. |
+
+### Histogram (classic buckets)
+
+| Name | Description |
+|------|-------------|
+| `survivor_loot_respawn_winning_chance_percent` | Distribution of winning roll chances. Tells you whether wins are clustered low (curve too generous) or high (curve too steep). Buckets: 1, 5, 10, 25, 50, 75, 90, 99, 100. |
+
+### Gauges
+
+| Name | Description |
+|------|-------------|
+| `survivor_loot_respawn_rows_tracked` | Total rows in `container_loot_state`. Refreshed each 10-minute sweep. |
+| `survivor_loot_respawn_rows_queued` | Rows currently queued for respawn (`respawn_queued_at_hours IS NOT NULL`). Refreshed each 10-minute sweep. |
+| `survivor_loot_respawn_enabled` | `1` when the sandbox `LootRespawnType` = `Exponential`, `0` when `Vanilla`. |
 
 ## Building
 
@@ -145,4 +198,4 @@ Under the **Survivor Loot Respawn** sandbox page. All read via `SandboxOptions.i
 JUnit + in-memory / `@TempDir` SQLite. Coverage in `src/test/java/.../survivorlootrespawn/`:
 
 - `HourlyRespawnRollHandlerTest` — `computeChance` boundary behaviour (t=0, t=1, steepness branches, `min`/`max` clamping).
-- `state/ContainerLootStateRepositoryTest` — upsert idempotency, `selectRolling` quiet-period gate, `selectQueuedInChunk` bounds, `markQueued` / `delete` semantics.
+- `state/ContainerLootStateRepositoryTest` — insert idempotency, `selectRolling` quiet-period gate, `selectQueuedInChunk` bounds, `markQueued` / `delete` semantics, `fill_added_nothing_count` increment + row-count helpers.
