@@ -1,7 +1,7 @@
 modInfo {
 	name = 'Survivor Loot Respawn by Gus Puffy'
 	workshopId = '3742639806'
-	workshopIdProd = ''
+	workshopIdProd = '3742854111'
 	description = '''[h1]Survivor Loot Respawn[/h1]
 Container loot regrows over time on multiplayer servers. A freshly looted container stays empty for a while, then has a growing chance to refill. Small at first, ramping up sharply as more game time passes.
 
