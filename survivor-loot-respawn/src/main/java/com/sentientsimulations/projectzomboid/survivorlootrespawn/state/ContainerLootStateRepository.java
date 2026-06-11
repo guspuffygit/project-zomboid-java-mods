@@ -20,11 +20,9 @@ public final class ContainerLootStateRepository {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
             ON CONFLICT(square_x, square_y, square_z, container_type, container_index)
             DO UPDATE SET
-                looted_game_hours       = excluded.looted_game_hours,
-                item_count              = excluded.item_count,
-                respawn_queued_at_hours = NULL,
-                last_username           = excluded.last_username,
-                last_steam_id           = excluded.last_steam_id""";
+                item_count    = excluded.item_count,
+                last_username = excluded.last_username,
+                last_steam_id = excluded.last_steam_id""";
 
     private static final String SELECT_ROLLING_SQL =
             """
