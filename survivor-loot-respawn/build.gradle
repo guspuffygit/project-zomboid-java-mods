@@ -3,36 +3,36 @@ modInfo {
 	workshopId = '3742639806'
 	workshopIdProd = ''
 	description = '''[h1]Survivor Loot Respawn[/h1]
-Container loot on multiplayer servers regrows over time. A freshly looted container stays empty for a while, then has a slowly growing chance to refill — small at first, then ramping up sharply as more in-game time passes.
+Container loot regrows over time on multiplayer servers. A freshly looted container stays empty for a while, then has a growing chance to refill. Small at first, ramping up sharply as more game time passes.
 
-[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Server-side only — connecting players don't need to install anything.
+[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Server-side only. Vanilla clients connect normally, nothing to install on their end.
 
 [hr][/hr]
 [url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
 
 [h2]Sponsors[/h2]
-[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
 [hr][/hr]
 
 [h1]How It Works[/h1]
 Every time a player loots a container, the mod stamps it with a timer:
 
 [list]
-[*][b]Quiet period[/b] — for a set number of hours, the container can't respawn anything. It stays empty.
-[*][b]Ramp[/b] — once the quiet period ends, the per-roll respawn chance starts at a low floor and grows along an exponential curve.
-[*][b]Max[/b] — after the full waiting time (default 96 in-game hours, about 4 days), the chance hits its cap.
+[*][b]Quiet period[/b]: for a set number of hours after looting, the container can't respawn anything.
+[*][b]Ramp[/b]: once the quiet period ends, the per-roll respawn chance starts at a low floor and grows along an exponential curve.
+[*][b]Max[/b]: after the full waiting time (default 96 in-game hours, about 4 days), the chance hits its cap.
 [/list]
 
-Because the curve is exponential, most of the respawn chance lands near the end of the window. A player can't sit on one container and re-roll it every hour, but old untouched areas keep coming back to life.
+The curve is exponential, so most of the respawn chance lands near the end of the window. A player can't sit on one container and re-roll it every hour, but old untouched areas keep coming back to life.
 
 [h2]The Formula[/h2]
 [code]f(t) = B + (M - B) * (b^t - 1) / (b^T - 1)[/code]
 [list]
-[*][b]t[/b] — hours since the container was last looted
-[*][b]T[/b] — hours till max respawn chance
-[*][b]B[/b] — min respawn chance
-[*][b]M[/b] — max respawn chance
-[*][b]b[/b] — curve steepness
+[*][b]t[/b]: hours since the container was last looted
+[*][b]T[/b]: hours till max respawn chance
+[*][b]B[/b]: min respawn chance
+[*][b]M[/b]: max respawn chance
+[*][b]b[/b]: curve steepness
 [/list]
 
 [hr][/hr]
@@ -40,12 +40,17 @@ Because the curve is exponential, most of the respawn chance lands near the end 
 [h1]Server Options[/h1]
 All knobs live under the [b]Survivor Loot Respawn[/b] sandbox page:
 [list]
-[*][b]Hours till max loot respawn chance[/b] — how long after looting before the chance hits its peak. Default 96.
-[*][b]Max loot respawn chance[/b] — the highest per-roll respawn chance, in percent. Default 100.
-[*][b]Min loot respawn chance[/b] — the floor chance once the quiet period ends. Default 0.
-[*][b]Container quiet period[/b] — hours after looting where no respawn can happen. Default 0.
-[*][b]Curve steepness[/b] — shape of the curve. Closer to 1 is nearly straight; higher pushes more chance to the end. Default 1.05.
+[*][b]Hours till max loot respawn chance[/b]: how long after looting before the chance hits its peak. Default 96.
+[*][b]Max loot respawn chance[/b]: the highest per-roll respawn chance, in percent. Default 100.
+[*][b]Min loot respawn chance[/b]: the floor chance once the quiet period ends. Default 0.
+[*][b]Container quiet period[/b]: hours after looting where no respawn can happen. Default 0.
+[*][b]Curve steepness[/b]: shape of the curve. Closer to 1 is nearly straight. Higher pushes more chance to the end. Default 1.05.
 [/list]
+
+[hr][/hr]
+
+[h1]Calculator[/h1]
+There's a [url=https://guspuffy.com/survivor-loot-calculator]calculator[/url] on guspuffy.com for picking T. It plots the curve and lets you fiddle with the sandbox options against a target average respawn time. Solve for T given a target average, or run it the other direction to see what average a given T produces. Same formula and once-per-game-hour cadence as the mod.
 
 [hr][/hr]
 
