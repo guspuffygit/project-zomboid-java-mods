@@ -12,8 +12,6 @@ import zombie.SandboxOptions;
 import zombie.inventory.ItemContainer;
 import zombie.iso.IsoGridSquare;
 import zombie.iso.IsoObject;
-import zombie.iso.objects.IsoDeadBody;
-import zombie.iso.objects.IsoThumpable;
 import zombie.util.list.PZArrayList;
 
 public final class ContainerLootedHandler {
@@ -38,9 +36,19 @@ public final class ContainerLootedHandler {
                     container.getType());
             return;
         }
+        if (!VanillaLootRespawnGate.passesSquareGate(sq)) {
+            SurvivorLootRespawnMetrics.recordLootedTracked("skipped_zone_gate");
+            LOGGER.debug(
+                    "[SurvivorLootRespawn] Loot skipped: square failed vanilla gate (type={} at x={} y={} z={})",
+                    container.getType(),
+                    sq.getX(),
+                    sq.getY(),
+                    sq.getZ());
+            return;
+        }
         IsoObject parent = container.getParent();
-        if (parent instanceof IsoThumpable || parent instanceof IsoDeadBody) {
-            SurvivorLootRespawnMetrics.recordLootedTracked("skipped_thumpable_deadbody");
+        if (VanillaLootRespawnGate.isExcludedObject(parent)) {
+            SurvivorLootRespawnMetrics.recordLootedTracked("skipped_excluded_object");
             LOGGER.debug(
                     "[SurvivorLootRespawn] Loot skipped: parent is {} (type={} at x={} y={} z={})",
                     parent.getClass().getSimpleName(),

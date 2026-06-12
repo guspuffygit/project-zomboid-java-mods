@@ -23,8 +23,6 @@ import zombie.iso.IsoChunk;
 import zombie.iso.IsoGridSquare;
 import zombie.iso.IsoObject;
 import zombie.iso.areas.IsoRoom;
-import zombie.iso.objects.IsoDeadBody;
-import zombie.iso.objects.IsoThumpable;
 import zombie.network.GameServer;
 import zombie.network.PacketTypes;
 import zombie.network.packets.INetworkPacket;
@@ -92,11 +90,15 @@ public final class ChunkLoadedRespawnHandler {
 
     private static void collectSquare(
             IsoGridSquare sq, int maxItems, double gameHours, List<InsertRow> rows) {
+        if (!VanillaLootRespawnGate.passesSquareGate(sq)) {
+            SurvivorLootRespawnMetrics.recordDiscoverySkipped("zone_gate");
+            return;
+        }
         int idx = 0;
         PZArrayList<IsoObject> objects = sq.getObjects();
         for (int oi = 0; oi < objects.size(); oi++) {
             IsoObject obj = objects.get(oi);
-            if (obj instanceof IsoThumpable || obj instanceof IsoDeadBody) {
+            if (VanillaLootRespawnGate.isExcludedObject(obj)) {
                 idx += obj.getContainerCount();
                 continue;
             }
@@ -340,6 +342,9 @@ public final class ChunkLoadedRespawnHandler {
         if (sq == null) {
             return FillResult.DELETE_SQUARE_MISSING;
         }
+        if (!VanillaLootRespawnGate.passesSquareGate(sq)) {
+            return FillResult.DELETE_ZONE_BLOCKED;
+        }
 
         int idx = 0;
         PZArrayList<IsoObject> objects = sq.getObjects();
@@ -408,6 +413,7 @@ public final class ChunkLoadedRespawnHandler {
         RETRY_FILL_ADDED_NOTHING(false),
         DELETE_ALREADY_FULL(true),
         DELETE_SQUARE_MISSING(true),
+        DELETE_ZONE_BLOCKED(true),
         DELETE_CONTAINER_NULL(true),
         DELETE_INDEX_NOT_FOUND(true),
         DELETE_TYPE_CHANGED(true),
