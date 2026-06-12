@@ -7,21 +7,29 @@ import com.sentientsimulations.projectzomboid.survivorlootrespawn.metrics.Surviv
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootState;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository.InsertRow;
+import gnu.trove.map.hash.THashMap;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import zombie.GameTime;
 import zombie.SandboxOptions;
 import zombie.inventory.InventoryItem;
 import zombie.inventory.ItemContainer;
 import zombie.inventory.ItemPickerJava;
+import zombie.inventory.ItemPickerJava.ItemPickerContainer;
+import zombie.inventory.ItemPickerJava.ItemPickerRoom;
 import zombie.iso.IsoChunk;
 import zombie.iso.IsoGridSquare;
 import zombie.iso.IsoObject;
+import zombie.iso.areas.IsoRoom;
 import zombie.iso.objects.IsoDeadBody;
 import zombie.iso.objects.IsoThumpable;
 import zombie.network.GameServer;
 import zombie.network.PacketTypes;
 import zombie.network.packets.INetworkPacket;
+import zombie.scripting.objects.ContainerType;
+import zombie.scripting.objects.ResourceLocation;
 import zombie.util.list.PZArrayList;
 
 public final class ChunkLoadedRespawnHandler {
@@ -120,6 +128,11 @@ public final class ChunkLoadedRespawnHandler {
                     idx++;
                     continue;
                 }
+                if (wouldFillBeEmpty(sq, container)) {
+                    SurvivorLootRespawnMetrics.recordDiscoverySkipped("no_loot_table");
+                    idx++;
+                    continue;
+                }
                 rows.add(
                         new InsertRow(
                                 sq.getX(),
@@ -130,6 +143,104 @@ public final class ChunkLoadedRespawnHandler {
                                 gameHours));
                 idx++;
             }
+        }
+    }
+
+    /**
+     * True when {@code ItemPickerJava.fillContainer} would deterministically add zero items for
+     * this (square, container) — the dispatch lands on an {@link ItemPickerContainer} (or pair of
+     * them) whose flat {@code items} and {@code proceduralItems} are both empty. The canonical
+     * case is vanilla's {@code rooms["empty"]} which defines only an empty {@code "other"} slot.
+     *
+     * <p>Returns {@code false} (don't skip) when distribution tables aren't loaded yet or the
+     * lookup can't be resolved confidently — the existing retry-and-evict path stays as the
+     * backstop.
+     */
+    static boolean wouldFillBeEmpty(IsoGridSquare sq, ItemContainer container) {
+        try {
+            THashMap<String, ItemPickerRoom> rooms = ItemPickerJava.rooms;
+            if (rooms == null || rooms.isEmpty()) {
+                return false;
+            }
+            String type = container.getType();
+            IsoRoom room = sq.getRoom();
+            String roomName = room == null ? null : room.getName();
+            boolean noGeneric = isNoGenericLoot(type);
+
+            ItemPickerRoom rollRoom = resolveRollRoom(rooms, roomName, type, noGeneric);
+            if (rollRoom == null) {
+                return false;
+            }
+            if (hasLoot(rollRoom.containers.get("all"))) {
+                return false;
+            }
+            ItemPickerContainer perType = rollRoom.containers.get(type);
+            if (hasLoot(perType)) {
+                return false;
+            }
+            if (perType == null
+                    && !noGeneric
+                    && hasLoot(rollRoom.containers.get("other"))) {
+                return false;
+            }
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static ItemPickerRoom resolveRollRoom(
+            THashMap<String, ItemPickerRoom> rooms,
+            String roomName,
+            String type,
+            boolean noGeneric) {
+        if (roomName != null && rooms.containsKey(roomName)) {
+            ItemPickerRoom specific = rooms.get(roomName);
+            boolean matches =
+                    specific.containers.containsKey(type)
+                            || (!noGeneric && specific.containers.containsKey("other"))
+                            || specific.containers.containsKey("all");
+            if (matches) {
+                return specific;
+            }
+        }
+        return rooms.get("all");
+    }
+
+    private static boolean hasLoot(ItemPickerContainer cd) {
+        if (cd == null) {
+            return false;
+        }
+        if (cd.items != null && cd.items.length > 0) {
+            return true;
+        }
+        return cd.proceduralItems != null && !cd.proceduralItems.isEmpty();
+    }
+
+    private static volatile Set<?> noGenericLootSet;
+    private static volatile boolean noGenericLootSetResolved;
+
+    private static boolean isNoGenericLoot(String type) {
+        Set<?> set = noGenericLootSet;
+        if (!noGenericLootSetResolved) {
+            try {
+                Field f = ItemPickerJava.class.getDeclaredField("NO_GENERIC_LOOT_CONTAINERS");
+                f.setAccessible(true);
+                set = (Set<?>) f.get(null);
+                noGenericLootSet = set;
+            } catch (Throwable t) {
+                set = null;
+            } finally {
+                noGenericLootSetResolved = true;
+            }
+        }
+        if (set == null) {
+            return false;
+        }
+        try {
+            return set.contains(ContainerType.get(ResourceLocation.of(type)));
+        } catch (Throwable t) {
+            return false;
         }
     }
 

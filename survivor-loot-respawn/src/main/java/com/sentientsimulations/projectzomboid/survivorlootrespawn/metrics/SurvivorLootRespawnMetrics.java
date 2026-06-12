@@ -19,14 +19,9 @@ public final class SurvivorLootRespawnMetrics {
                     .name("survivor_loot_respawn_looted_observed_total")
                     .help(
                             "Container loot events received by the mod, by source path."
-                                    + " path=event for OnContainerLootedEvent (Storm"
-                                    + " container-to-container transfer);"
-                                    + " path=packet for inbound"
-                                    + " RemoveInventoryItemFromContainerPacket (rare; mannequin"
-                                    + " removal and similar);"
-                                    + " path=server_send for outbound"
-                                    + " GameServer.sendRemoveItemFromContainer (floor drop,"
-                                    + " item consumption, animal/mannequin sync).")
+                                    + " path=event for OnContainerLootedEvent (Storm UUID"
+                                    + " transfer; covers container-to-container and"
+                                    + " container-to-floor drops).")
                     .labelNames("path")
                     .register(StormPrometheus.registry());
 
@@ -53,7 +48,10 @@ public final class SurvivorLootRespawnMetrics {
                     .name("survivor_loot_respawn_discovery_skipped_total")
                     .help(
                             "Containers seen during chunk discovery that were skipped. reason ="
-                                    + " null | unexplored | not_looted | no_items | full.")
+                                    + " null | unexplored | not_looted | no_items | full |"
+                                    + " no_loot_table (room + type resolves to a distribution"
+                                    + " with zero items + zero proceduralItems, e.g. counter"
+                                    + " in vanilla rooms[\"empty\"]).")
                     .labelNames("reason")
                     .register(StormPrometheus.registry());
 
