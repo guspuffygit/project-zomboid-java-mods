@@ -222,6 +222,9 @@ local function describeOtherSide(row, ourRef)
         if other:sub(1, 8) == "vehicle:" then
             return "vehicle"
         end
+        if other:sub(1, 5) == "loot:" then
+            return "loot generation"
+        end
     end
     return tostring(other)
 end

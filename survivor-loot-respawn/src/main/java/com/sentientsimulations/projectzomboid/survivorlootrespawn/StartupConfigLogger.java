@@ -13,7 +13,7 @@ public final class StartupConfigLogger {
     @SubscribeEvent
     public static void onServerStarted(OnServerStartedEvent event) {
         LOGGER.info(
-                "(SurvivorLootRespawn) Active config: lootRespawnType={}, hoursTillMax={}, maxChance={}, minChance={}, quietPeriodHours={}, curveSteepness={}",
+                "[SurvivorLootRespawn] Active config: lootRespawnType={}, hoursTillMax={}, maxChance={}, minChance={}, quietPeriodHours={}, curveSteepness={}",
                 SurvivorLootRespawnConfig.getLootRespawnType(),
                 SurvivorLootRespawnConfig.getHoursTillMaxRespawnChance(),
                 SurvivorLootRespawnConfig.getMaxRespawnChance(),

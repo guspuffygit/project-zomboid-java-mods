@@ -98,7 +98,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("insert");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to insert container loot state at x={} y={} z={} type={} idx={}",
+                        "[SurvivorLootRespawn] Failed to insert container loot state at x={} y={} z={} type={} idx={}",
                         x,
                         y,
                         z,
@@ -147,7 +147,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("batch_insert");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to batch insert {} container loot states",
+                        "[SurvivorLootRespawn] Failed to batch insert {} container loot states",
                         rows.size(),
                         e);
                 return 0;
@@ -173,7 +173,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("select_rolling");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to select rolling container loot states", e);
+                        "[SurvivorLootRespawn] Failed to select rolling container loot states", e);
             }
         }
         return out;
@@ -202,7 +202,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("select_queued_chunk");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to select queued container loot states in chunk wx={} wy={}",
+                        "[SurvivorLootRespawn] Failed to select queued container loot states in chunk wx={} wy={}",
                         chunkWX,
                         chunkWY,
                         e);
@@ -229,7 +229,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("select_queued_square");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to select queued container loot states at x={} y={} z={}",
+                        "[SurvivorLootRespawn] Failed to select queued container loot states at x={} y={} z={}",
                         x,
                         y,
                         z,
@@ -256,7 +256,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("mark_queued");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to mark container loot state queued at x={} y={} z={} type={} idx={}",
+                        "[SurvivorLootRespawn] Failed to mark container loot state queued at x={} y={} z={} type={} idx={}",
                         x,
                         y,
                         z,
@@ -297,7 +297,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("batch_mark_queued");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to batch mark {} container loot states queued",
+                        "[SurvivorLootRespawn] Failed to batch mark {} container loot states queued",
                         rows.size(),
                         e);
             }
@@ -319,7 +319,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("delete");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to delete container loot state at x={} y={} z={} type={} idx={}",
+                        "[SurvivorLootRespawn] Failed to delete container loot state at x={} y={} z={} type={} idx={}",
                         x,
                         y,
                         z,
@@ -346,7 +346,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("increment_fill_added_nothing");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to increment fill_added_nothing_count at x={} y={} z={} type={} idx={}",
+                        "[SurvivorLootRespawn] Failed to increment fill_added_nothing_count at x={} y={} z={} type={} idx={}",
                         x,
                         y,
                         z,
@@ -371,7 +371,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("count_total");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to count total container loot states", e);
+                        "[SurvivorLootRespawn] Failed to count total container loot states", e);
                 return 0L;
             }
         }
@@ -391,7 +391,7 @@ public final class ContainerLootStateRepository {
             } catch (SQLException e) {
                 SurvivorLootRespawnMetrics.recordDbError("count_queued");
                 LOGGER.error(
-                        "(SurvivorLootRespawn) Failed to count queued container loot states", e);
+                        "[SurvivorLootRespawn] Failed to count queued container loot states", e);
                 return 0L;
             }
         }

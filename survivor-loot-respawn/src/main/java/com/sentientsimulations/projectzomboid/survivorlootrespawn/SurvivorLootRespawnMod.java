@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.patch.GameServerSendRemovePatch;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.patch.LootRespawnPatch;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
@@ -18,7 +19,7 @@ public class SurvivorLootRespawnMod implements ZomboidMod {
             return;
         }
         LOGGER.debug(
-                "(SurvivorLootRespawn) Registering event handler for {}",
+                "[SurvivorLootRespawn] Registering event handler for {}",
                 SurvivorLootRespawnMod.class.getName());
         StormEventDispatcher.registerEventHandler(StartupConfigLogger.class);
         StormEventDispatcher.registerEventHandler(ContainerLootedHandler.class);
@@ -31,6 +32,6 @@ public class SurvivorLootRespawnMod implements ZomboidMod {
         if (!StormEnv.isStormServer()) {
             return Collections.emptyList();
         }
-        return List.of(new LootRespawnPatch());
+        return List.of(new LootRespawnPatch(), new GameServerSendRemovePatch());
     }
 }

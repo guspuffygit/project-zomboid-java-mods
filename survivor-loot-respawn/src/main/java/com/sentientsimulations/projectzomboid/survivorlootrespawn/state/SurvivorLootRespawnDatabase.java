@@ -60,7 +60,7 @@ public final class SurvivorLootRespawnDatabase {
                     try {
                         task.run();
                     } catch (Throwable e) {
-                        LOGGER.error("(SurvivorLootRespawn) DB executor task failed", e);
+                        LOGGER.error("[SurvivorLootRespawn] DB executor task failed", e);
                     }
                 });
     }
@@ -98,7 +98,7 @@ public final class SurvivorLootRespawnDatabase {
         if (!exists) {
             stmt.execute(ADD_FILL_ADDED_NOTHING_COUNT_COLUMN);
             LOGGER.info(
-                    "(SurvivorLootRespawn) Migrated container_loot_state: added"
+                    "[SurvivorLootRespawn] Migrated container_loot_state: added"
                             + " fill_added_nothing_count column.");
         }
     }
@@ -116,7 +116,7 @@ public final class SurvivorLootRespawnDatabase {
                 connection.close();
             }
         } catch (SQLException e) {
-            LOGGER.warn("(SurvivorLootRespawn) Error closing db", e);
+            LOGGER.warn("[SurvivorLootRespawn] Error closing db", e);
         }
         connection = null;
     }

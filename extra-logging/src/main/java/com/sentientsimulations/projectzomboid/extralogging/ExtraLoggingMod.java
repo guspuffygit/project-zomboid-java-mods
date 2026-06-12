@@ -40,6 +40,7 @@ public class ExtraLoggingMod implements ZomboidMod {
         //        transformers.add(new PlayerDropHeldItemsPatch());
         transformers.add(new ServerWorldDatabasePatch());
         transformers.add(new GameServerPatch());
+        transformers.add(new ItemPickerJavaPatch());
 
         return transformers;
     }

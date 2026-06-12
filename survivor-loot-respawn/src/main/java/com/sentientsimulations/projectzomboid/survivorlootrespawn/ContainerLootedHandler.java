@@ -58,12 +58,30 @@ public final class ContainerLootedHandler {
         handleLooted(container, container.getItems().size());
     }
 
+    /**
+     * Invoked from {@link
+     * com.sentientsimulations.projectzomboid.survivorlootrespawn.patch.GameServerSendRemovePatch}
+     * on every server-side {@code GameServer.sendRemoveItemFromContainer} call. Catches the
+     * floor-drop path: the server-mirror TimedAction calls {@code DoRemoveItem} then routes through
+     * here to broadcast to other clients. The same hook also fires for many non-loot consumers
+     * (food eaten, drainables drained, mannequin/animal data, etc.) — the existing filters in
+     * {@link #handleLooted} reject them via {@code sq == null} (player inventory) or parent type
+     * (thumpable, dead body).
+     */
+    public static void onServerSendRemove(Object containerObj) {
+        if (!(containerObj instanceof ItemContainer container)) {
+            return;
+        }
+        SurvivorLootRespawnMetrics.recordLootedObserved("server_send");
+        handleLooted(container, container.getItems().size());
+    }
+
     private static void handleLooted(ItemContainer container, int itemCount) {
         IsoGridSquare sq = container.getSourceGrid();
         if (sq == null) {
             SurvivorLootRespawnMetrics.recordLootedTracked("skipped_no_grid");
             LOGGER.debug(
-                    "(SurvivorLootRespawn) Loot skipped: container has no source grid (type={})",
+                    "[SurvivorLootRespawn] Loot skipped: container has no source grid (type={})",
                     container.getType());
             return;
         }
@@ -71,7 +89,7 @@ public final class ContainerLootedHandler {
         if (parent instanceof IsoThumpable || parent instanceof IsoDeadBody) {
             SurvivorLootRespawnMetrics.recordLootedTracked("skipped_thumpable_deadbody");
             LOGGER.debug(
-                    "(SurvivorLootRespawn) Loot skipped: parent is {} (type={} at x={} y={} z={})",
+                    "[SurvivorLootRespawn] Loot skipped: parent is {} (type={} at x={} y={} z={})",
                     parent.getClass().getSimpleName(),
                     container.getType(),
                     sq.getX(),
@@ -84,7 +102,7 @@ public final class ContainerLootedHandler {
         if (itemCount >= maxItems) {
             SurvivorLootRespawnMetrics.recordLootedTracked("skipped_full");
             LOGGER.debug(
-                    "(SurvivorLootRespawn) Loot skipped: container still has {}/{} items (type={} at x={} y={} z={})",
+                    "[SurvivorLootRespawn] Loot skipped: container still has {}/{} items (type={} at x={} y={} z={})",
                     itemCount,
                     maxItems,
                     container.getType(),
@@ -98,7 +116,7 @@ public final class ContainerLootedHandler {
         if (containerIndex < 0) {
             SurvivorLootRespawnMetrics.recordLootedTracked("skipped_index_not_found");
             LOGGER.warn(
-                    "(SurvivorLootRespawn) container looted but not found in square objects: type={} at x={} y={} z={}",
+                    "[SurvivorLootRespawn] container looted but not found in square objects: type={} at x={} y={} z={}",
                     container.getType(),
                     sq.getX(),
                     sq.getY(),

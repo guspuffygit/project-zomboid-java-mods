@@ -56,7 +56,7 @@ public final class HourlyRespawnRollHandler {
         }
         SurvivorLootRespawnMetrics.observeHourlyRollSeconds((System.nanoTime() - startNanos) / 1e9);
         LOGGER.debug(
-                "(SurvivorLootRespawn) Hourly roll fired at worldAgeHours={}: eligible={}, queued={} (hoursTillMax={}, max={}%, min={}%, quiet={}h, steepness={})",
+                "[SurvivorLootRespawn] Hourly roll fired at worldAgeHours={}: eligible={}, queued={} (hoursTillMax={}, max={}%, min={}%, quiet={}h, steepness={})",
                 worldAgeHours,
                 rolling.size(),
                 winners.size(),

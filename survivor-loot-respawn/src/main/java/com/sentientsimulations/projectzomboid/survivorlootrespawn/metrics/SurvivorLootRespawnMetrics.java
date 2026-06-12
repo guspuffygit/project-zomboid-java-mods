@@ -19,9 +19,14 @@ public final class SurvivorLootRespawnMetrics {
                     .name("survivor_loot_respawn_looted_observed_total")
                     .help(
                             "Container loot events received by the mod, by source path."
-                                    + " path=event for OnContainerLootedEvent (Storm transfer);"
-                                    + " path=packet for RemoveInventoryItemFromContainerPacket"
-                                    + " (floor drop, dead body).")
+                                    + " path=event for OnContainerLootedEvent (Storm"
+                                    + " container-to-container transfer);"
+                                    + " path=packet for inbound"
+                                    + " RemoveInventoryItemFromContainerPacket (rare; mannequin"
+                                    + " removal and similar);"
+                                    + " path=server_send for outbound"
+                                    + " GameServer.sendRemoveItemFromContainer (floor drop,"
+                                    + " item consumption, animal/mannequin sync).")
                     .labelNames("path")
                     .register(StormPrometheus.registry());
 

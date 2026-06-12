@@ -52,7 +52,7 @@ public final class EveryTenMinutesRespawnHandler {
         SurvivorLootRespawnMetrics.observeTenMinSweepSeconds(
                 (System.nanoTime() - startNanos) / 1e9);
         LOGGER.debug(
-                "(SurvivorLootRespawn) 10-minute sweep fired: chunks={}, respawned={}",
+                "[SurvivorLootRespawn] 10-minute sweep fired: chunks={}, respawned={}",
                 chunksScanned,
                 respawned);
         SurvivorLootRespawnDatabase.submit(

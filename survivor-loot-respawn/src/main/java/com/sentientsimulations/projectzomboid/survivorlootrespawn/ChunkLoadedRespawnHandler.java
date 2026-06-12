@@ -45,7 +45,7 @@ public final class ChunkLoadedRespawnHandler {
             processChunk(chunk);
         } catch (Throwable t) {
             SurvivorLootRespawnMetrics.recordOnChunkLoadedError();
-            LOGGER.error("(SurvivorLootRespawn) onChunkLoaded failed", t);
+            LOGGER.error("[SurvivorLootRespawn] onChunkLoaded failed", t);
         }
     }
 
@@ -74,7 +74,7 @@ public final class ChunkLoadedRespawnHandler {
                 (System.nanoTime() - startNanos) / 1e9);
         if (discovered > 0) {
             LOGGER.debug(
-                    "(SurvivorLootRespawn) Container discovery in chunk wx={} wy={}: discovered={}",
+                    "[SurvivorLootRespawn] Container discovery in chunk wx={} wy={}: discovered={}",
                     chunk.wx,
                     chunk.wy,
                     discovered);
@@ -162,7 +162,7 @@ public final class ChunkLoadedRespawnHandler {
                     effective = FillResult.DELETE_FILL_GIVE_UP;
                     SurvivorLootRespawnMetrics.recordFillGiveUp(s.containerType());
                     LOGGER.debug(
-                            "(SurvivorLootRespawn) fill_added_nothing retry cap reached at x={} y={} z={} type={} idx={}, evicting row",
+                            "[SurvivorLootRespawn] fill_added_nothing retry cap reached at x={} y={} z={} type={} idx={}, evicting row",
                             s.squareX(),
                             s.squareY(),
                             s.squareZ(),
@@ -194,7 +194,7 @@ public final class ChunkLoadedRespawnHandler {
                     HourlyRespawnRollHandler.computeChance(
                             hoursLootedToQueued, hoursTillMax, minChance, maxChance, steepness);
             LOGGER.debug(
-                    "(SurvivorLootRespawn) Container x={} y={} z={} type={} idx={} queued={} rolled={}: {}",
+                    "[SurvivorLootRespawn] Container x={} y={} z={} type={} idx={} queued={} rolled={}: {}",
                     s.squareX(),
                     s.squareY(),
                     s.squareZ(),
@@ -207,7 +207,7 @@ public final class ChunkLoadedRespawnHandler {
         SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
                 (System.nanoTime() - startNanos) / 1e9);
         LOGGER.debug(
-                "(SurvivorLootRespawn) Loot respawn for chunk wx={} wy={}: queued={}, respawned={}",
+                "[SurvivorLootRespawn] Loot respawn for chunk wx={} wy={}: queued={}, respawned={}",
                 chunk.wx,
                 chunk.wy,
                 queued.size(),
