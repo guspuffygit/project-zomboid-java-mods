@@ -149,8 +149,8 @@ public final class ChunkLoadedRespawnHandler {
     /**
      * True when {@code ItemPickerJava.fillContainer} would deterministically add zero items for
      * this (square, container) — the dispatch lands on an {@link ItemPickerContainer} (or pair of
-     * them) whose flat {@code items} and {@code proceduralItems} are both empty. The canonical
-     * case is vanilla's {@code rooms["empty"]} which defines only an empty {@code "other"} slot.
+     * them) whose flat {@code items} and {@code proceduralItems} are both empty. The canonical case
+     * is vanilla's {@code rooms["empty"]} which defines only an empty {@code "other"} slot.
      *
      * <p>Returns {@code false} (don't skip) when distribution tables aren't loaded yet or the
      * lookup can't be resolved confidently — the existing retry-and-evict path stays as the
@@ -178,9 +178,7 @@ public final class ChunkLoadedRespawnHandler {
             if (hasLoot(perType)) {
                 return false;
             }
-            if (perType == null
-                    && !noGeneric
-                    && hasLoot(rollRoom.containers.get("other"))) {
+            if (perType == null && !noGeneric && hasLoot(rollRoom.containers.get("other"))) {
                 return false;
             }
             return true;
