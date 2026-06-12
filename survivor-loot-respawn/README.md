@@ -9,10 +9,10 @@ Server-side only. Requires [Storm](https://steamcommunity.com/sharedfiles/filede
 ## What it does
 
 - **Disables vanilla loot respawn** — `LootRespawnPatch.GetRespawnIntervalAdvice` forces `zombie.LootRespawn.getRespawnInterval` to return `0` whenever the mod is enabled, so the base game's `LootRespawnHours` machinery is inert.
-- **Tracks every looted container** in SQLite (`<save>/survivor-loot-respawn.db`). Each row keys on `(square_x, square_y, square_z, container_type, container_index)` plus the world-age hour the container was looted and a nullable `respawn_queued_at_hours`.
+- **Tracks every looted container** in SQLite (`<save>/survivor_loot_respawn.db`). Each row keys on `(square_x, square_y, square_z, container_type, container_index)` plus the world-age hour the container was looted and a nullable `respawn_queued_at_hours`.
 - **Rolls hourly** — `EveryHoursEvent` selects all rows whose `looted_game_hours <= worldAgeHours - quiet`, computes a per-container chance, and rolls. Winners get `respawn_queued_at_hours` stamped.
 - **Refills on chunk load** — `LootRespawnPatch.ChunkLoadedAdvice` intercepts `chunkLoaded` and runs `ChunkLoadedRespawnHandler.processChunk`, which fills queued containers via `ItemPickerJava.fillContainer` and broadcasts `AddInventoryItemToContainer` packets to nearby players.
-- **10-minute fallback sweep** — `EveryTenMinutesEvent` walks every `IsoChunk` in every loaded `ServerCell` and runs the same chunk handler. This catches containers that were queued *after* a chunk was loaded (so the `chunkLoaded` hook already fired).
+- **10-minute fallback sweep** — `EveryTenMinutesEvent` queries the DB for all queued rows grouped by chunk and runs `ChunkLoadedRespawnHandler.processChunkRows` against whichever of those chunks are currently loaded. This catches containers that were queued *after* a chunk was loaded (so the `chunkLoaded` hook already fired).
 
 ## The math
 
@@ -63,7 +63,8 @@ The cap and the quiet period are far stronger levers than `H` itself.
 ```
 src/main/java/com/sentientsimulations/projectzomboid/survivorlootrespawn/
 ├── SurvivorLootRespawnMod.java           # Storm entry point; server-only via StormEnv.isStormServer()
-├── ContainerLootedHandler.java           # OnContainerLootedEvent + RemoveInventoryItemFromContainerPacketEvent → insert into DB
+├── ContainerLootedHandler.java           # OnContainerLootedEvent → insert into DB
+├── VanillaLootRespawnGate.java           # Square + parent-object eligibility (zone, safehouse, construction, IsoThumpable/IsoDeadBody/IsoCompost)
 ├── HourlyRespawnRollHandler.java         # EveryHoursEvent → roll eligible rows, mark queued
 ├── EveryTenMinutesRespawnHandler.java    # EveryTenMinutesEvent → sweep loaded chunks, update gauges
 ├── ChunkLoadedRespawnHandler.java        # chunkLoaded patch target; fills queued containers
@@ -98,15 +99,11 @@ Primary key: `(square_x, square_y, square_z, container_type, container_index)`, 
 ## Event flow
 
 ### `OnContainerLootedEvent` (Storm) — `ContainerLootedHandler.onContainerLooted`
-- Fires when items move out of a container via Storm's UUID transfer path (player → inventory, container → container).
-- Skips containers attached to `IsoThumpable` (player-built furniture) or `IsoDeadBody`, and containers already at or above `SandboxOptions.maxItemsForLootRespawn`.
+- Fires when items move out of a container via Storm's UUID transfer path. Storm dispatches this for container → inventory, container → container, and container → floor transfers, so the mod no longer needs a separate packet-level subscriber.
+- Filters via `VanillaLootRespawnGate.passesSquareGate(sq)` (zone must be `TownZone` / `TownZones` / `TrailerPark`; respects `constructionPreventsLootRespawn` and `safehousePreventsLootRespawn`).
+- Skips containers whose parent `IsoObject` is excluded — `IsoThumpable` (player-built furniture), `IsoDeadBody`, or `IsoCompost` — and containers already at or above `SandboxOptions.maxItemsForLootRespawn`.
 - Computes `container_index` by walking `sq.getObjects()` and counting containers in declaration order.
 - Inserts the row with `INSERT … ON CONFLICT DO NOTHING`, so existing `looted_game_hours` / `respawn_queued_at_hours` / `fill_added_nothing_count` are never overwritten by a re-loot.
-
-### `RemoveInventoryItemFromContainerPacketEvent` (Storm) — `ContainerLootedHandler.onItemRemovedFromContainer`
-- Catches the floor-drop and dead-body paths that bypass `OnContainerLootedEvent` — vanilla routes those through `RemoveInventoryItemFromContainerPacket` instead of the Storm transfer handler.
-- Filters out packets whose `isInventory()` is true (those are player inventory swaps, not container loots) and packets without a valid `ContainerID`.
-- Otherwise calls the same `handleLooted` path as the Storm event.
 
 ### `EveryHoursEvent` — `HourlyRespawnRollHandler.onEveryHour`
 - Runs on a daemon thread so the SQL doesn't block the game thread.
@@ -114,8 +111,9 @@ Primary key: `(square_x, square_y, square_z, container_type, container_index)`, 
 - For each row: compute chance, roll `ThreadLocalRandom.nextDouble() * 100 < chance`, mark queued.
 
 ### `EveryTenMinutesEvent` — `EveryTenMinutesRespawnHandler.onEveryTenMinutes`
-- Walks `ServerMap.instance.loadedCells`, then each cell's `chunks[x][y]`, calling `ChunkLoadedRespawnHandler.processChunk` on each.
+- `ContainerLootStateRepository.selectAllQueuedByChunk()` returns every queued row grouped by `(chunkWX, chunkWY)`. For each group, looks up the live `IsoChunk` via `ServerMap.instance.getChunk(chunkWX, chunkWY)`; if the chunk isn't loaded the group is skipped (counted in `chunks_skipped_not_loaded`), otherwise `ChunkLoadedRespawnHandler.processChunkRows` runs on the pre-fetched rows.
 - Necessary because a container can be marked queued *after* its chunk was loaded — the `chunkLoaded` advice would never fire for that chunk again until reload.
+- Also refreshes the `rows_tracked` / `rows_queued` gauges and the `enabled` gauge on the DB executor.
 
 ### `chunkLoaded` (advised on `zombie.LootRespawn.chunkLoaded`)
 - `ChunkLoadedRespawnHandler.onChunkLoaded` runs on chunk load. The whole body is wrapped in `try/catch (Throwable)` — Byte Buddy's `@Advice.OnMethodExit(suppress = Throwable.class)` would otherwise swallow every failure silently, so the explicit catch logs the error and increments `survivor_loot_respawn_on_chunk_loaded_errors_total`.
@@ -149,10 +147,10 @@ All instruments are prefixed `survivor_loot_respawn_*` so they group together at
 
 | Name | Labels | Description |
 |------|--------|-------------|
-| `survivor_loot_respawn_looted_observed_total` | `path` = `event` \| `packet` | Loot events received. `event` = `OnContainerLootedEvent` (Storm transfer); `packet` = `RemoveInventoryItemFromContainerPacketEvent` (floor drop, dead body). |
-| `survivor_loot_respawn_looted_tracked_total` | `outcome` = `inserted` \| `duplicate` \| `skipped_no_grid` \| `skipped_thumpable_deadbody` \| `skipped_full` \| `skipped_index_not_found` | Result of attempting to track a looted container in the DB. |
+| `survivor_loot_respawn_looted_observed_total` | `path` = `event` | Loot events received from `OnContainerLootedEvent` (Storm UUID transfer — covers container→inventory, container→container, and container→floor). |
+| `survivor_loot_respawn_looted_tracked_total` | `outcome` = `inserted` \| `duplicate` \| `skipped_no_grid` \| `skipped_zone_gate` \| `skipped_excluded_object` \| `skipped_full` \| `skipped_index_not_found` | Result of attempting to track a looted container in the DB. |
 | `survivor_loot_respawn_discovery_inserted_total` | — | Rows inserted by chunk-load discovery (containers found explored & looted before the mod started tracking them). |
-| `survivor_loot_respawn_discovery_skipped_total` | `reason` = `null` \| `unexplored` \| `not_looted` \| `no_items` \| `full` | Containers seen during chunk-load discovery but filtered out before insert. |
+| `survivor_loot_respawn_discovery_skipped_total` | `reason` = `zone_gate` \| `null` \| `unexplored` \| `not_looted` \| `no_items` \| `full` \| `no_loot_table` | Containers seen during chunk-load discovery but filtered out before insert. |
 | `survivor_loot_respawn_rolls_total` | `outcome` = `won` \| `lost` | Per-container hourly roll outcomes. |
 | `survivor_loot_respawn_result_total` | `result` = `respawned` \| `retry_*` \| `delete_*` | One increment per queued row processed in `processChunk`; mirrors the `FillResult` enum (lowercased). |
 | `survivor_loot_respawn_fill_added_nothing_total` | `container_type` | Times `fillContainer` returned with no new items for a queued container. Repeated hits for the same type point at an empty / broken loot distribution. |

@@ -314,16 +314,10 @@ function ContainerHistory.requestHistory(containerRef)
     })
 end
 
-function ContainerHistory.openWindowForCurrent(inventoryPage)
+function ContainerHistory.openWindowForRef(ref)
     if not isPlayerAdmin() then
         return
     end
-    local pane = inventoryPage.inventoryPane
-    if pane == nil or pane.inventory == nil then
-        return
-    end
-    local character = inventoryPage.character or getSpecificPlayer(inventoryPage.player or 0)
-    local ref = buildContainerRef(pane.inventory, character)
     if not isWorldContainerRef(ref) then
         return
     end
@@ -350,49 +344,48 @@ function ContainerHistory.openWindowForCurrent(inventoryPage)
 end
 
 ---------------------------------------------------------------------------
--- ISInventoryPage injection
+-- Loot window control handler
+--
+-- Registers an "H" button alongside the vanilla "Transfer to Floor" / "Delete
+-- All" buttons in ISLootWindowContainerControls. arrange() lays left-side
+-- handlers out in registration order, so adding ours after RemoveAll puts the
+-- H button to the right of both.
 ---------------------------------------------------------------------------
 
-local _originalCreateChildren = ISInventoryPage.createChildren
-function ISInventoryPage:createChildren()
-    _originalCreateChildren(self)
+require("ISUI/LootWindow/ISLootWindowObjectControlHandler")
 
-    local btnW, btnH = 22, 22
-    local x = self.width - self.buttonSize - btnW - 4
-    local y = 2
-    self.containerHistoryBtn =
-        ISButton:new(x, y, btnW, btnH, "H", self, ContainerHistory.onHistoryButton)
-    self.containerHistoryBtn:initialise()
-    self.containerHistoryBtn:instantiate()
-    self.containerHistoryBtn.tooltip = "Show take/put history for this container"
-    self.containerHistoryBtn:setVisible(false)
-    self:addChild(self.containerHistoryBtn)
-end
+ContainerHistoryControlHandler =
+    ISLootWindowObjectControlHandler:derive("ContainerHistoryControlHandler")
+local Handler = ContainerHistoryControlHandler
 
-function ContainerHistory.onHistoryButton(inventoryPage)
-    ContainerHistory.openWindowForCurrent(inventoryPage)
-end
-
-local _originalPrerender = ISInventoryPage.prerender
-function ISInventoryPage:prerender()
-    _originalPrerender(self)
-
-    if self.containerHistoryBtn == nil then
-        return
-    end
+function Handler:shouldBeVisible()
     if not isPlayerAdmin() then
-        self.containerHistoryBtn:setVisible(false)
-        return
+        return false
     end
-    local pane = self.inventoryPane
-    if pane == nil or pane.inventory == nil then
-        self.containerHistoryBtn:setVisible(false)
-        return
+    if self.container == nil then
+        return false
     end
-    local character = self.character or getSpecificPlayer(self.player or 0)
-    local ref = buildContainerRef(pane.inventory, character)
-    self.containerHistoryBtn:setVisible(isWorldContainerRef(ref))
+    local ref = buildContainerRef(self.container, self.playerObj)
+    if not isWorldContainerRef(ref) then
+        return false
+    end
+    self.containerRef = ref
+    return true
 end
+
+function Handler:getControl()
+    self.control = self:getButtonControl("H")
+    self.control.tooltip = "Show take/put history for this container"
+    return self.control
+end
+
+function Handler:perform()
+    if self.containerRef then
+        ContainerHistory.openWindowForRef(self.containerRef)
+    end
+end
+
+ISLootWindowContainerControls.AddHandler(ContainerHistoryControlHandler)
 
 ---------------------------------------------------------------------------
 -- Server reply listener
