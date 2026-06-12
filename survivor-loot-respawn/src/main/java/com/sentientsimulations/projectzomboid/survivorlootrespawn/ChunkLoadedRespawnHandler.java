@@ -319,7 +319,7 @@ public final class ChunkLoadedRespawnHandler {
                     HourlyRespawnRollHandler.computeChance(
                             hoursLootedToQueued, hoursTillMax, minChance, maxChance, steepness);
             LOGGER.debug(
-                    "[SurvivorLootRespawn] Container x={} y={} z={} type={} idx={} queued={} rolled={}: {}",
+                    "[SurvivorLootRespawn] Container x={} y={} z={} type={} idx={} hours_to_win={} rolled={}: {}",
                     s.squareX(),
                     s.squareY(),
                     s.squareZ(),
