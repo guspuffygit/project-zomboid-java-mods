@@ -55,11 +55,15 @@ public final class HourlyRespawnRollHandler {
             ContainerLootStateRepository.batchMarkQueued(winners, worldAgeHours);
         }
         SurvivorLootRespawnMetrics.observeHourlyRollSeconds((System.nanoTime() - startNanos) / 1e9);
+        long totalQueued = ContainerLootStateRepository.countQueued();
+        SurvivorLootRespawnMetrics.setRowsQueued(totalQueued);
+        SurvivorLootRespawnMetrics.setRowsTracked(ContainerLootStateRepository.countTotal());
         LOGGER.debug(
-                "[SurvivorLootRespawn] Hourly roll fired at worldAgeHours={}: eligible={}, queued={} (hoursTillMax={}, max={}%, min={}%, quiet={}h, steepness={})",
-                worldAgeHours,
+                "[SurvivorLootRespawn] Hourly roll: candidates={}, newlyQueued={}, totalQueued={} (worldAgeHours={}, hoursTillMax={}, max={}%, min={}%, quiet={}h, steepness={})",
                 rolling.size(),
                 winners.size(),
+                totalQueued,
+                worldAgeHours,
                 hoursTillMax,
                 maxChance,
                 minChance,
