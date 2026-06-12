@@ -33,7 +33,7 @@ public final class ContainerHistoryHandler {
                         destRef,
                         event.getUuid());
 
-        ContainerHistoryRepository.insert(record);
+        ContainerHistoryWriter.enqueue(record);
     }
 
     private static boolean involvesWorldContainer(String ref) {

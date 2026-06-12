@@ -145,12 +145,36 @@ public final class ChunkLoadedRespawnHandler {
                     (System.nanoTime() - startNanos) / 1e9);
             return 0;
         }
+        List<ContainerLootState> toDelete = new ArrayList<>();
+        List<ContainerLootState> toIncrement = new ArrayList<>();
+        int respawned = processChunkRows(chunk, queued, toDelete, toIncrement);
+        ContainerLootStateRepository.batchDelete(toDelete);
+        ContainerLootStateRepository.batchIncrementFillAddedNothing(toIncrement);
+        SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
+                (System.nanoTime() - startNanos) / 1e9);
+        LOGGER.debug(
+                "[SurvivorLootRespawn] Loot respawn for chunk wx={} wy={}: queued={}, respawned={}",
+                chunk.wx,
+                chunk.wy,
+                queued.size(),
+                respawned);
+        return respawned;
+    }
 
+    /**
+     * Walks a pre-fetched batch of queued rows for one chunk, performing the in-game respawn work
+     * and appending DB intent to the two accumulator lists. No DB writes happen here — callers
+     * batch-apply {@code toDelete} and {@code toIncrement} once they finish their own outer loop.
+     */
+    public static int processChunkRows(
+            IsoChunk chunk,
+            List<ContainerLootState> queued,
+            List<ContainerLootState> toDelete,
+            List<ContainerLootState> toIncrement) {
         int hoursTillMax = SurvivorLootRespawnConfig.getHoursTillMaxRespawnChance();
         int maxChance = SurvivorLootRespawnConfig.getMaxRespawnChance();
         int minChance = SurvivorLootRespawnConfig.getMinRespawnChance();
         double steepness = SurvivorLootRespawnConfig.getCurveSteepness();
-
         int respawned = 0;
         for (ContainerLootState s : queued) {
             FillResult result = respawnQueued(chunk, s);
@@ -169,22 +193,12 @@ public final class ChunkLoadedRespawnHandler {
                             s.containerType(),
                             s.containerIndex());
                 } else {
-                    ContainerLootStateRepository.incrementFillAddedNothing(
-                            s.squareX(),
-                            s.squareY(),
-                            s.squareZ(),
-                            s.containerType(),
-                            s.containerIndex());
+                    toIncrement.add(s);
                 }
             }
             SurvivorLootRespawnMetrics.recordRespawnResult(effective.name().toLowerCase());
             if (effective.shouldDelete) {
-                ContainerLootStateRepository.delete(
-                        s.squareX(),
-                        s.squareY(),
-                        s.squareZ(),
-                        s.containerType(),
-                        s.containerIndex());
+                toDelete.add(s);
                 if (effective == FillResult.RESPAWNED) {
                     respawned++;
                 }
@@ -204,14 +218,6 @@ public final class ChunkLoadedRespawnHandler {
                     String.format("%.2f%%", chance),
                     effective);
         }
-        SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
-                (System.nanoTime() - startNanos) / 1e9);
-        LOGGER.debug(
-                "[SurvivorLootRespawn] Loot respawn for chunk wx={} wy={}: queued={}, respawned={}",
-                chunk.wx,
-                chunk.wy,
-                queued.size(),
-                respawned);
         return respawned;
     }
 

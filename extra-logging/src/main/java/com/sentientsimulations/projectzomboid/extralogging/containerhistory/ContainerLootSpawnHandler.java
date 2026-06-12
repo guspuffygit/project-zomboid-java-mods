@@ -67,7 +67,7 @@ public final class ContainerLootSpawnHandler {
                             LOOT_SRC_REF,
                             destRef,
                             uuid);
-            ContainerHistoryRepository.insert(record);
+            ContainerHistoryWriter.enqueue(record);
         }
     }
 

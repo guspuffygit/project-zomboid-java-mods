@@ -4,10 +4,14 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.config.SurvivorLootRespawnConfig;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.metrics.SurvivorLootRespawnMetrics;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootState;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.SurvivorLootRespawnDatabase;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.EveryTenMinutesEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import zombie.iso.IsoChunk;
 import zombie.network.GameServer;
 import zombie.network.ServerMap;
@@ -31,23 +35,39 @@ public final class EveryTenMinutesRespawnHandler {
         }
 
         long startNanos = System.nanoTime();
+        Map<Long, List<ContainerLootState>> queuedByChunk =
+                ContainerLootStateRepository.selectAllQueuedByChunk();
         int chunksScanned = 0;
         int respawned = 0;
-        for (int i = 0; i < ServerMap.instance.loadedCells.size(); i++) {
-            ServerMap.ServerCell cell = ServerMap.instance.loadedCells.get(i);
-            if (!cell.isLoaded) {
-                continue;
-            }
-            for (int y = 0; y < 8; y++) {
-                for (int x = 0; x < 8; x++) {
-                    IsoChunk chunk = cell.chunks[x][y];
-                    if (chunk == null) {
-                        continue;
+        List<ContainerLootState> toDelete = new ArrayList<>();
+        List<ContainerLootState> toIncrement = new ArrayList<>();
+        if (!queuedByChunk.isEmpty()) {
+            for (int i = 0; i < ServerMap.instance.loadedCells.size(); i++) {
+                ServerMap.ServerCell cell = ServerMap.instance.loadedCells.get(i);
+                if (!cell.isLoaded) {
+                    continue;
+                }
+                for (int y = 0; y < 8; y++) {
+                    for (int x = 0; x < 8; x++) {
+                        IsoChunk chunk = cell.chunks[x][y];
+                        if (chunk == null) {
+                            continue;
+                        }
+                        chunksScanned++;
+                        List<ContainerLootState> queued =
+                                queuedByChunk.get(
+                                        ContainerLootStateRepository.chunkKey(chunk.wx, chunk.wy));
+                        if (queued == null) {
+                            continue;
+                        }
+                        respawned +=
+                                ChunkLoadedRespawnHandler.processChunkRows(
+                                        chunk, queued, toDelete, toIncrement);
                     }
-                    chunksScanned++;
-                    respawned += ChunkLoadedRespawnHandler.processChunk(chunk);
                 }
             }
+            ContainerLootStateRepository.batchDelete(toDelete);
+            ContainerLootStateRepository.batchIncrementFillAddedNothing(toIncrement);
         }
         SurvivorLootRespawnMetrics.observeTenMinSweepSeconds(
                 (System.nanoTime() - startNanos) / 1e9);

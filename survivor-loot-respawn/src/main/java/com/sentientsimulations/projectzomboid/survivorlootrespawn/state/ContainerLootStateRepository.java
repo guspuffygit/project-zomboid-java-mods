@@ -8,7 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class ContainerLootStateRepository {
 
@@ -45,6 +47,13 @@ public final class ContainerLootStateRepository {
              WHERE square_x >= ? AND square_x < ?
                AND square_y >= ? AND square_y < ?
                AND respawn_queued_at_hours IS NOT NULL""";
+
+    private static final String SELECT_ALL_QUEUED_SQL =
+            """
+            SELECT square_x, square_y, square_z, container_type, container_index,
+                   looted_game_hours, respawn_queued_at_hours, fill_added_nothing_count
+              FROM container_loot_state
+             WHERE respawn_queued_at_hours IS NOT NULL""";
 
     private static final String MARK_QUEUED_SQL =
             """
@@ -211,6 +220,34 @@ public final class ContainerLootStateRepository {
         return out;
     }
 
+    public static long chunkKey(int chunkWX, int chunkWY) {
+        return (((long) chunkWX) << 32) | (chunkWY & 0xFFFFFFFFL);
+    }
+
+    public static Map<Long, List<ContainerLootState>> selectAllQueuedByChunk() {
+        Map<Long, List<ContainerLootState>> out = new HashMap<>();
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                try (PreparedStatement ps = c.prepareStatement(SELECT_ALL_QUEUED_SQL);
+                        ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        ContainerLootState row = read(rs);
+                        int wx = Math.floorDiv(row.squareX(), 8);
+                        int wy = Math.floorDiv(row.squareY(), 8);
+                        out.computeIfAbsent(chunkKey(wx, wy), k -> new ArrayList<>()).add(row);
+                    }
+                }
+            } catch (SQLException e) {
+                SurvivorLootRespawnMetrics.recordDbError("select_all_queued");
+                LOGGER.error(
+                        "[SurvivorLootRespawn] Failed to select all queued container loot states",
+                        e);
+            }
+        }
+        return out;
+    }
+
     public static List<ContainerLootState> selectQueuedForSquare(int x, int y, int z) {
         List<ContainerLootState> out = new ArrayList<>();
         synchronized (SurvivorLootRespawnDatabase.class) {
@@ -325,6 +362,79 @@ public final class ContainerLootStateRepository {
                         z,
                         containerType,
                         containerIndex,
+                        e);
+            }
+        }
+    }
+
+    public static void batchDelete(List<ContainerLootState> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                boolean prevAutoCommit = c.getAutoCommit();
+                c.setAutoCommit(false);
+                try (PreparedStatement ps = c.prepareStatement(DELETE_SQL)) {
+                    for (ContainerLootState s : rows) {
+                        ps.setInt(1, s.squareX());
+                        ps.setInt(2, s.squareY());
+                        ps.setInt(3, s.squareZ());
+                        ps.setString(4, s.containerType());
+                        ps.setInt(5, s.containerIndex());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                    c.commit();
+                } catch (SQLException e) {
+                    c.rollback();
+                    throw e;
+                } finally {
+                    c.setAutoCommit(prevAutoCommit);
+                }
+            } catch (SQLException e) {
+                SurvivorLootRespawnMetrics.recordDbError("batch_delete");
+                LOGGER.error(
+                        "[SurvivorLootRespawn] Failed to batch delete {} container loot states",
+                        rows.size(),
+                        e);
+            }
+        }
+    }
+
+    public static void batchIncrementFillAddedNothing(List<ContainerLootState> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        synchronized (SurvivorLootRespawnDatabase.class) {
+            try {
+                Connection c = SurvivorLootRespawnDatabase.getConnection();
+                boolean prevAutoCommit = c.getAutoCommit();
+                c.setAutoCommit(false);
+                try (PreparedStatement ps = c.prepareStatement(INCREMENT_FILL_ADDED_NOTHING_SQL)) {
+                    for (ContainerLootState s : rows) {
+                        ps.setInt(1, s.squareX());
+                        ps.setInt(2, s.squareY());
+                        ps.setInt(3, s.squareZ());
+                        ps.setString(4, s.containerType());
+                        ps.setInt(5, s.containerIndex());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                    c.commit();
+                } catch (SQLException e) {
+                    c.rollback();
+                    throw e;
+                } finally {
+                    c.setAutoCommit(prevAutoCommit);
+                }
+            } catch (SQLException e) {
+                SurvivorLootRespawnMetrics.recordDbError("batch_increment_fill_added_nothing");
+                LOGGER.error(
+                        "[SurvivorLootRespawn] Failed to batch increment fill_added_nothing for {}"
+                                + " rows",
+                        rows.size(),
                         e);
             }
         }

@@ -49,6 +49,7 @@ public final class QueryContainerHistoryHandler {
         Integer requested = event.getLimit();
         int limit = requested == null ? DEFAULT_LIMIT : Math.min(Math.max(requested, 1), MAX_LIMIT);
 
+        ContainerHistoryWriter.flush();
         List<ContainerTransferRecord> rows =
                 ContainerHistoryRepository.queryByContainerRef(ref, limit);
 
