@@ -1,88 +1,36 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
-import static io.pzstorm.storm.logging.StormLogger.LOGGER;
+import io.pzstorm.storm.logging.StormFileLoggerFactory;
+import org.slf4j.Logger;
 
-import ch.qos.logback.classic.AsyncAppender;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.rolling.FixedWindowRollingPolicy;
-import ch.qos.logback.core.rolling.RollingFileAppender;
-import ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy;
-import ch.qos.logback.core.util.FileSize;
-import org.slf4j.LoggerFactory;
+/**
+ * Thin wrapper around {@link StormFileLoggerFactory} that gives extra-logging its own log directory
+ * (defaulting to {@code <STORM_LOG_DIR>/extra-logging/}, overridable via {@code
+ * -DEXTRA_LOGGING_DIR=…}) and the mod's preferred size/rotation settings (20&nbsp;MB active file
+ * with one rolled archive). JSON files use the bare {@code %msg%n} layout so each line is a
+ * standalone JSON record; other extensions get the standard timestamped layout.
+ */
+public final class ExtraLoggerFactory {
 
-public class ExtraLoggerFactory {
+    private static final String LOG_DIR =
+            System.getProperty(
+                    "EXTRA_LOGGING_DIR", StormFileLoggerFactory.LOG_HOME + "/extra-logging");
 
-    private static final String LOG_DIR;
+    private ExtraLoggerFactory() {}
 
-    static {
-        String logHome = System.getProperty("STORM_LOG_DIR");
-        if (logHome == null || logHome.isEmpty()) {
-            logHome = System.getProperty("user.home") + "/Zomboid/Logs";
-        }
-        LOG_DIR = System.getProperty("EXTRA_LOGGING_DIR", logHome + "/extra-logging");
+    public static Logger createLogger(String name, String extension) {
+        String pattern = "json".equals(extension) ? "%msg%n" : null;
+        return StormFileLoggerFactory.create(
+                "extra-logging." + name + "." + extension,
+                LOG_DIR,
+                name,
+                extension,
+                20,
+                1,
+                pattern);
     }
 
-    public static ch.qos.logback.classic.Logger createLogger(String name, String extension) {
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        String logFile = "%s/%s.%s".formatted(LOG_DIR, name, extension);
-
-        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-        encoder.setContext(context);
-        if (extension.equals("json")) {
-            encoder.setPattern("%msg%n");
-        } else {
-            encoder.setPattern("%date{yyyy-MM-dd HH:mm:ss.SSS} %msg%n");
-        }
-        encoder.start();
-
-        RollingFileAppender<ILoggingEvent> rollingAppender = new RollingFileAppender<>();
-        rollingAppender.setContext(context);
-        rollingAppender.setName("EXTRA_LOGGING_" + name.toUpperCase() + "_FILE");
-        rollingAppender.setFile(logFile);
-        rollingAppender.setAppend(true);
-        rollingAppender.setEncoder(encoder);
-
-        FixedWindowRollingPolicy rollingPolicy = new FixedWindowRollingPolicy();
-        rollingPolicy.setContext(context);
-        rollingPolicy.setParent(rollingAppender);
-        rollingPolicy.setFileNamePattern(LOG_DIR + "/" + name + ".%i.log");
-        rollingPolicy.setMinIndex(1);
-        rollingPolicy.setMaxIndex(1);
-        rollingPolicy.start();
-
-        SizeBasedTriggeringPolicy<ILoggingEvent> triggeringPolicy =
-                new SizeBasedTriggeringPolicy<>();
-        triggeringPolicy.setContext(context);
-        triggeringPolicy.setMaxFileSize(FileSize.valueOf("20MB"));
-        triggeringPolicy.start();
-
-        rollingAppender.setRollingPolicy(rollingPolicy);
-        rollingAppender.setTriggeringPolicy(triggeringPolicy);
-        rollingAppender.start();
-
-        AsyncAppender asyncAppender = new AsyncAppender();
-        asyncAppender.setContext(context);
-        asyncAppender.setName("ASYNC_EXTRA_LOGGING_" + name.toUpperCase());
-        asyncAppender.addAppender(rollingAppender);
-        asyncAppender.setQueueSize(512);
-        asyncAppender.setDiscardingThreshold(0);
-        asyncAppender.setIncludeCallerData(false);
-        asyncAppender.start();
-
-        ch.qos.logback.classic.Logger logger =
-                context.getLogger("extra-logging." + name + "." + extension);
-        logger.setLevel(Level.INFO);
-        logger.setAdditive(false);
-        logger.addAppender(asyncAppender);
-
-        LOGGER.info("Extra logger [{}] initialized, writing to: {}", name, logFile);
-        return logger;
-    }
-
-    public static ch.qos.logback.classic.Logger createLogger(String name) {
+    public static Logger createLogger(String name) {
         return createLogger(name, "log");
     }
 }
