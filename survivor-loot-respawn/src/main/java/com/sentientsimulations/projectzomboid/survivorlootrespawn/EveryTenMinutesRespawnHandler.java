@@ -38,6 +38,7 @@ public final class EveryTenMinutesRespawnHandler {
         long startNanos = System.nanoTime();
         Map<Long, List<ContainerLootState>> queuedByChunk =
                 ContainerLootStateRepository.selectAllQueuedByChunk();
+        long afterSelectNanos = System.nanoTime();
         List<ContainerLootState> toDelete = new ArrayList<>();
         List<ContainerLootState> toIncrement = new ArrayList<>();
         int totalQueued = 0;
@@ -60,11 +61,10 @@ public final class EveryTenMinutesRespawnHandler {
             respawned +=
                     ChunkLoadedRespawnHandler.processChunkRows(chunk, rows, toDelete, toIncrement);
         }
+        long afterProcessNanos = System.nanoTime();
 
-        ContainerLootStateRepository.batchDelete(toDelete);
-        ContainerLootStateRepository.batchIncrementFillAddedNothing(toIncrement);
         SurvivorLootRespawnMetrics.observeTenMinSweepSeconds(
-                (System.nanoTime() - startNanos) / 1e9);
+                (afterProcessNanos - startNanos) / 1e9);
         LOGGER.debug(
                 "[SurvivorLootRespawn] 10-minute sweep: queued={}, chunks_processed={}, chunks_skipped_not_loaded={}, respawned={}",
                 totalQueued,
@@ -73,10 +73,29 @@ public final class EveryTenMinutesRespawnHandler {
                 respawned);
         SurvivorLootRespawnDatabase.submit(
                 () -> {
+                    long submitStartNanos = System.nanoTime();
+                    ContainerLootStateRepository.batchDelete(toDelete);
+                    long afterDeleteNanos = System.nanoTime();
+                    ContainerLootStateRepository.batchIncrementFillAddedNothing(toIncrement);
+                    long afterIncrementNanos = System.nanoTime();
                     SurvivorLootRespawnMetrics.setRowsTracked(
                             ContainerLootStateRepository.countTotal());
+                    long afterCountTotalNanos = System.nanoTime();
                     SurvivorLootRespawnMetrics.setRowsQueued(
                             ContainerLootStateRepository.countQueued());
+                    long afterCountQueuedNanos = System.nanoTime();
+
+                    LOGGER.debug(
+                            "[SurvivorLootRespawn] 10-minute sweep timings (ms): select={}, process={}, batchDelete={}, batchIncrement={}, countTotal={}, countQueued={}",
+                            String.format("%.2f", (afterSelectNanos - startNanos) / 1e6),
+                            String.format("%.2f", (afterProcessNanos - afterSelectNanos) / 1e6),
+                            String.format("%.2f", (afterDeleteNanos - submitStartNanos) / 1e6),
+                            String.format("%.2f", (afterIncrementNanos - afterDeleteNanos) / 1e6),
+                            String.format(
+                                    "%.2f", (afterCountTotalNanos - afterIncrementNanos) / 1e6),
+                            String.format(
+                                    "%.2f",
+                                    (afterCountQueuedNanos - afterCountTotalNanos) / 1e6));
                 });
     }
 }
