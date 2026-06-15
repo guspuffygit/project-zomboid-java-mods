@@ -4,8 +4,7 @@ import io.pzstorm.storm.event.packet.*;
 
 public class VehicleEventHandler {
 
-    private static final org.slf4j.Logger logger =
-            ExtraLoggerFactory.createLogger("vehicles");
+    private static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("vehicles");
 
     public static void onPlayerHitVehicle(PlayerHitVehiclePacketEvent event) {
         try {

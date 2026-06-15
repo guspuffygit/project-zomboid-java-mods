@@ -4,8 +4,7 @@ import io.pzstorm.storm.event.packet.*;
 
 public class SafehouseEventHandler {
 
-    private static final org.slf4j.Logger logger =
-            ExtraLoggerFactory.createLogger("safehouses");
+    private static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("safehouses");
 
     public static void onSafehouseClaim(SafehouseClaimPacketEvent event) {
         try {

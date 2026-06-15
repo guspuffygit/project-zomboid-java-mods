@@ -9,8 +9,7 @@ import zombie.scripting.entity.components.crafting.CraftRecipe;
 
 public class ItemEventHandler {
 
-    private static final org.slf4j.Logger logger =
-            ExtraLoggerFactory.createLogger("items");
+    private static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("items");
 
     public static void onAddInventoryItemToContainer(AddInventoryItemToContainerPacketEvent event) {
         try {

@@ -94,8 +94,7 @@ public final class EveryTenMinutesRespawnHandler {
                             String.format(
                                     "%.2f", (afterCountTotalNanos - afterIncrementNanos) / 1e6),
                             String.format(
-                                    "%.2f",
-                                    (afterCountQueuedNanos - afterCountTotalNanos) / 1e6));
+                                    "%.2f", (afterCountQueuedNanos - afterCountTotalNanos) / 1e6));
                 });
     }
 }
