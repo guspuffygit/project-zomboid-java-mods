@@ -1,0 +1,28 @@
+modInfo {
+	name = 'Stop Zombie Safehouse Spawns by Gus Puffy'
+	workshopId = '3746160175'
+	workshopIdProd = '3746161611'
+	description = '''[h1]Stop Zombie Safehouse Spawns[/h1]
+
+Prevents zombies from spawning inside claimed safehouses.
+
+[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Server-side only. Vanilla clients connect normally, nothing to install on their end.
+
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
+[hr][/hr]
+
+[h1]Server Options[/h1]
+All knobs live under the [b]Stop Zombie Safehouse Spawns[/b] sandbox page:
+[list]
+[*][b]Block zombie respawn inside safehouses[/b]: ON (default) blocks the natural respawn path inside claimed safehouses. OFF restores vanilla behavior.
+[/list]
+
+[hr][/hr]
+
+Tested and compatible with 42.19.0'''
+	modVersion = '1.0.0'
+}
