@@ -106,7 +106,11 @@ local function isPlayerAdmin()
     if not isClient() then
         return true
     end
-    return getAccessLevel() == "admin"
+    local player = getPlayer()
+    if player == nil then
+        return false
+    end
+    return player:getAccessLevel() == "admin"
 end
 
 ---------------------------------------------------------------------------
