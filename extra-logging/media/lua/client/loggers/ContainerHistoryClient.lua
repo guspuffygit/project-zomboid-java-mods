@@ -110,7 +110,11 @@ local function isPlayerAdmin()
     if player == nil then
         return false
     end
-    return player:getAccessLevel() == "admin"
+    local role = player:getRole()
+    if role == nil then
+        return false
+    end
+    return role:getName() == "admin"
 end
 
 ---------------------------------------------------------------------------
