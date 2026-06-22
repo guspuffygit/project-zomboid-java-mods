@@ -278,6 +278,7 @@ subprojects { subproj ->
 		inputs.property('visibility', getWorkshopVisibility())
 		inputs.property('title', info.workshopTitle.orElse(info.name))
 		inputs.property('description', info.description.orElse(''))
+		inputs.property('modId', info.id.orElse("${subproj.name}-b42${getEnvSuffix()}"))
 		inputs.property('changenote', 'Deployment')
 
 		outputs.file(outputFile)
@@ -285,7 +286,10 @@ subprojects { subproj ->
 		doLast {
 			def f = outputFile.get().asFile
 			f.parentFile.mkdirs()
-			def escDesc = inputs.properties['description'].replace('\r', '').readLines().collect { it.replaceFirst(/^\s+/, '') }.join('\n').trim().replace('"', "'")
+			def workshopId = info.workshopId.getOrElse('')
+			def modId = info.id.getOrElse("${subproj.name}-b42${getEnvSuffix()}")
+			def descriptionWithFooter = info.description.getOrElse("").trim() + "\n\n[hr][/hr]\nWorkshop ID: ${workshopId}\nMod ID: ${modId}"
+			def escDesc = descriptionWithFooter.replace('\r', '').readLines().collect { it.replaceFirst(/^\s+/, '') }.join('\n').trim().replace('"', "'")
 			def escTitle = inputs.properties['title'].replace('"', "'").replace('\r', '').replace('\n', ' ')
 			f.text = [
 				'"workshopitem"',
