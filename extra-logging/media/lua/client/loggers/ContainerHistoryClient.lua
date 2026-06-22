@@ -354,10 +354,10 @@ end
 ---------------------------------------------------------------------------
 -- Loot window control handler
 --
--- Registers an "H" button alongside the vanilla "Transfer to Floor" / "Delete
--- All" buttons in ISLootWindowContainerControls. arrange() lays left-side
--- handlers out in registration order, so adding ours after RemoveAll puts the
--- H button to the right of both.
+-- Registers a "History" button alongside the vanilla "Transfer to Floor" /
+-- "Delete All" buttons in ISLootWindowContainerControls. arrange() lays
+-- left-side handlers out in registration order, so adding ours after RemoveAll
+-- puts the History button to the right of both.
 ---------------------------------------------------------------------------
 
 require("ISUI/LootWindow/ISLootWindowObjectControlHandler")
@@ -382,7 +382,7 @@ function Handler:shouldBeVisible()
 end
 
 function Handler:getControl()
-    self.control = self:getButtonControl("H")
+    self.control = self:getButtonControl("History")
     self.control.tooltip = "Show take/put history for this container"
     return self.control
 end
