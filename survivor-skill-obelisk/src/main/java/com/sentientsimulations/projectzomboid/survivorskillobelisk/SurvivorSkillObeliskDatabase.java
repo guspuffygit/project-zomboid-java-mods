@@ -60,10 +60,9 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
     private static final String CREATE_DEATH_READ_LITERATURE =
             """
             CREATE TABLE IF NOT EXISTS death_read_literature (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                death_id   INTEGER NOT NULL,
-                full_type  TEXT NOT NULL,
-                pages_read INTEGER NOT NULL DEFAULT 0,
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id         INTEGER NOT NULL,
+                literature_title TEXT NOT NULL,
                 FOREIGN KEY (death_id) REFERENCES deaths(id)
             )""";
 

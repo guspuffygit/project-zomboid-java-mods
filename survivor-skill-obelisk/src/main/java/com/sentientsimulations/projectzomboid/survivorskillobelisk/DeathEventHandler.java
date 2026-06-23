@@ -18,8 +18,8 @@ import zombie.radio.media.RecordedMedia;
  * attacker-attribution / extraction approach used by the extra-logging mod's DeathEventHandler, but
  * writes to a database rather than a log file.
  *
- * <p>Captured per death: identity + perk levels/XP, known recipes, read literature (with pages
- * read), read print media, and watched recorded media (VHS tapes / CDs).
+ * <p>Captured per death: identity + perk levels/XP, known recipes, read literature (titles), read
+ * print media, and watched recorded media (VHS tapes / CDs).
  */
 public final class DeathEventHandler {
 
@@ -95,12 +95,17 @@ public final class DeathEventHandler {
         }
     }
 
-    /** Skill books and recipe magazines the character has read, with pages-read progress. */
+    /**
+     * Skill books / magazines the character has read. Keys are PZ's per-item {@code
+     * literatureTitle} mod-data strings (built by {@code ItemCodeOnCreate}/{@code
+     * RecipeCodeHelper}) — NOT item full-types. The map's value is a "last-read day" stamp used by
+     * the literature cooldown sandbox option, not a pages-read count, so we store membership only.
+     */
     private static void recordReadLiterature(
             SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
-        for (String fullType : player.getReadLiterature()) {
-            if (fullType != null) {
-                repo.insertReadLiterature(deathId, fullType, player.getAlreadyReadPages(fullType));
+        for (String literatureTitle : player.getReadLiterature().keySet()) {
+            if (literatureTitle != null) {
+                repo.insertReadLiterature(deathId, literatureTitle);
             }
         }
     }

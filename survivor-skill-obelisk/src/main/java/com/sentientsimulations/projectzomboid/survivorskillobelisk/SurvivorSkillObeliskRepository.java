@@ -22,8 +22,7 @@ public class SurvivorSkillObeliskRepository {
             "INSERT INTO death_recipes (death_id, recipe_name) VALUES (?, ?)";
 
     private static final String INSERT_READ_LITERATURE =
-            "INSERT INTO death_read_literature (death_id, full_type, pages_read)"
-                    + " VALUES (?, ?, ?)";
+            "INSERT INTO death_read_literature (death_id, literature_title) VALUES (?, ?)";
 
     private static final String INSERT_READ_PRINT_MEDIA =
             "INSERT INTO death_read_print_media (death_id, media_id) VALUES (?, ?)";
@@ -48,7 +47,7 @@ public class SurvivorSkillObeliskRepository {
             long steamId,
             String forename,
             String surname,
-            float hoursSurvived,
+            double hoursSurvived,
             int zombieKills,
             float x,
             float y,
@@ -61,7 +60,7 @@ public class SurvivorSkillObeliskRepository {
             stmt.setLong(3, steamId);
             stmt.setString(4, forename);
             stmt.setString(5, surname);
-            stmt.setFloat(6, hoursSurvived);
+            stmt.setDouble(6, hoursSurvived);
             stmt.setInt(7, zombieKills);
             stmt.setFloat(8, x);
             stmt.setFloat(9, y);
@@ -94,12 +93,10 @@ public class SurvivorSkillObeliskRepository {
         }
     }
 
-    public void insertReadLiterature(long deathId, String fullType, int pagesRead)
-            throws SQLException {
+    public void insertReadLiterature(long deathId, String literatureTitle) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(INSERT_READ_LITERATURE)) {
             stmt.setLong(1, deathId);
-            stmt.setString(2, fullType);
-            stmt.setInt(3, pagesRead);
+            stmt.setString(2, literatureTitle);
             stmt.executeUpdate();
         }
     }

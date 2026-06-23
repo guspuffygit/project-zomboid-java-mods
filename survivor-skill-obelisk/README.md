@@ -16,8 +16,10 @@ Requires: [Storm](https://steamcommunity.com/sharedfiles/filedetails/?id=3670772
   - **Skills** — one `death_skills` row per non-zero perk (level + XP).
   - **Known recipes** — `death_recipes`, from `IsoPlayer.getKnownRecipes()` (mostly taught by skill
     magazines).
-  - **Read literature** — `death_read_literature`, from `getReadLiterature()` with pages read via
-    `getAlreadyReadPages(fullType)` (skill books + recipe magazines).
+  - **Read literature** — `death_read_literature`, one row per `literatureTitle` from
+    `IsoGameCharacter.getReadLiterature()` (skill books + recipe magazines). PZ stores its own
+    constructed "literature title" string per item rather than the item full-type, so that's what
+    we persist.
   - **Read print media** — `death_read_print_media`, from `getReadPrintMedia()` (newspapers /
     magazines).
   - **Watched recorded media** — `death_watched_media`, the VHS tapes / CDs the character has seen.
@@ -80,12 +82,11 @@ are written.
 
 ### `death_read_literature`
 
-| column     | type    | notes                                   |
-|------------|---------|-----------------------------------------|
-| id         | INTEGER | primary key                             |
-| death_id   | INTEGER | not null; FK → `deaths(id)`             |
-| full_type  | TEXT    | not null; item full-type, e.g. `Base.BookCarpentry1` |
-| pages_read | INTEGER | not null; pages read for that full-type |
+| column           | type    | notes                                   |
+|------------------|---------|-----------------------------------------|
+| id               | INTEGER | primary key                             |
+| death_id         | INTEGER | not null; FK → `deaths(id)`             |
+| literature_title | TEXT    | not null; PZ's `literatureTitle` key (e.g. `BookCarpentry1_translation_42`) |
 
 ### `death_read_print_media`
 

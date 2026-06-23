@@ -66,18 +66,20 @@ class SurvivorSkillObeliskDatabaseTest {
     void insertDeathWithSkillsPersists() throws Exception {
         long deathId =
                 repo.insertDeath(
-                        1_000L, "alice", 42L, "Alice", "Smith", 12.5f, 7, 100.0f, 200.0f, 0.0f);
+                        1_000L, "alice", 42L, "Alice", "Smith", 12.5, 7, 100.0f, 200.0f, 0.0f);
         repo.insertSkill(deathId, "Woodwork", 3, 1234.5f);
         repo.insertSkill(deathId, "Aiming", 1, 50.0f);
 
         try (Statement stmt = db.getConnection().createStatement();
                 ResultSet rs =
                         stmt.executeQuery(
-                                "SELECT username, zombie_kills FROM deaths WHERE id = "
+                                "SELECT username, zombie_kills, hours_survived FROM deaths"
+                                        + " WHERE id = "
                                         + deathId)) {
             assertTrue(rs.next());
             assertEquals("alice", rs.getString("username"));
             assertEquals(7, rs.getInt("zombie_kills"));
+            assertEquals(12.5, rs.getDouble("hours_survived"), 0.0001);
         }
 
         try (Statement stmt = db.getConnection().createStatement();
@@ -93,10 +95,10 @@ class SurvivorSkillObeliskDatabaseTest {
     @Test
     void insertProgressionChildRowsPersist() throws Exception {
         long deathId =
-                repo.insertDeath(2_000L, "bob", 7L, "Bob", "Jones", 3.0f, 1, 0.0f, 0.0f, 0.0f);
+                repo.insertDeath(2_000L, "bob", 7L, "Bob", "Jones", 3.0, 1, 0.0f, 0.0f, 0.0f);
 
         repo.insertRecipe(deathId, "Make Stir Fry");
-        repo.insertReadLiterature(deathId, "Base.BookCarpentry1", 120);
+        repo.insertReadLiterature(deathId, "BookCarpentry1_translation_42");
         repo.insertReadPrintMedia(deathId, "Base.Newspaper_Dispatch_Day1");
         repo.insertWatchedMedia(
                 deathId, "TapeHTV1", 5, "Home-VHS", 1, "Exercise Tape", 2, 3, false);
@@ -109,10 +111,11 @@ class SurvivorSkillObeliskDatabaseTest {
         try (Statement stmt = db.getConnection().createStatement();
                 ResultSet rs =
                         stmt.executeQuery(
-                                "SELECT pages_read FROM death_read_literature WHERE death_id = "
+                                "SELECT literature_title FROM death_read_literature"
+                                        + " WHERE death_id = "
                                         + deathId)) {
             assertTrue(rs.next());
-            assertEquals(120, rs.getInt("pages_read"));
+            assertEquals("BookCarpentry1_translation_42", rs.getString("literature_title"));
         }
 
         try (Statement stmt = db.getConnection().createStatement();
