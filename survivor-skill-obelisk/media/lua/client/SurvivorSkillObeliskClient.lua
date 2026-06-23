@@ -264,8 +264,12 @@ function SurvivorSkillObelisk.openRecoverWindow()
     end
     local width = 560
     local height = 360
-    local x = math.floor(getCore():getScreenWidth() / 2 - width / 2)
-    local y = math.floor(getCore():getScreenHeight() / 2 - height / 2)
+    local screenW = getCore():getScreenWidth()
+    local screenH = getCore():getScreenHeight()
+    local bottomReserved = 220
+    local x = math.floor(screenW / 2 - width / 2)
+    local y = math.floor((screenH - bottomReserved) / 2 - height / 2)
+    if y < 40 then y = 40 end
     local w = RecoverSkillsWindow:new(x, y, width, height)
     w:initialise()
     w:addToUIManager()
