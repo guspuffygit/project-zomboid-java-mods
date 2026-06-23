@@ -4,6 +4,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnServerStartedEvent;
+import io.pzstorm.storm.event.zomboid.OnSandboxOptionsUpdateEvent;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import zombie.SandboxOptions;
@@ -32,6 +33,17 @@ public final class SurvivorSkillObeliskSandboxApplier {
 
     @SubscribeEvent
     public static void onServerStarted(OnServerStartedEvent event) {
+        applyAll();
+    }
+
+    /**
+     * Re-apply after an admin pushes new sandbox options at runtime. Vanilla {@code
+     * GameServer.receiveSandboxOptions} updates {@code SandboxOptions.instance} in place without
+     * firing a Lua event; Storm fires this Java event from there so per-mod config caches don't
+     * stay frozen at boot-time values.
+     */
+    @SubscribeEvent
+    public static void onSandboxOptionsUpdate(OnSandboxOptionsUpdateEvent event) {
         applyAll();
     }
 
