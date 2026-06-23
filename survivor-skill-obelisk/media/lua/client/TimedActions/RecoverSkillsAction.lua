@@ -12,9 +12,6 @@ end
 
 function RecoverSkillsAction:update()
     self.character:setMetabolicTarget(Metabolics.LightDomestic)
-    if not self.character:getEmitter():isPlaying(self.sound) then
-        self.sound = self.character:playSound("SurvivorSkillObeliskRecover")
-    end
 end
 
 function RecoverSkillsAction:start()
