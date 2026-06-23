@@ -335,21 +335,6 @@ local function iterateLuaArray(t, fn)
     end
 end
 
-local function applySkills(player, skills)
-    iterateLuaArray(skills, function(entry)
-        if entry.perk == nil then
-            return
-        end
-        local perk = PerkFactory.getPerkFromName(entry.perk)
-        if perk == nil then
-            return
-        end
-        local targetXp = entry.xp or 0
-        player:setPerkLevelDebug(perk, targetXp)
-        player:getXp():setXPToLevel(perk, targetXp)
-    end)
-end
-
 local function applyRecipes(player, recipes)
     iterateLuaArray(recipes, function(name)
         player:learnRecipe(name)
@@ -462,7 +447,7 @@ local function onRecoveredData(args)
     if player == nil or args == nil then
         return
     end
-    applySkills(player, args.skills)
+
     applyRecipes(player, args.recipes)
     applyLiterature(player, args.literature)
     applyPrintMedia(player, args.printMedia)

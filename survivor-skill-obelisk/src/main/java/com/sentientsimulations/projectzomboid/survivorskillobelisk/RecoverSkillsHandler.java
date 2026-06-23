@@ -7,6 +7,7 @@ import java.util.List;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;
 import zombie.characters.IsoPlayer;
+import zombie.characters.skills.PerkFactory;
 import zombie.network.GameServer;
 
 /**
@@ -73,6 +74,7 @@ public final class RecoverSkillsHandler {
             }
 
             KahluaTable reply = buildReply(repo, deathId);
+            applySkillsAuthoritatively(player, repo, deathId);
             GameServer.sendServerCommand(player, MODULE, REPLY_COMMAND, reply);
         } catch (Exception e) {
             LOGGER.error(
@@ -85,26 +87,40 @@ public final class RecoverSkillsHandler {
     }
 
     /**
+     * Set the player's server-side XP map to the recovered values. PZ's {@code
+     * NetworkPlayerManager} pushes a full {@code PlayerXp} packet to the owning client every ~1s,
+     * which calls {@code IsoGameCharacter.XP.load()} (clears and rebuilds {@code xpMap} +
+     * {@code perkList}) — so this single server-side write is enough; no client mirror needed.
+     */
+    private static void applySkillsAuthoritatively(
+            IsoPlayer player, SurvivorSkillObeliskRepository repo, long deathId) throws Exception {
+        if (!SurvivorSkillObeliskConfig.isRecoverSkills()) {
+            return;
+        }
+        float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
+        for (SurvivorSkillObeliskRepository.SkillRow row : repo.listSkillsByDeath(deathId)) {
+            PerkFactory.Perk perk = PerkFactory.Perks.FromString(row.perk());
+            if (perk == null || perk == PerkFactory.Perks.MAX) {
+                continue;
+            }
+            float targetXp = row.xp() * percent;
+            float delta = targetXp - player.getXp().getXP(perk);
+            // AddXP handles the negative-delta case (clamps to 0 and walks LoseLevel), so we can
+            // use it to set XP to an exact value regardless of whether the player is above or
+            // below the recovered amount. callLua/doXPBoost/remote/haloText all false: this is a
+            // restore, not earned XP — no multipliers, no halo floaters.
+            player.getXp().AddXP(perk, delta, false, false, false, false);
+        }
+    }
+
+    /**
      * Build the payload the client will apply. Filtered server-side by the {@code SkillObelisk.*}
-     * sandbox toggles, and XP is pre-scaled by {@code SkillObelisk.SkillRecoveryPercent} so the
-     * client just adds whatever it receives.
+     * sandbox toggles. Skills are not in the payload — they're applied server-side and synced
+     * down via the periodic {@code PlayerXp} packet.
      */
     private static KahluaTable buildReply(SurvivorSkillObeliskRepository repo, long deathId)
             throws Exception {
         KahluaTable reply = LuaManager.platform.newTable();
-
-        if (SurvivorSkillObeliskConfig.isRecoverSkills()) {
-            float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
-            KahluaTable skills = LuaManager.platform.newTable();
-            int i = 1;
-            for (SurvivorSkillObeliskRepository.SkillRow row : repo.listSkillsByDeath(deathId)) {
-                KahluaTable t = LuaManager.platform.newTable();
-                t.rawset("perk", row.perk());
-                t.rawset("xp", (double) (row.xp() * percent));
-                skills.rawset(i++, t);
-            }
-            reply.rawset("skills", skills);
-        }
 
         if (SurvivorSkillObeliskConfig.isRecoverRecipes()) {
             reply.rawset("recipes", stringList(repo.listRecipesByDeath(deathId)));
