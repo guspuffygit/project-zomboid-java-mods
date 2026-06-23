@@ -301,7 +301,15 @@ function RecoverSkillsWindow:onRecover()
     if player == nil then
         return
     end
-    ISTimedActionQueue.add(RecoverSkillsAction:new(player, self.selectedDeathId))
+    ISTimedActionQueue.add(
+        RecoverSkillsAction:new(
+            player,
+            self.selectedDeathId,
+            self.obeliskX,
+            self.obeliskY,
+            self.obeliskZ
+        )
+    )
     self:close()
 end
 

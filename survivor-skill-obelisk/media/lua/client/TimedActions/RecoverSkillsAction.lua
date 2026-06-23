@@ -33,17 +33,17 @@ function RecoverSkillsAction:perform()
         self.sound = 0
     end
 
-    sendClientCommand(
-        self.character,
-        "SurvivorSkillObelisk",
-        "recoverSkills",
-        { id = self.deathId }
-    )
+    sendClientCommand(self.character, "SurvivorSkillObelisk", "recoverSkills", {
+        id = self.deathId,
+        x = self.obeliskX,
+        y = self.obeliskY,
+        z = self.obeliskZ,
+    })
 
     ISBaseTimedAction.perform(self)
 end
 
-function RecoverSkillsAction:new(character, deathId)
+function RecoverSkillsAction:new(character, deathId, obeliskX, obeliskY, obeliskZ)
     local o = {}
     setmetatable(o, self)
     self.__index = self
@@ -52,6 +52,9 @@ function RecoverSkillsAction:new(character, deathId)
 
     o.character = character
     o.deathId = deathId
+    o.obeliskX = obeliskX
+    o.obeliskY = obeliskY
+    o.obeliskZ = obeliskZ
 
     -- ISReadABook derives maxTime from in-game minutes × 2 × minutesPerDay; substituting
     -- realSec × 24/minutesPerDay for in-game minutes cancels minutesPerDay out, so 1 real

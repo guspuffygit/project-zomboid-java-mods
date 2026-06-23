@@ -17,4 +17,19 @@ public class RecoverSkillsCommand extends ClientCommandEvent {
         Double d = getDouble("id");
         return d == null ? null : d.longValue();
     }
+
+    public Integer getX() {
+        Double d = getDouble("x");
+        return d == null ? null : d.intValue();
+    }
+
+    public Integer getY() {
+        Double d = getDouble("y");
+        return d == null ? null : d.intValue();
+    }
+
+    public Integer getZ() {
+        Double d = getDouble("z");
+        return d == null ? null : d.intValue();
+    }
 }

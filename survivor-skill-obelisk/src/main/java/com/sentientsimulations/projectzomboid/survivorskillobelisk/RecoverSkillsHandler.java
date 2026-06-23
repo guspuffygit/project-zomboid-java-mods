@@ -21,6 +21,7 @@ public final class RecoverSkillsHandler {
 
     private static final String MODULE = "SurvivorSkillObelisk";
     private static final String REPLY_COMMAND = "recoveredData";
+    private static final String NONE_TYPE = "None";
 
     private RecoverSkillsHandler() {}
 
@@ -74,8 +75,9 @@ public final class RecoverSkillsHandler {
                 return;
             }
 
+            String obeliskType = resolveObeliskType(repo, event);
             KahluaTable reply = buildReply(repo, deathId);
-            applySkillsAuthoritatively(player, repo, deathId);
+            applySkillsAuthoritatively(player, repo, deathId, obeliskType);
             GameServer.sendServerCommand(player, MODULE, REPLY_COMMAND, reply);
         } catch (Exception e) {
             LOGGER.error(
@@ -109,7 +111,8 @@ public final class RecoverSkillsHandler {
      * respawn — a player who farmed some skill before reaching the obelisk would over-level.
      */
     private static void applySkillsAuthoritatively(
-            IsoPlayer player, SurvivorSkillObeliskRepository repo, long deathId) throws Exception {
+            IsoPlayer player, SurvivorSkillObeliskRepository repo, long deathId, String obeliskType)
+            throws Exception {
         if (!SurvivorSkillObeliskConfig.isRecoverSkills()) {
             LOGGER.info(
                     "[SurvivorSkillObelisk] recoverSkills: skill recovery disabled, skipping XP"
@@ -118,7 +121,8 @@ public final class RecoverSkillsHandler {
                     deathId);
             return;
         }
-        float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
+        float configPercent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
+        boolean obeliskOverride = obeliskType != null && !NONE_TYPE.equals(obeliskType);
         Map<PerkFactory.Perk, Integer> grantedLevels =
                 DeathEventHandler.grantedLevelsAtCreation(player);
         float totalDelta = 0f;
@@ -132,6 +136,8 @@ public final class RecoverSkillsHandler {
                         player.getUsername());
                 continue;
             }
+            boolean obeliskMatch = obeliskOverride && obeliskType.equals(perk.getId());
+            float percent = obeliskMatch ? 1.0F : configPercent;
             int grantedLevel = grantedLevels.getOrDefault(perk, 0);
             float baselineXp = grantedLevel > 0 ? perk.getTotalXpForLevel(grantedLevel) : 0f;
             float maxXp = perk.getTotalXpForLevel(10);
@@ -156,7 +162,8 @@ public final class RecoverSkillsHandler {
             applied++;
             LOGGER.info(
                     "[SurvivorSkillObelisk] recoverSkills: {} {} -> level {}->{} ({} -> {} XP,"
-                            + " delta={}) (stored earned={}, percent={}%, baseline grant level={})",
+                            + " delta={}) (stored earned={}, percent={}%{}, baseline grant"
+                            + " level={})",
                     player.getUsername(),
                     perk.getName(),
                     beforeLevel,
@@ -165,16 +172,35 @@ public final class RecoverSkillsHandler {
                     afterXp,
                     delta,
                     row.xp(),
-                    SurvivorSkillObeliskConfig.getSkillRecoveryPercent(),
+                    Math.round(percent * 100),
+                    obeliskMatch ? " [obelisk type override]" : "",
                     grantedLevel);
         }
         LOGGER.info(
                 "[SurvivorSkillObelisk] recoverSkills: applied {} perks, net {} XP delta for"
-                        + " {} (death id={})",
+                        + " {} (death id={}, obelisk type={})",
                 applied,
                 totalDelta,
                 player.getUsername(),
-                deathId);
+                deathId,
+                obeliskType);
+    }
+
+    /**
+     * Resolves the obelisk's configured skill type from the request coords. Returns {@code "None"}
+     * when coords are missing, no row exists, or the stored value is blank — the recovery loop uses
+     * this to decide whether to override per-perk recovery percent.
+     */
+    private static String resolveObeliskType(
+            SurvivorSkillObeliskRepository repo, RecoverSkillsCommand event) throws Exception {
+        Integer x = event.getX();
+        Integer y = event.getY();
+        Integer z = event.getZ();
+        if (x == null || y == null || z == null) {
+            return NONE_TYPE;
+        }
+        String stored = repo.findObeliskType(x, y, z);
+        return (stored == null || stored.isBlank()) ? NONE_TYPE : stored;
     }
 
     /**
