@@ -5,9 +5,29 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 /** All SQL for the Survivor Skill Obelisk mod. Holds no business logic. */
 public class SurvivorSkillObeliskRepository {
+
+    /** A row of the {@code deaths} table flattened for the client-side death-picker UI. */
+    public record DeathSummary(
+            long id,
+            long ts,
+            String username,
+            String forename,
+            String surname,
+            double hoursSurvived,
+            int zombieKills) {}
+
+    private static final String LIST_DEATHS_BY_OWNER =
+            """
+            SELECT id, ts, username, forename, surname, hours_survived, zombie_kills
+            FROM deaths
+            WHERE steam_id = ? AND username = ?
+            ORDER BY ts DESC
+            LIMIT ?""";
 
     private static final String INSERT_DEATH =
             """
@@ -192,5 +212,33 @@ public class SurvivorSkillObeliskRepository {
             }
             stmt.executeUpdate();
         }
+    }
+
+    /**
+     * Most recent first. Filter on both {@code steam_id} and {@code username} so an account that
+     * was used by multiple PZ characters only sees rows for the one currently in play.
+     */
+    public List<DeathSummary> listDeathsByOwner(long steamId, String username, int limit)
+            throws SQLException {
+        List<DeathSummary> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(LIST_DEATHS_BY_OWNER)) {
+            stmt.setLong(1, steamId);
+            stmt.setString(2, username);
+            stmt.setInt(3, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(
+                            new DeathSummary(
+                                    rs.getLong("id"),
+                                    rs.getLong("ts"),
+                                    rs.getString("username"),
+                                    rs.getString("forename"),
+                                    rs.getString("surname"),
+                                    rs.getDouble("hours_survived"),
+                                    rs.getInt("zombie_kills")));
+                }
+            }
+        }
+        return rows;
     }
 }

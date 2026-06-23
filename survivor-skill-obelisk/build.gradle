@@ -1,6 +1,6 @@
 modInfo {
 	name = 'Survivor Skill Obelisk by Gus Puffy'
-	workshopId = ''
+	workshopId = '3750314291'
 	workshopIdStage = ''
 	workshopIdProd = ''
 	description = '''A mysterious obelisk that interacts with survivor skills.
@@ -19,5 +19,3 @@ Tested and compatible with 42.19.0'''
 	pack = 'survivor_skill_obelisk'
 	tiledef = 'survivor_skill_obelisk 8801'
 }
-
-uploadWorkshop.enabled = false

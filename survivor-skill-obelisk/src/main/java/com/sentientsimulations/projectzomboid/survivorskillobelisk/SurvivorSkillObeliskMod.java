@@ -18,6 +18,7 @@ public class SurvivorSkillObeliskMod implements ZomboidMod {
         LOGGER.info("[SurvivorSkillObelisk] Registering event handlers");
         StormEventDispatcher.registerEventHandler(this);
         StormEventDispatcher.registerEventHandler(SurvivorSkillObeliskSandboxApplier.class);
+        StormEventDispatcher.registerEventHandler(ListDeathsHandler.class);
     }
 
     @SubscribeEvent
