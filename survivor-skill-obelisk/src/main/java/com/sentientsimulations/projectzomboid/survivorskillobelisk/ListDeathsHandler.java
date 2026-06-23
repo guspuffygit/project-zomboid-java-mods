@@ -179,7 +179,9 @@ public final class ListDeathsHandler {
             GameServer.sendServerCommand(done.player(), MODULE, REPLY_COMMAND, reply);
         } catch (Throwable t) {
             LOGGER.error(
-                    "[SurvivorSkillObelisk] Failed to send listDeaths reply: {}", t.getMessage(), t);
+                    "[SurvivorSkillObelisk] Failed to send listDeaths reply: {}",
+                    t.getMessage(),
+                    t);
         }
     }
 }

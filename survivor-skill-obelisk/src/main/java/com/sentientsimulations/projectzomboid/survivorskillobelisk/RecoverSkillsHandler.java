@@ -89,8 +89,8 @@ public final class RecoverSkillsHandler {
     /**
      * Set the player's server-side XP map to the recovered values. PZ's {@code
      * NetworkPlayerManager} pushes a full {@code PlayerXp} packet to the owning client every ~1s,
-     * which calls {@code IsoGameCharacter.XP.load()} (clears and rebuilds {@code xpMap} +
-     * {@code perkList}) — so this single server-side write is enough; no client mirror needed.
+     * which calls {@code IsoGameCharacter.XP.load()} (clears and rebuilds {@code xpMap} + {@code
+     * perkList}) — so this single server-side write is enough; no client mirror needed.
      */
     private static void applySkillsAuthoritatively(
             IsoPlayer player, SurvivorSkillObeliskRepository repo, long deathId) throws Exception {
@@ -115,8 +115,8 @@ public final class RecoverSkillsHandler {
 
     /**
      * Build the payload the client will apply. Filtered server-side by the {@code SkillObelisk.*}
-     * sandbox toggles. Skills are not in the payload — they're applied server-side and synced
-     * down via the periodic {@code PlayerXp} packet.
+     * sandbox toggles. Skills are not in the payload — they're applied server-side and synced down
+     * via the periodic {@code PlayerXp} packet.
      */
     private static KahluaTable buildReply(SurvivorSkillObeliskRepository repo, long deathId)
             throws Exception {
