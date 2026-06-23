@@ -17,4 +17,19 @@ public class ListDeathsCommand extends ClientCommandEvent {
         Double d = getDouble("limit");
         return d == null ? null : d.intValue();
     }
+
+    public Integer getX() {
+        Double d = getDouble("x");
+        return d == null ? null : d.intValue();
+    }
+
+    public Integer getY() {
+        Double d = getDouble("y");
+        return d == null ? null : d.intValue();
+    }
+
+    public Integer getZ() {
+        Double d = getDouble("z");
+        return d == null ? null : d.intValue();
+    }
 }

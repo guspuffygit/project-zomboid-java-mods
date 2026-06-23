@@ -63,6 +63,17 @@ local function isPlayerAdmin()
     return false
 end
 
+local function perkDisplayName(typeId)
+    if typeId == nil or typeId == "" or typeId == NONE_TYPE then
+        return NONE_TYPE
+    end
+    local perk = PerkFactory.Perks.FromString(typeId)
+    if perk == nil then
+        return typeId
+    end
+    return perk:getName()
+end
+
 local function collectSkillPerks()
     local perks = {}
     local list = PerkFactory.PerkList
@@ -108,14 +119,33 @@ function RecoverSkillsWindow:new(x, y, width, height)
     local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.title = "Recover Skills"
+    o.baseTitle = "Recover Skills"
+    o.title = o.baseTitle
     o.rows = {}
     o.loading = true
     o.selectedDeathId = nil
+    o.obeliskX = nil
+    o.obeliskY = nil
+    o.obeliskZ = nil
     o.resizable = false
     o.minimumWidth = width
     o.minimumHeight = height
     return o
+end
+
+function RecoverSkillsWindow:setObelisk(x, y, z)
+    self.obeliskX = x
+    self.obeliskY = y
+    self.obeliskZ = z
+    self.title = self.baseTitle
+end
+
+function RecoverSkillsWindow:setObeliskType(typeId)
+    if typeId == nil or typeId == "" or typeId == NONE_TYPE then
+        self.title = self.baseTitle
+    else
+        self.title = self.baseTitle .. " - " .. perkDisplayName(typeId)
+    end
 end
 
 function RecoverSkillsWindow:createChildren()
@@ -425,14 +455,26 @@ end
 
 function SurvivorSkillObelisk.requestDeaths()
     local player = getSpecificPlayer(0)
-    if player == nil then
+    if player == nil or openWindow == nil then
         return
     end
-    sendClientCommand(player, MODULE, LIST_COMMAND, { limit = DEFAULT_LIMIT })
+    sendClientCommand(player, MODULE, LIST_COMMAND, {
+        limit = DEFAULT_LIMIT,
+        x = openWindow.obeliskX,
+        y = openWindow.obeliskY,
+        z = openWindow.obeliskZ,
+    })
 end
 
-function SurvivorSkillObelisk.openRecoverWindow()
+function SurvivorSkillObelisk.openRecoverWindow(worldobjects)
+    local obj = findObeliskInWorldObjects(worldobjects)
+    local square = obj and obj:getSquare() or nil
+    local ox = square and square:getX() or nil
+    local oy = square and square:getY() or nil
+    local oz = square and square:getZ() or nil
+
     if openWindow ~= nil then
+        openWindow:setObelisk(ox, oy, oz)
         openWindow:setVisible(true)
         openWindow:addToUIManager()
         openWindow.loading = true
@@ -451,6 +493,7 @@ function SurvivorSkillObelisk.openRecoverWindow()
         y = 40
     end
     local w = RecoverSkillsWindow:new(x, y, width, height)
+    w:setObelisk(ox, oy, oz)
     w:initialise()
     w:addToUIManager()
     openWindow = w
@@ -488,6 +531,7 @@ local function onDeathsList(args)
     if openWindow == nil then
         return
     end
+    openWindow:setObeliskType(args and args.type or NONE_TYPE)
     local rows = {}
     if args and args.rows then
         local count = args.count or 0

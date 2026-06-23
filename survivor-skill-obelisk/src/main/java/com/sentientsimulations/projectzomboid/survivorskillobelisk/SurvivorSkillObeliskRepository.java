@@ -114,6 +114,9 @@ public class SurvivorSkillObeliskRepository {
             INSERT INTO death_learned_songs (death_id, instrument, song_name, sound)
             VALUES (?, ?, ?, ?)""";
 
+    private static final String FIND_OBELISK_TYPE =
+            "SELECT type FROM obelisk_types WHERE x = ? AND y = ? AND z = ?";
+
     private static final String UPSERT_OBELISK_TYPE =
             """
             INSERT INTO obelisk_types (x, y, z, type, set_by_username, set_by_steam_id, set_ts)
@@ -408,6 +411,21 @@ public class SurvivorSkillObeliskRepository {
             }
         }
         return rows;
+    }
+
+    /** Returns {@code null} when no row exists for the coordinates — caller defaults to "None". */
+    public String findObeliskType(int x, int y, int z) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(FIND_OBELISK_TYPE)) {
+            stmt.setInt(1, x);
+            stmt.setInt(2, y);
+            stmt.setInt(3, z);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("type");
+                }
+            }
+        }
+        return null;
     }
 
     public void upsertObeliskType(

@@ -39,14 +39,23 @@ public final class ListDeathsHandler {
     private static final String REPLY_COMMAND = "deathsList";
     private static final int DEFAULT_LIMIT = 20;
     private static final int MAX_LIMIT = 100;
+    private static final String NONE_TYPE = "None";
 
-    private record PendingRequest(IsoPlayer player, long steamId, String username, int limit) {}
+    private record PendingRequest(
+            IsoPlayer player,
+            long steamId,
+            String username,
+            int limit,
+            Integer obeliskX,
+            Integer obeliskY,
+            Integer obeliskZ) {}
 
     private record DeathWithSkills(
             SurvivorSkillObeliskRepository.DeathSummary summary,
             List<SurvivorSkillObeliskRepository.SkillRow> skills) {}
 
-    private record CompletedRequest(IsoPlayer player, List<DeathWithSkills> deaths) {}
+    private record CompletedRequest(
+            IsoPlayer player, List<DeathWithSkills> deaths, String obeliskType) {}
 
     private static final BlockingQueue<PendingRequest> PENDING = new LinkedBlockingQueue<>();
     private static final ConcurrentLinkedQueue<CompletedRequest> COMPLETED =
@@ -78,7 +87,15 @@ public final class ListDeathsHandler {
         }
         Integer requested = event.getLimit();
         int limit = requested == null ? DEFAULT_LIMIT : Math.min(Math.max(requested, 1), MAX_LIMIT);
-        PENDING.offer(new PendingRequest(player, steamId, username, limit));
+        PENDING.offer(
+                new PendingRequest(
+                        player,
+                        steamId,
+                        username,
+                        limit,
+                        event.getX(),
+                        event.getY(),
+                        event.getZ()));
     }
 
     @SubscribeEvent
@@ -99,9 +116,10 @@ public final class ListDeathsHandler {
                 return;
             }
             try {
-                List<DeathWithSkills> result = runQuery(req);
+                QueryResult result = runQuery(req);
                 if (result != null) {
-                    COMPLETED.offer(new CompletedRequest(req.player(), result));
+                    COMPLETED.offer(
+                            new CompletedRequest(req.player(), result.deaths, result.obeliskType));
                 }
             } catch (Throwable t) {
                 LOGGER.error(
@@ -114,8 +132,11 @@ public final class ListDeathsHandler {
         }
     }
 
-    private static List<DeathWithSkills> runQuery(PendingRequest req) {
+    private record QueryResult(List<DeathWithSkills> deaths, String obeliskType) {}
+
+    private static QueryResult runQuery(PendingRequest req) {
         List<DeathWithSkills> result = new ArrayList<>();
+        String obeliskType = NONE_TYPE;
         try (SurvivorSkillObeliskDatabase db =
                 new SurvivorSkillObeliskDatabase(DeathEventHandler.getDbPath())) {
             Connection conn = db.getConnection();
@@ -130,6 +151,13 @@ public final class ListDeathsHandler {
                         repo.listSkillsByDeath(r.id());
                 result.add(new DeathWithSkills(r, skills));
             }
+            if (req.obeliskX() != null && req.obeliskY() != null && req.obeliskZ() != null) {
+                String stored =
+                        repo.findObeliskType(req.obeliskX(), req.obeliskY(), req.obeliskZ());
+                if (stored != null && !stored.isBlank()) {
+                    obeliskType = stored;
+                }
+            }
             conn.commit();
         } catch (Exception e) {
             LOGGER.error(
@@ -140,7 +168,7 @@ public final class ListDeathsHandler {
                     e);
             return null;
         }
-        return result;
+        return new QueryResult(result, obeliskType);
     }
 
     private static void sendReply(CompletedRequest done) {
@@ -174,6 +202,7 @@ public final class ListDeathsHandler {
             }
             reply.rawset("rows", rowsTable);
             reply.rawset("count", (double) done.deaths().size());
+            reply.rawset("type", done.obeliskType());
             // If the player disconnected while the query was in-flight, sendServerCommand is a
             // no-op (it gates on PlayerToAddressMap).
             GameServer.sendServerCommand(done.player(), MODULE, REPLY_COMMAND, reply);
