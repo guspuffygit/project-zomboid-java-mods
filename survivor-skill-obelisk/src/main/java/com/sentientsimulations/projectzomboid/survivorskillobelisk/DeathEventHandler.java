@@ -117,7 +117,7 @@ public final class DeathEventHandler {
             int granted = grantedLevels.getOrDefault(perk, 0);
             float xpToSave = computeXpToSave(rawXp, granted, perk);
             if (level > 0 || xpToSave > 0f) {
-                repo.insertSkill(deathId, perk.getName(), level, xpToSave);
+                repo.insertSkill(deathId, perk.getId(), level, xpToSave);
             }
         }
     }

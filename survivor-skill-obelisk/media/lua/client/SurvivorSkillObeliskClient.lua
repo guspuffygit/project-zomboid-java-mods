@@ -9,8 +9,10 @@ require("TimedActions/RecoverSkillsAction")
 local MODULE = "SurvivorSkillObelisk"
 local LIST_COMMAND = "listDeaths"
 local SET_TYPE_COMMAND = "setObeliskType"
+local GET_TYPE_COMMAND = "getObeliskType"
 local DEATHS_REPLY = "deathsList"
 local RECOVERED_REPLY = "recoveredData"
+local TYPE_REPLY = "obeliskType"
 -- SyncPlayerFieldsPacket bit flags: 1 = recipes, 4 = already-read books.
 local SYNC_RECIPES_AND_BOOKS = 1 + 4
 local SPRITE_PREFIX = "survivor_skill_obelisk_"
@@ -365,6 +367,8 @@ function ConfigureObeliskWindow:createChildren()
     self.skillCombo.selected = 1
     self:addChild(self.skillCombo)
 
+    self:requestCurrentType()
+
     local btnW = 100
     local btnH = 24
     local btnY = self.height - padding - btnH
@@ -402,6 +406,38 @@ function ConfigureObeliskWindow:createChildren()
     self.cancelBtn.anchorRight = true
     self.cancelBtn.anchorLeft = false
     self:addChild(self.cancelBtn)
+end
+
+function ConfigureObeliskWindow:requestCurrentType()
+    local player = getSpecificPlayer(0)
+    if player == nil then
+        return
+    end
+    sendClientCommand(player, MODULE, GET_TYPE_COMMAND, {
+        x = self.obeliskX,
+        y = self.obeliskY,
+        z = self.obeliskZ,
+    })
+end
+
+function ConfigureObeliskWindow:applyType(typeId)
+    if self.skillCombo == nil then
+        return
+    end
+    if typeId == nil or typeId == "" then
+        typeId = NONE_TYPE
+    end
+    local options = self.skillCombo.options
+    if options == nil then
+        return
+    end
+    for i = 1, #options do
+        if options[i].data == typeId then
+            self.skillCombo.selected = i
+            return
+        end
+    end
+    -- Unknown type (e.g. perk from a since-removed mod) — leave combo at default.
 end
 
 function ConfigureObeliskWindow:onSave()
@@ -691,6 +727,20 @@ local function onRecoveredData(args)
     HaloTextHelper.addGoodText(player, "Skills recovered")
 end
 
+local function onObeliskType(args)
+    if openConfigureWindow == nil or args == nil then
+        return
+    end
+    if
+        args.x ~= openConfigureWindow.obeliskX
+        or args.y ~= openConfigureWindow.obeliskY
+        or args.z ~= openConfigureWindow.obeliskZ
+    then
+        return
+    end
+    openConfigureWindow:applyType(args.type)
+end
+
 local function onServerCommand(module, command, args)
     if module ~= MODULE then
         return
@@ -699,6 +749,8 @@ local function onServerCommand(module, command, args)
         onDeathsList(args)
     elseif command == RECOVERED_REPLY then
         onRecoveredData(args)
+    elseif command == TYPE_REPLY then
+        onObeliskType(args)
     end
 end
 
