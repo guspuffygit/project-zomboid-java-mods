@@ -140,7 +140,7 @@ public final class DeathEventHandler {
      * Vanilla writes {@code descriptor.xpBoostMap} capped at 3 and Lifestyles can mutate it
      * mid-game, so don't read it back from there — sum from the factories instead.
      */
-    private static Map<PerkFactory.Perk, Integer> grantedLevelsAtCreation(IsoPlayer player) {
+    static Map<PerkFactory.Perk, Integer> grantedLevelsAtCreation(IsoPlayer player) {
         List<Map<PerkFactory.Perk, Integer>> traitBoosts = new ArrayList<>();
         for (CharacterTrait t : player.getCharacterTraits().getKnownTraits()) {
             CharacterTraitDefinition def = CharacterTraitDefinition.getCharacterTraitDefinition(t);

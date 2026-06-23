@@ -4,6 +4,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import io.pzstorm.storm.event.core.OnClientCommand;
 import java.util.List;
+import java.util.Map;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;
 import zombie.characters.IsoPlayer;
@@ -87,15 +88,25 @@ public final class RecoverSkillsHandler {
     }
 
     /**
-     * Add the recovered earned-XP on top of the new character's existing XP map. PZ's {@code
-     * NetworkPlayerManager} pushes a full {@code PlayerXp} packet to the owning client every ~1s,
-     * which calls {@code IsoGameCharacter.XP.load()} (clears and rebuilds {@code xpMap} + {@code
-     * perkList}) — so this single server-side write is enough; no client mirror needed.
+     * Drive each perk's XP to {@code (this character's creation-grant baseline XP) + (recovered
+     * earned XP × recovery%)} by computing the delta from current and feeding it to {@code AddXP}.
+     * The delta is negative when the live character has out-earned the recovery target — recovery
+     * is a SET, not an ADD, so we walk the XP back down to the grant + recovered amount.
      *
-     * <p>The DB stores XP with the previous character's creation-time grant already subtracted (see
-     * {@link DeathEventHandler#computeXpToSave}), so adding it stacks correctly on whatever the new
-     * character was granted at its own creation — profession/trait skill boosts stay
-     * one-time-per-character.
+     * <p>PZ's {@code NetworkPlayerManager} pushes a full {@code PlayerXp} packet to the owning
+     * client every ~1s, which calls {@code IsoGameCharacter.XP.load()} (clears and rebuilds {@code
+     * xpMap} + {@code perkList}) — so this single server-side write is enough; no client mirror
+     * needed.
+     *
+     * <p>Why delta-via-AddXP instead of direct map writes: AddXP runs the level-up / level-down
+     * loops that fire {@code LevelPerk} Lua events, which Lifestyles and other mods listen to for
+     * downstream state (ambition progress, fitness/strength stat sync, etc). Direct {@code
+     * xpMap.put} would skip those.
+     *
+     * <p>Why set instead of add-recovered: the DB stores XP with the dead character's creation
+     * grant already subtracted (see {@link DeathEventHandler#computeXpToSave}). Adding the stored
+     * amount on top of the live XP map double-counts whatever this character has earned since
+     * respawn — a player who farmed some skill before reaching the obelisk would over-level.
      */
     private static void applySkillsAuthoritatively(
             IsoPlayer player, SurvivorSkillObeliskRepository repo, long deathId) throws Exception {
@@ -108,7 +119,9 @@ public final class RecoverSkillsHandler {
             return;
         }
         float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
-        float totalGained = 0f;
+        Map<PerkFactory.Perk, Integer> grantedLevels =
+                DeathEventHandler.grantedLevelsAtCreation(player);
+        float totalDelta = 0f;
         int applied = 0;
         for (SurvivorSkillObeliskRepository.SkillRow row : repo.listSkillsByDeath(deathId)) {
             PerkFactory.Perk perk = PerkFactory.Perks.FromString(row.perk());
@@ -119,40 +132,47 @@ public final class RecoverSkillsHandler {
                         player.getUsername());
                 continue;
             }
-            float gainXp = row.xp() * percent;
-            if (gainXp <= 0f) {
-                continue;
-            }
+            int grantedLevel = grantedLevels.getOrDefault(perk, 0);
+            float baselineXp = grantedLevel > 0 ? perk.getTotalXpForLevel(grantedLevel) : 0f;
+            float maxXp = perk.getTotalXpForLevel(10);
+            float targetXp = Math.min(baselineXp + row.xp() * percent, maxXp);
+
             float beforeXp = player.getXp().getXP(perk);
             int beforeLevel = player.getPerkLevel(perk);
-            // doXPBoost=false bypasses trait/profession rate multipliers; AddXP still clamps at
-            // totalXpForLevel(10). callLua/remote/haloText all false: this is a restore, not
-            // earned XP — no Lua hooks, no halo floaters.
-            player.getXp().AddXP(perk, gainXp, false, false, false, false);
+            float delta = targetXp - beforeXp;
+            // Sub-XP noise isn't worth firing a LevelPerk pass over.
+            if (Math.abs(delta) < 0.5f) {
+                continue;
+            }
+
+            // doXPBoost=false bypasses trait/profession rate multipliers so the delta is applied
+            // as a literal XP change (modulo the protein/strength tweak inside AddXP, which we
+            // accept since recovery% is already a fudgeable knob). callLua/remote/haloText all
+            // false: this is a restore, not earned XP — no Lua hooks, no halo floaters.
+            player.getXp().AddXP(perk, delta, false, false, false, false);
             float afterXp = player.getXp().getXP(perk);
             int afterLevel = player.getPerkLevel(perk);
-            float actualGain = afterXp - beforeXp;
-            totalGained += actualGain;
+            totalDelta += afterXp - beforeXp;
             applied++;
             LOGGER.info(
-                    "[SurvivorSkillObelisk] recoverSkills: {} {} +{} XP (stored={}, percent={}%,"
-                            + " requested={}) -> level {}->{} ({} -> {} XP)",
+                    "[SurvivorSkillObelisk] recoverSkills: {} {} -> level {}->{} ({} -> {} XP,"
+                            + " delta={}) (stored earned={}, percent={}%, baseline grant level={})",
                     player.getUsername(),
                     perk.getName(),
-                    actualGain,
-                    row.xp(),
-                    SurvivorSkillObeliskConfig.getSkillRecoveryPercent(),
-                    gainXp,
                     beforeLevel,
                     afterLevel,
                     beforeXp,
-                    afterXp);
+                    afterXp,
+                    delta,
+                    row.xp(),
+                    SurvivorSkillObeliskConfig.getSkillRecoveryPercent(),
+                    grantedLevel);
         }
         LOGGER.info(
-                "[SurvivorSkillObelisk] recoverSkills: applied {} perks, {} XP total restored to"
+                "[SurvivorSkillObelisk] recoverSkills: applied {} perks, net {} XP delta for"
                         + " {} (death id={})",
                 applied,
-                totalGained,
+                totalDelta,
                 player.getUsername(),
                 deathId);
     }

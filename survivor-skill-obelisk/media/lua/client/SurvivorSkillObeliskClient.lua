@@ -81,9 +81,9 @@ function RecoverSkillsWindow:new(x, y, width, height)
     o.rows = {}
     o.loading = true
     o.selectedDeathId = nil
-    o.resizable = true
-    o.minimumWidth = 480
-    o.minimumHeight = 280
+    o.resizable = false
+    o.minimumWidth = width
+    o.minimumHeight = height
     return o
 end
 
@@ -140,22 +140,6 @@ function RecoverSkillsWindow:createChildren()
     self.recoverBtn.anchorRight = true
     self.recoverBtn.anchorLeft = false
     self:addChild(self.recoverBtn)
-end
-
-function RecoverSkillsWindow:onResize()
-    ISCollapsableWindow.onResize(self)
-    local titleBarH = self:titleBarHeight()
-    local padding = 6
-    local btnH = 24
-    local listY = titleBarH + padding + 22
-    if self.listBox then
-        self.listBox:setWidth(self.width - padding * 2)
-        self.listBox:setHeight(self.height - listY - padding - btnH - padding)
-    end
-    if self.recoverBtn then
-        self.recoverBtn:setX(self.width - padding - self.recoverBtn:getWidth())
-        self.recoverBtn:setY(self.height - padding - btnH)
-    end
 end
 
 function RecoverSkillsWindow:drawListItem(y, item, alt)
