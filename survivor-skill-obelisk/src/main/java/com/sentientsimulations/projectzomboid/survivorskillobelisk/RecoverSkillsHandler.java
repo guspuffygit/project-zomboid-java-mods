@@ -87,30 +87,74 @@ public final class RecoverSkillsHandler {
     }
 
     /**
-     * Set the player's server-side XP map to the recovered values. PZ's {@code
+     * Add the recovered earned-XP on top of the new character's existing XP map. PZ's {@code
      * NetworkPlayerManager} pushes a full {@code PlayerXp} packet to the owning client every ~1s,
      * which calls {@code IsoGameCharacter.XP.load()} (clears and rebuilds {@code xpMap} + {@code
      * perkList}) — so this single server-side write is enough; no client mirror needed.
+     *
+     * <p>The DB stores XP with the previous character's creation-time grant already subtracted (see
+     * {@link DeathEventHandler#computeXpToSave}), so adding it stacks correctly on whatever the new
+     * character was granted at its own creation — profession/trait skill boosts stay
+     * one-time-per-character.
      */
     private static void applySkillsAuthoritatively(
             IsoPlayer player, SurvivorSkillObeliskRepository repo, long deathId) throws Exception {
         if (!SurvivorSkillObeliskConfig.isRecoverSkills()) {
+            LOGGER.info(
+                    "[SurvivorSkillObelisk] recoverSkills: skill recovery disabled, skipping XP"
+                            + " application for {} (death id={})",
+                    player.getUsername(),
+                    deathId);
             return;
         }
         float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
+        float totalGained = 0f;
+        int applied = 0;
         for (SurvivorSkillObeliskRepository.SkillRow row : repo.listSkillsByDeath(deathId)) {
             PerkFactory.Perk perk = PerkFactory.Perks.FromString(row.perk());
             if (perk == null || perk == PerkFactory.Perks.MAX) {
+                LOGGER.debug(
+                        "[SurvivorSkillObelisk] recoverSkills: skipping unknown perk '{}' for {}",
+                        row.perk(),
+                        player.getUsername());
                 continue;
             }
-            float targetXp = row.xp() * percent;
-            float delta = targetXp - player.getXp().getXP(perk);
-            // AddXP handles the negative-delta case (clamps to 0 and walks LoseLevel), so we can
-            // use it to set XP to an exact value regardless of whether the player is above or
-            // below the recovered amount. callLua/doXPBoost/remote/haloText all false: this is a
-            // restore, not earned XP — no multipliers, no halo floaters.
-            player.getXp().AddXP(perk, delta, false, false, false, false);
+            float gainXp = row.xp() * percent;
+            if (gainXp <= 0f) {
+                continue;
+            }
+            float beforeXp = player.getXp().getXP(perk);
+            int beforeLevel = player.getPerkLevel(perk);
+            // doXPBoost=false bypasses trait/profession rate multipliers; AddXP still clamps at
+            // totalXpForLevel(10). callLua/remote/haloText all false: this is a restore, not
+            // earned XP — no Lua hooks, no halo floaters.
+            player.getXp().AddXP(perk, gainXp, false, false, false, false);
+            float afterXp = player.getXp().getXP(perk);
+            int afterLevel = player.getPerkLevel(perk);
+            float actualGain = afterXp - beforeXp;
+            totalGained += actualGain;
+            applied++;
+            LOGGER.info(
+                    "[SurvivorSkillObelisk] recoverSkills: {} {} +{} XP (stored={}, percent={}%,"
+                            + " requested={}) -> level {}->{} ({} -> {} XP)",
+                    player.getUsername(),
+                    perk.getName(),
+                    actualGain,
+                    row.xp(),
+                    SurvivorSkillObeliskConfig.getSkillRecoveryPercent(),
+                    gainXp,
+                    beforeLevel,
+                    afterLevel,
+                    beforeXp,
+                    afterXp);
         }
+        LOGGER.info(
+                "[SurvivorSkillObelisk] recoverSkills: applied {} perks, {} XP total restored to"
+                        + " {} (death id={})",
+                applied,
+                totalGained,
+                player.getUsername(),
+                deathId);
     }
 
     /**

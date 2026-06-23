@@ -5,6 +5,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,10 +13,14 @@ import se.krka.kahlua.vm.KahluaTable;
 import se.krka.kahlua.vm.KahluaTableIterator;
 import zombie.ZomboidFileSystem;
 import zombie.characters.IsoPlayer;
+import zombie.characters.professions.CharacterProfessionDefinition;
 import zombie.characters.skills.PerkFactory;
+import zombie.characters.traits.CharacterTraitDefinition;
 import zombie.radio.ZomboidRadio;
 import zombie.radio.media.MediaData;
 import zombie.radio.media.RecordedMedia;
+import zombie.scripting.objects.CharacterProfession;
+import zombie.scripting.objects.CharacterTrait;
 
 /**
  * Persists a snapshot of a player's progression to SQLite when they die. Mirrors the
@@ -105,13 +110,87 @@ public final class DeathEventHandler {
 
     private static void recordSkills(
             SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        Map<PerkFactory.Perk, Integer> grantedLevels = grantedLevelsAtCreation(player);
         for (PerkFactory.Perk perk : PerkFactory.PerkList) {
             int level = player.getPerkLevel(perk);
-            float xp = player.getXp().getXP(perk);
-            if (level > 0 || xp > 0) {
-                repo.insertSkill(deathId, perk.getName(), level, xp);
+            float rawXp = player.getXp().getXP(perk);
+            int granted = grantedLevels.getOrDefault(perk, 0);
+            float xpToSave = computeXpToSave(rawXp, granted, perk);
+            if (level > 0 || xpToSave > 0f) {
+                repo.insertSkill(deathId, perk.getName(), level, xpToSave);
             }
         }
+    }
+
+    /**
+     * Convert raw XP and the per-perk creation-grant level to the "earned-only" XP we want to save.
+     * Subtracts the cumulative XP the vanilla character-creation flow poured into {@code xpMap} for
+     * the granted level so a player can't farm free-skill bonuses by dying immediately on a new
+     * character. Clamps at 0 — sub-grant XP (Lifestyles can mutate the xpBoostMap mid-game, etc.)
+     * just saves as nothing rather than going negative.
+     */
+    static float computeXpToSave(float rawXp, int grantedLevel, PerkFactory.Perk perk) {
+        float grantedXp = grantedLevel > 0 ? perk.getTotalXpForLevel(grantedLevel) : 0f;
+        return Math.max(0f, rawXp - grantedXp);
+    }
+
+    /**
+     * Replays {@code IsoGameCharacter#applyTraits}' summation against the live trait + profession
+     * scripts so we can recover the per-perk LEVEL boost the character received at creation.
+     * Vanilla writes {@code descriptor.xpBoostMap} capped at 3 and Lifestyles can mutate it
+     * mid-game, so don't read it back from there — sum from the factories instead.
+     */
+    private static Map<PerkFactory.Perk, Integer> grantedLevelsAtCreation(IsoPlayer player) {
+        List<Map<PerkFactory.Perk, Integer>> traitBoosts = new ArrayList<>();
+        for (CharacterTrait t : player.getCharacterTraits().getKnownTraits()) {
+            CharacterTraitDefinition def = CharacterTraitDefinition.getCharacterTraitDefinition(t);
+            if (def != null) {
+                traitBoosts.add(def.getXpBoosts());
+            }
+        }
+        Map<PerkFactory.Perk, Integer> professionBoosts = null;
+        CharacterProfession profession = player.getDescriptor().getCharacterProfession();
+        if (profession != null) {
+            CharacterProfessionDefinition profDef =
+                    CharacterProfessionDefinition.getCharacterProfessionDefinition(profession);
+            if (profDef != null) {
+                professionBoosts = profDef.getXpBoosts();
+            }
+        }
+        return combineGrantedLevels(traitBoosts, professionBoosts);
+    }
+
+    /**
+     * Pure math: combine the vanilla baseline (Strength=5, Fitness=5) with trait + profession boost
+     * maps, then clamp every entry to {@code [0, 10]} — same algorithm as {@code
+     * IsoGameCharacter#applyTraits} but taking boost maps directly so unit tests don't need to
+     * stand up an {@code IsoPlayer} / texture system.
+     */
+    static Map<PerkFactory.Perk, Integer> combineGrantedLevels(
+            List<Map<PerkFactory.Perk, Integer>> traitBoosts,
+            Map<PerkFactory.Perk, Integer> professionBoosts) {
+        HashMap<PerkFactory.Perk, Integer> levels = new HashMap<>();
+        levels.put(PerkFactory.Perks.Strength, 5);
+        levels.put(PerkFactory.Perks.Fitness, 5);
+        if (traitBoosts != null) {
+            for (Map<PerkFactory.Perk, Integer> boosts : traitBoosts) {
+                if (boosts == null) {
+                    continue;
+                }
+                for (Map.Entry<PerkFactory.Perk, Integer> e : boosts.entrySet()) {
+                    levels.merge(e.getKey(), e.getValue(), Integer::sum);
+                }
+            }
+        }
+        if (professionBoosts != null) {
+            for (Map.Entry<PerkFactory.Perk, Integer> e : professionBoosts.entrySet()) {
+                levels.merge(e.getKey(), e.getValue(), Integer::sum);
+            }
+        }
+        for (Map.Entry<PerkFactory.Perk, Integer> e : levels.entrySet()) {
+            e.setValue(Math.max(0, Math.min(10, e.getValue())));
+        }
+        return levels;
     }
 
     /** Recipes the character has learned — most are taught by reading skill magazines. */
