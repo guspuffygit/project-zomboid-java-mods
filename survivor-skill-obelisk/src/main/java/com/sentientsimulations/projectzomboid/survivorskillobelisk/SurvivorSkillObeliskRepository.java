@@ -18,6 +18,23 @@ public class SurvivorSkillObeliskRepository {
     private static final String INSERT_SKILL =
             "INSERT INTO death_skills (death_id, perk, level, xp) VALUES (?, ?, ?, ?)";
 
+    private static final String INSERT_RECIPE =
+            "INSERT INTO death_recipes (death_id, recipe_name) VALUES (?, ?)";
+
+    private static final String INSERT_READ_LITERATURE =
+            "INSERT INTO death_read_literature (death_id, full_type, pages_read)"
+                    + " VALUES (?, ?, ?)";
+
+    private static final String INSERT_READ_PRINT_MEDIA =
+            "INSERT INTO death_read_print_media (death_id, media_id) VALUES (?, ?)";
+
+    private static final String INSERT_WATCHED_MEDIA =
+            """
+            INSERT INTO death_watched_media
+                (death_id, media_id, media_index, category, media_type, title,
+                 lines_watched, line_count, fully_watched)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+
     private final Connection connection;
 
     public SurvivorSkillObeliskRepository(Connection connection) {
@@ -65,6 +82,57 @@ public class SurvivorSkillObeliskRepository {
             stmt.setString(2, perk);
             stmt.setInt(3, level);
             stmt.setFloat(4, xp);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void insertRecipe(long deathId, String recipeName) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_RECIPE)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, recipeName);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void insertReadLiterature(long deathId, String fullType, int pagesRead)
+            throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_READ_LITERATURE)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, fullType);
+            stmt.setInt(3, pagesRead);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void insertReadPrintMedia(long deathId, String mediaId) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_READ_PRINT_MEDIA)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, mediaId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void insertWatchedMedia(
+            long deathId,
+            String mediaId,
+            int mediaIndex,
+            String category,
+            int mediaType,
+            String title,
+            int linesWatched,
+            int lineCount,
+            boolean fullyWatched)
+            throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_WATCHED_MEDIA)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, mediaId);
+            stmt.setInt(3, mediaIndex);
+            stmt.setString(4, category);
+            stmt.setInt(5, mediaType);
+            stmt.setString(6, title);
+            stmt.setInt(7, linesWatched);
+            stmt.setInt(8, lineCount);
+            stmt.setInt(9, fullyWatched ? 1 : 0);
             stmt.executeUpdate();
         }
     }

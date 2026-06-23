@@ -4,17 +4,22 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import zombie.ZomboidFileSystem;
 import zombie.characters.IsoPlayer;
 import zombie.characters.skills.PerkFactory;
+import zombie.radio.ZomboidRadio;
+import zombie.radio.media.MediaData;
+import zombie.radio.media.RecordedMedia;
 
 /**
  * Persists a snapshot of a player's progression to SQLite when they die. Mirrors the
  * attacker-attribution / extraction approach used by the extra-logging mod's DeathEventHandler, but
  * writes to a database rather than a log file.
  *
- * <p>Today it records identity + perk levels/XP. Journals read and VHS watched are tracked
- * separately once the source data on {@link IsoPlayer} is mapped out.
+ * <p>Captured per death: identity + perk levels/XP, known recipes, read literature (with pages
+ * read), read print media, and watched recorded media (VHS tapes / CDs).
  */
 public final class DeathEventHandler {
 
@@ -61,13 +66,98 @@ public final class DeathEventHandler {
                             player.getY(),
                             player.getZ());
 
-            for (PerkFactory.Perk perk : PerkFactory.PerkList) {
-                int level = player.getPerkLevel(perk);
-                float xp = player.getXp().getXP(perk);
-                if (level > 0 || xp > 0) {
-                    repo.insertSkill(deathId, perk.getName(), level, xp);
+            recordSkills(repo, deathId, player);
+            recordRecipes(repo, deathId, player);
+            recordReadLiterature(repo, deathId, player);
+            recordReadPrintMedia(repo, deathId, player);
+            recordWatchedMedia(repo, deathId, player);
+        }
+    }
+
+    private static void recordSkills(
+            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        for (PerkFactory.Perk perk : PerkFactory.PerkList) {
+            int level = player.getPerkLevel(perk);
+            float xp = player.getXp().getXP(perk);
+            if (level > 0 || xp > 0) {
+                repo.insertSkill(deathId, perk.getName(), level, xp);
+            }
+        }
+    }
+
+    /** Recipes the character has learned — most are taught by reading skill magazines. */
+    private static void recordRecipes(
+            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        for (String recipeName : player.getKnownRecipes()) {
+            if (recipeName != null) {
+                repo.insertRecipe(deathId, recipeName);
+            }
+        }
+    }
+
+    /** Skill books and recipe magazines the character has read, with pages-read progress. */
+    private static void recordReadLiterature(
+            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        for (String fullType : player.getReadLiterature()) {
+            if (fullType != null) {
+                repo.insertReadLiterature(deathId, fullType, player.getAlreadyReadPages(fullType));
+            }
+        }
+    }
+
+    /** Newspapers / print magazines the character has read. */
+    private static void recordReadPrintMedia(
+            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        for (String mediaId : player.getReadPrintMedia()) {
+            if (mediaId != null) {
+                repo.insertReadPrintMedia(deathId, mediaId);
+            }
+        }
+    }
+
+    /**
+     * Recorded media (VHS tapes / CDs) the character has watched. Consumption is tracked per media
+     * line on the character ({@code knownMediaLines}); there is no public getter, so we iterate the
+     * global catalog and test each tape's lines against the player.
+     */
+    private static void recordWatchedMedia(
+            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        ZomboidRadio radio = ZomboidRadio.getInstance();
+        if (radio == null) {
+            return;
+        }
+        RecordedMedia recordedMedia = radio.getRecordedMedia();
+        if (recordedMedia == null) {
+            return;
+        }
+
+        List<MediaData> catalog = new ArrayList<>();
+        catalog.addAll(recordedMedia.getAllMediaForType((byte) 0)); // CDs
+        catalog.addAll(recordedMedia.getAllMediaForType((byte) 1)); // VHS
+
+        for (MediaData media : catalog) {
+            int lineCount = media.getLineCount();
+            int linesWatched = 0;
+            for (int i = 0; i < lineCount; i++) {
+                MediaData.MediaLineData line = media.getLine(i);
+                if (line != null && player.isKnownMediaLine(line.getTextGuid())) {
+                    linesWatched++;
                 }
             }
+            if (linesWatched == 0) {
+                continue;
+            }
+            String title = media.hasTitle() ? media.getTranslatedTitle() : media.getTitleEN();
+            repo.insertWatchedMedia(
+                    deathId,
+                    media.getId(),
+                    media.getIndex(),
+                    media.getCategory(),
+                    media.getMediaType(),
+                    title,
+                    linesWatched,
+                    lineCount,
+                    recordedMedia.hasListenedToAll(player, media));
         }
     }
 }

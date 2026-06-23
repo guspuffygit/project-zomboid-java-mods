@@ -51,6 +51,15 @@ class SurvivorSkillObeliskDatabaseTest {
         }
         assertTrue(tables.contains("deaths"), "deaths table should exist");
         assertTrue(tables.contains("death_skills"), "death_skills table should exist");
+        assertTrue(tables.contains("death_recipes"), "death_recipes table should exist");
+        assertTrue(
+                tables.contains("death_read_literature"),
+                "death_read_literature table should exist");
+        assertTrue(
+                tables.contains("death_read_print_media"),
+                "death_read_print_media table should exist");
+        assertTrue(
+                tables.contains("death_watched_media"), "death_watched_media table should exist");
     }
 
     @Test
@@ -78,6 +87,57 @@ class SurvivorSkillObeliskDatabaseTest {
                                         + deathId)) {
             assertTrue(rs.next());
             assertEquals(2, rs.getInt("c"));
+        }
+    }
+
+    @Test
+    void insertProgressionChildRowsPersist() throws Exception {
+        long deathId =
+                repo.insertDeath(2_000L, "bob", 7L, "Bob", "Jones", 3.0f, 1, 0.0f, 0.0f, 0.0f);
+
+        repo.insertRecipe(deathId, "Make Stir Fry");
+        repo.insertReadLiterature(deathId, "Base.BookCarpentry1", 120);
+        repo.insertReadPrintMedia(deathId, "Base.Newspaper_Dispatch_Day1");
+        repo.insertWatchedMedia(
+                deathId, "TapeHTV1", 5, "Home-VHS", 1, "Exercise Tape", 2, 3, false);
+
+        assertEquals(1, countChildren("death_recipes", deathId));
+        assertEquals(1, countChildren("death_read_literature", deathId));
+        assertEquals(1, countChildren("death_read_print_media", deathId));
+        assertEquals(1, countChildren("death_watched_media", deathId));
+
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT pages_read FROM death_read_literature WHERE death_id = "
+                                        + deathId)) {
+            assertTrue(rs.next());
+            assertEquals(120, rs.getInt("pages_read"));
+        }
+
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT lines_watched, line_count, fully_watched"
+                                        + " FROM death_watched_media WHERE death_id = "
+                                        + deathId)) {
+            assertTrue(rs.next());
+            assertEquals(2, rs.getInt("lines_watched"));
+            assertEquals(3, rs.getInt("line_count"));
+            assertEquals(0, rs.getInt("fully_watched"));
+        }
+    }
+
+    private int countChildren(String table, long deathId) throws Exception {
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT COUNT(*) AS c FROM "
+                                        + table
+                                        + " WHERE death_id = "
+                                        + deathId)) {
+            assertTrue(rs.next());
+            return rs.getInt("c");
         }
     }
 }

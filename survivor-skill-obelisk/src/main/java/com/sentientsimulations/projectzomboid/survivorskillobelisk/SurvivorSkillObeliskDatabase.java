@@ -45,6 +45,65 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
     private static final String CREATE_DEATH_SKILLS_INDEX =
             "CREATE INDEX IF NOT EXISTS idx_death_skills_death ON death_skills(death_id)";
 
+    private static final String CREATE_DEATH_RECIPES =
+            """
+            CREATE TABLE IF NOT EXISTS death_recipes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id    INTEGER NOT NULL,
+                recipe_name TEXT NOT NULL,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_RECIPES_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_recipes_death ON death_recipes(death_id)";
+
+    private static final String CREATE_DEATH_READ_LITERATURE =
+            """
+            CREATE TABLE IF NOT EXISTS death_read_literature (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id   INTEGER NOT NULL,
+                full_type  TEXT NOT NULL,
+                pages_read INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_READ_LITERATURE_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_read_literature_death "
+                    + "ON death_read_literature(death_id)";
+
+    private static final String CREATE_DEATH_READ_PRINT_MEDIA =
+            """
+            CREATE TABLE IF NOT EXISTS death_read_print_media (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id INTEGER NOT NULL,
+                media_id TEXT NOT NULL,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_READ_PRINT_MEDIA_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_read_print_media_death "
+                    + "ON death_read_print_media(death_id)";
+
+    private static final String CREATE_DEATH_WATCHED_MEDIA =
+            """
+            CREATE TABLE IF NOT EXISTS death_watched_media (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id      INTEGER NOT NULL,
+                media_id      TEXT NOT NULL,
+                media_index   INTEGER,
+                category      TEXT,
+                media_type    INTEGER,
+                title         TEXT,
+                lines_watched INTEGER NOT NULL,
+                line_count    INTEGER NOT NULL,
+                fully_watched INTEGER NOT NULL,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_WATCHED_MEDIA_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_watched_media_death "
+                    + "ON death_watched_media(death_id)";
+
     private final Connection connection;
 
     public SurvivorSkillObeliskDatabase(String dbPath) throws SQLException {
@@ -62,6 +121,14 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             stmt.execute(CREATE_DEATHS);
             stmt.execute(CREATE_DEATH_SKILLS);
             stmt.execute(CREATE_DEATH_SKILLS_INDEX);
+            stmt.execute(CREATE_DEATH_RECIPES);
+            stmt.execute(CREATE_DEATH_RECIPES_INDEX);
+            stmt.execute(CREATE_DEATH_READ_LITERATURE);
+            stmt.execute(CREATE_DEATH_READ_LITERATURE_INDEX);
+            stmt.execute(CREATE_DEATH_READ_PRINT_MEDIA);
+            stmt.execute(CREATE_DEATH_READ_PRINT_MEDIA_INDEX);
+            stmt.execute(CREATE_DEATH_WATCHED_MEDIA);
+            stmt.execute(CREATE_DEATH_WATCHED_MEDIA_INDEX);
         }
     }
 
