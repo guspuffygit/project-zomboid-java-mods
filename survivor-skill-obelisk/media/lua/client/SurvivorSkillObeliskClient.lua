@@ -207,14 +207,14 @@ local function buildSkillTooltip(row)
     local i = 1
     while skills[i] ~= nil do
         local s = skills[i]
-        local level = s.level or 0
-        if level > 0 then
-            table.insert(lines, string.format("%s: %d", s.perk or "?", level))
+        local xp = s.xp or 0
+        if xp > 0 then
+            table.insert(lines, string.format("%s: %d xp", s.perk or "?", math.floor(xp + 0.5)))
         end
         i = i + 1
     end
     if #lines == 0 then
-        return "(all skills at level 0)"
+        return "(no XP earned)"
     end
     return table.concat(lines, "\n")
 end

@@ -225,10 +225,12 @@ public final class RecoverSkillsHandler {
                 t.rawset("isPassive", row.isPassive());
                 for (int g = 0; g < 6; g++) {
                     if (row.goals()[g] != null) {
-                        t.rawset("goal" + (g + 1), row.goals()[g]);
+                        t.rawset("goal" + (g + 1), decodeAmbitionValue(row.goals()[g]));
                     }
                     if (row.goalProgress()[g] != null) {
-                        t.rawset("goal" + (g + 1) + "progress", row.goalProgress()[g]);
+                        t.rawset(
+                                "goal" + (g + 1) + "progress",
+                                decodeAmbitionValue(row.goalProgress()[g]));
                     }
                 }
                 ambitions.rawset(i++, t);
@@ -237,6 +239,26 @@ public final class RecoverSkillsHandler {
         }
 
         return reply;
+    }
+
+    /**
+     * Goals/progress are stored as TEXT to handle Lifestyles' heterogeneous slot types (number,
+     * string flag, boolean). Restore the original Lua type so comparisons like {@code
+     * ambt.goal1progress >= ambt.goal1} in LSAmbtActiveIncomplete don't blow up with {@code __le
+     * not defined for operand} when the slot was numeric.
+     */
+    private static Object decodeAmbitionValue(String stored) {
+        if ("true".equals(stored)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equals(stored)) {
+            return Boolean.FALSE;
+        }
+        try {
+            return Double.valueOf(stored);
+        } catch (NumberFormatException ignored) {
+            return stored;
+        }
     }
 
     private static KahluaTable stringList(List<String> values) {
