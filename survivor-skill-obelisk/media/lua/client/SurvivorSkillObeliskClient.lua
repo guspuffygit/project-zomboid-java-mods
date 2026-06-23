@@ -13,7 +13,7 @@ local RECOVERED_REPLY = "recoveredData"
 -- SyncPlayerFieldsPacket bit flags: 1 = recipes, 4 = already-read books.
 local SYNC_RECIPES_AND_BOOKS = 1 + 4
 local SPRITE_PREFIX = "survivor_skill_obelisk_"
-local DEFAULT_LIMIT = 200
+local DEFAULT_LIMIT = 20
 
 local SurvivorSkillObelisk = {}
 local openWindow = nil
@@ -198,6 +198,27 @@ function RecoverSkillsWindow.onRowClicked(self, x, y)
     parent.recoverBtn:setEnable(true)
 end
 
+local function buildSkillTooltip(row)
+    local skills = row.skills
+    if skills == nil or skills[1] == nil then
+        return nil
+    end
+    local lines = {}
+    local i = 1
+    while skills[i] ~= nil do
+        local s = skills[i]
+        local level = s.level or 0
+        if level > 0 then
+            table.insert(lines, string.format("%s: %d", s.perk or "?", level))
+        end
+        i = i + 1
+    end
+    if #lines == 0 then
+        return "(all skills at level 0)"
+    end
+    return table.concat(lines, "\n")
+end
+
 function RecoverSkillsWindow:populate(rows)
     self.loading = false
     self.rows = rows or {}
@@ -209,7 +230,7 @@ function RecoverSkillsWindow:populate(rows)
     for i = 1, #self.rows do
         local row = self.rows[i]
         row._index = i
-        self.listBox:addItem("", row)
+        self.listBox:addItem("", row, buildSkillTooltip(row))
     end
     self:updateStatus()
 end
