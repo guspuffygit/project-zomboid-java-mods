@@ -21,6 +21,30 @@ public class SurvivorSkillObeliskRepository {
             double hoursSurvived,
             int zombieKills) {}
 
+    /** Owner identity for a {@code deaths} row — used to validate recovery requests. */
+    public record DeathOwner(long steamId, String username) {}
+
+    public record SkillRow(String perk, int level, float xp) {}
+
+    public record WatchedMediaRow(
+            String mediaId,
+            int mediaIndex,
+            int mediaType,
+            int linesWatched,
+            int lineCount,
+            boolean fullyWatched) {}
+
+    public record LearnedSongRow(String instrument, String songName, String sound) {}
+
+    public record AmbitionRow(
+            String name,
+            String category,
+            boolean completed,
+            boolean isActive,
+            boolean isPassive,
+            String[] goals,
+            String[] goalProgress) {}
+
     private static final String LIST_DEATHS_BY_OWNER =
             """
             SELECT id, ts, username, forename, surname, hours_survived, zombie_kills
@@ -28,6 +52,37 @@ public class SurvivorSkillObeliskRepository {
             WHERE steam_id = ? AND username = ?
             ORDER BY ts DESC
             LIMIT ?""";
+
+    private static final String FIND_DEATH_OWNER =
+            "SELECT steam_id, username FROM deaths WHERE id = ?";
+
+    private static final String LIST_SKILLS_BY_DEATH =
+            "SELECT perk, level, xp FROM death_skills WHERE death_id = ?";
+
+    private static final String LIST_RECIPES_BY_DEATH =
+            "SELECT recipe_name FROM death_recipes WHERE death_id = ?";
+
+    private static final String LIST_READ_LITERATURE_BY_DEATH =
+            "SELECT literature_title FROM death_read_literature WHERE death_id = ?";
+
+    private static final String LIST_READ_PRINT_MEDIA_BY_DEATH =
+            "SELECT media_id FROM death_read_print_media WHERE death_id = ?";
+
+    private static final String LIST_WATCHED_MEDIA_BY_DEATH =
+            """
+            SELECT media_id, media_index, media_type, lines_watched, line_count, fully_watched
+            FROM death_watched_media WHERE death_id = ?""";
+
+    private static final String LIST_LEARNED_SONGS_BY_DEATH =
+            "SELECT instrument, song_name, sound FROM death_learned_songs WHERE death_id = ?";
+
+    private static final String LIST_AMBITIONS_BY_DEATH =
+            """
+            SELECT name, category, completed, is_active, is_passive,
+                   goal1, goal2, goal3, goal4, goal5, goal6,
+                   goal1_progress, goal2_progress, goal3_progress,
+                   goal4_progress, goal5_progress, goal6_progress
+            FROM death_ambitions WHERE death_id = ?""";
 
     private static final String INSERT_DEATH =
             """
@@ -236,6 +291,123 @@ public class SurvivorSkillObeliskRepository {
                                     rs.getString("surname"),
                                     rs.getDouble("hours_survived"),
                                     rs.getInt("zombie_kills")));
+                }
+            }
+        }
+        return rows;
+    }
+
+    public DeathOwner findDeathOwner(long deathId) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(FIND_DEATH_OWNER)) {
+            stmt.setLong(1, deathId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new DeathOwner(rs.getLong("steam_id"), rs.getString("username"));
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<SkillRow> listSkillsByDeath(long deathId) throws SQLException {
+        List<SkillRow> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(LIST_SKILLS_BY_DEATH)) {
+            stmt.setLong(1, deathId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(
+                            new SkillRow(
+                                    rs.getString("perk"), rs.getInt("level"), rs.getFloat("xp")));
+                }
+            }
+        }
+        return rows;
+    }
+
+    public List<String> listRecipesByDeath(long deathId) throws SQLException {
+        return listStringColumn(LIST_RECIPES_BY_DEATH, "recipe_name", deathId);
+    }
+
+    public List<String> listReadLiteratureByDeath(long deathId) throws SQLException {
+        return listStringColumn(LIST_READ_LITERATURE_BY_DEATH, "literature_title", deathId);
+    }
+
+    public List<String> listReadPrintMediaByDeath(long deathId) throws SQLException {
+        return listStringColumn(LIST_READ_PRINT_MEDIA_BY_DEATH, "media_id", deathId);
+    }
+
+    public List<WatchedMediaRow> listWatchedMediaByDeath(long deathId) throws SQLException {
+        List<WatchedMediaRow> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(LIST_WATCHED_MEDIA_BY_DEATH)) {
+            stmt.setLong(1, deathId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(
+                            new WatchedMediaRow(
+                                    rs.getString("media_id"),
+                                    rs.getInt("media_index"),
+                                    rs.getInt("media_type"),
+                                    rs.getInt("lines_watched"),
+                                    rs.getInt("line_count"),
+                                    rs.getInt("fully_watched") != 0));
+                }
+            }
+        }
+        return rows;
+    }
+
+    public List<LearnedSongRow> listLearnedSongsByDeath(long deathId) throws SQLException {
+        List<LearnedSongRow> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(LIST_LEARNED_SONGS_BY_DEATH)) {
+            stmt.setLong(1, deathId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(
+                            new LearnedSongRow(
+                                    rs.getString("instrument"),
+                                    rs.getString("song_name"),
+                                    rs.getString("sound")));
+                }
+            }
+        }
+        return rows;
+    }
+
+    public List<AmbitionRow> listAmbitionsByDeath(long deathId) throws SQLException {
+        List<AmbitionRow> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(LIST_AMBITIONS_BY_DEATH)) {
+            stmt.setLong(1, deathId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String[] goals = new String[6];
+                    String[] progress = new String[6];
+                    for (int i = 0; i < 6; i++) {
+                        goals[i] = rs.getString("goal" + (i + 1));
+                        progress[i] = rs.getString("goal" + (i + 1) + "_progress");
+                    }
+                    rows.add(
+                            new AmbitionRow(
+                                    rs.getString("name"),
+                                    rs.getString("category"),
+                                    rs.getInt("completed") != 0,
+                                    rs.getInt("is_active") != 0,
+                                    rs.getInt("is_passive") != 0,
+                                    goals,
+                                    progress));
+                }
+            }
+        }
+        return rows;
+    }
+
+    private List<String> listStringColumn(String sql, String column, long deathId)
+            throws SQLException {
+        List<String> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, deathId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(rs.getString(column));
                 }
             }
         }

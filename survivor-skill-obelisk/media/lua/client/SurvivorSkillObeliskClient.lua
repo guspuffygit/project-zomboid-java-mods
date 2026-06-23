@@ -4,9 +4,14 @@
 -- ISCollapsableWindow with the player's past deaths fetched from the server.
 --
 
+require("TimedActions/RecoverSkillsAction")
+
 local MODULE = "SurvivorSkillObelisk"
 local LIST_COMMAND = "listDeaths"
 local DEATHS_REPLY = "deathsList"
+local RECOVERED_REPLY = "recoveredData"
+-- SyncPlayerFieldsPacket bit flags: 1 = recipes, 4 = already-read books.
+local SYNC_RECIPES_AND_BOOKS = 1 + 4
 local SPRITE_PREFIX = "survivor_skill_obelisk_"
 local DEFAULT_LIMIT = 200
 
@@ -226,13 +231,12 @@ function RecoverSkillsWindow:onRecover()
     if self.selectedDeathId == nil then
         return
     end
-    -- TODO: send a "recoverSkills" client command with self.selectedDeathId.
-    print(
-        string.format(
-            "[SurvivorSkillObelisk] Recover Skills clicked for death id=%s",
-            tostring(self.selectedDeathId)
-        )
-    )
+    local player = getSpecificPlayer(0)
+    if player == nil then
+        return
+    end
+    ISTimedActionQueue.add(RecoverSkillsAction:new(player, self.selectedDeathId))
+    self:close()
 end
 
 function RecoverSkillsWindow:close()
@@ -269,7 +273,9 @@ function SurvivorSkillObelisk.openRecoverWindow()
     local bottomReserved = 220
     local x = math.floor(screenW / 2 - width / 2)
     local y = math.floor((screenH - bottomReserved) / 2 - height / 2)
-    if y < 40 then y = 40 end
+    if y < 40 then
+        y = 40
+    end
     local w = RecoverSkillsWindow:new(x, y, width, height)
     w:initialise()
     w:addToUIManager()
@@ -297,13 +303,7 @@ Events.OnFillWorldObjectContextMenu.Add(onFillWorldObjectContextMenu)
 -- Server reply
 ---------------------------------------------------------------------------
 
-local function onServerCommand(module, command, args)
-    if module ~= MODULE then
-        return
-    end
-    if command ~= DEATHS_REPLY then
-        return
-    end
+local function onDeathsList(args)
     if openWindow == nil then
         return
     end
@@ -318,6 +318,175 @@ local function onServerCommand(module, command, args)
         end
     end
     openWindow:populate(rows)
+end
+
+local function iterateLuaArray(t, fn)
+    if t == nil then
+        return
+    end
+    local i = 1
+    while true do
+        local v = t[i]
+        if v == nil then
+            return
+        end
+        fn(v, i)
+        i = i + 1
+    end
+end
+
+local function applySkills(player, skills)
+    iterateLuaArray(skills, function(entry)
+        if entry.perk == nil then
+            return
+        end
+        local perk = PerkFactory.getPerkFromName(entry.perk)
+        if perk == nil then
+            return
+        end
+        local targetXp = entry.xp or 0
+        local currentXp = player:getXp():getXP(perk)
+        local delta = targetXp - currentXp
+        if delta > 0 then
+            -- Mirror ISPlayerStatsUI's debug "Give XP" path: no boost, no multiplier, no
+            -- haloText (we render a summary at the end instead of per-perk floaters).
+            player:getXp():AddXP(perk, delta, false, false, false, false)
+        end
+    end)
+end
+
+local function applyRecipes(player, recipes)
+    iterateLuaArray(recipes, function(name)
+        player:learnRecipe(name)
+    end)
+end
+
+local function applyLiterature(player, literature)
+    iterateLuaArray(literature, function(title)
+        player:addReadLiterature(title)
+    end)
+end
+
+local function applyPrintMedia(player, printMedia)
+    iterateLuaArray(printMedia, function(id)
+        player:addReadPrintMedia(id)
+    end)
+end
+
+local function applyWatchedMedia(player, watchedMedia)
+    local radio = getZomboidRadio()
+    if radio == nil then
+        return
+    end
+    local recordedMedia = radio:getRecordedMedia()
+    if recordedMedia == nil then
+        return
+    end
+    iterateLuaArray(watchedMedia, function(entry)
+        if entry.mediaId == nil then
+            return
+        end
+        local media = recordedMedia:getMediaData(entry.mediaId)
+        if media == nil then
+            return
+        end
+        if not entry.fullyWatched then
+            -- We only snapshot per-media line counts, not the per-line GUIDs. Skip the
+            -- partial-watch case rather than guess which lines were seen.
+            return
+        end
+        for i = 0, media:getLineCount() - 1 do
+            local line = media:getLine(i)
+            if line then
+                player:addKnownMediaLine(line:getTextGuid())
+            end
+        end
+    end)
+end
+
+local function applyLearnedSongs(player, songs)
+    local modData = player:getModData()
+    if modData == nil then
+        return
+    end
+    iterateLuaArray(songs, function(entry)
+        if entry.instrument == nil or entry.name == nil then
+            return
+        end
+        local key = entry.instrument .. "LearnedTracks"
+        local list = modData[key]
+        if list == nil then
+            list = {}
+            modData[key] = list
+        end
+        for i = 1, #list do
+            if list[i] and list[i].name == entry.name then
+                return
+            end
+        end
+        table.insert(list, { name = entry.name, sound = entry.sound })
+    end)
+end
+
+local function applyAmbitions(player, ambitions)
+    local modData = player:getModData()
+    if modData == nil then
+        return
+    end
+    if modData.Ambitions == nil then
+        modData.Ambitions = {}
+    end
+    iterateLuaArray(ambitions, function(entry)
+        if entry.name == nil then
+            return
+        end
+        local existing = modData.Ambitions[entry.name] or {}
+        existing.name = entry.name
+        if entry.cat ~= nil then
+            existing.cat = entry.cat
+        end
+        existing.completed = entry.completed or existing.completed or false
+        existing.isActive = entry.isActive or existing.isActive or false
+        existing.isPassive = entry.isPassive or existing.isPassive or false
+        for g = 1, 6 do
+            local goalKey = "goal" .. g
+            local progressKey = goalKey .. "progress"
+            if entry[goalKey] ~= nil then
+                existing[goalKey] = entry[goalKey]
+            end
+            if entry[progressKey] ~= nil then
+                existing[progressKey] = entry[progressKey]
+            end
+        end
+        modData.Ambitions[entry.name] = existing
+    end)
+end
+
+local function onRecoveredData(args)
+    local player = getSpecificPlayer(0)
+    if player == nil or args == nil then
+        return
+    end
+    applySkills(player, args.skills)
+    applyRecipes(player, args.recipes)
+    applyLiterature(player, args.literature)
+    applyPrintMedia(player, args.printMedia)
+    applyWatchedMedia(player, args.watchedMedia)
+    applyLearnedSongs(player, args.learnedSongs)
+    applyAmbitions(player, args.ambitions)
+    sendSyncPlayerFields(player, SYNC_RECIPES_AND_BOOKS)
+    HaloTextHelper.addGoodText(player, "Skills recovered")
+end
+
+local function onServerCommand(module, command, args)
+    if module ~= MODULE then
+        return
+    end
+    if command == DEATHS_REPLY then
+        onDeathsList(args)
+    elseif command == RECOVERED_REPLY then
+        onRecoveredData(args)
+    end
 end
 
 Events.OnServerCommand.Add(onServerCommand)
