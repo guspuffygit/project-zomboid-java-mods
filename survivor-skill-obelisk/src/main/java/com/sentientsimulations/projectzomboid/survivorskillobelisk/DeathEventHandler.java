@@ -108,6 +108,15 @@ public final class DeathEventHandler {
         }
     }
 
+    /**
+     * Insert every perk in {@link PerkFactory#PerkList}, including ones the dead character left at
+     * level 0 with no earned XP. Recovery iterates the full saved snapshot and drives every perk on
+     * the live character to {@code (live baseline + saved xp × recovery%)} — so perks the dead
+     * character never earned anything in carry an {@code xp=0} row that resets the live character's
+     * progression in that perk back to baseline. That's the point: each obelisk recovery is a clean
+     * "restore THIS death's progression", not a cumulative merge across multiple deaths — chaining
+     * D1's high Running into D2's high Strength is intentionally blocked.
+     */
     private static void recordSkills(
             SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
         Map<PerkFactory.Perk, Integer> grantedLevels = grantedLevelsAtCreation(player);
@@ -116,9 +125,7 @@ public final class DeathEventHandler {
             float rawXp = player.getXp().getXP(perk);
             int granted = grantedLevels.getOrDefault(perk, 0);
             float xpToSave = computeXpToSave(rawXp, granted, perk);
-            if (level > 0 || xpToSave > 0f) {
-                repo.insertSkill(deathId, perk.getId(), level, xpToSave);
-            }
+            repo.insertSkill(deathId, perk.getId(), level, xpToSave);
         }
     }
 

@@ -677,6 +677,24 @@ local function applyLearnedSongs(player, songs)
     end)
 end
 
+-- Sandbox-synced to the client by PZ; nil before world load, so guard.
+-- Skills are already scaled server-side in RecoverSkillsHandler — ambitions are
+-- scaled client-side because the goal/progress decode lives here.
+local function getRecoveryPercent()
+    local sv = SandboxVars and SandboxVars.SkillObelisk
+    local percent = sv and sv.SkillRecoveryPercent
+    if type(percent) ~= "number" then
+        return 1.0
+    end
+    if percent < 0 then
+        return 0
+    end
+    if percent > 100 then
+        return 1.0
+    end
+    return percent / 100.0
+end
+
 local function applyAmbitions(player, ambitions)
     local modData = player:getModData()
     if modData == nil then
@@ -685,6 +703,7 @@ local function applyAmbitions(player, ambitions)
     if modData.Ambitions == nil then
         modData.Ambitions = {}
     end
+    local percent = getRecoveryPercent()
     iterateLuaArray(ambitions, function(entry)
         if entry.name == nil then
             return
@@ -704,7 +723,14 @@ local function applyAmbitions(player, ambitions)
                 existing[goalKey] = entry[goalKey]
             end
             if entry[progressKey] ~= nil then
-                existing[progressKey] = entry[progressKey]
+                -- Lifestyles goal slots are heterogeneous (number target, string
+                -- flag, boolean). Only scale numbers; flags pass through verbatim.
+                local value = entry[progressKey]
+                if type(value) == "number" then
+                    existing[progressKey] = value * percent
+                else
+                    existing[progressKey] = value
+                end
             end
         end
         modData.Ambitions[entry.name] = existing

@@ -3,16 +3,59 @@ modInfo {
 	workshopId = '3750314291'
 	workshopIdStage = ''
 	workshopIdProd = ''
-	description = '''A mysterious obelisk that interacts with survivor skills.
+	description = '''[h1]Survivor Skill Obelisk[/h1]
+An in-world obelisk that carries part of a dead character's progression forward to their next life. On death the server snapshots the character's skills, books, recipes, watched media, and Lifestyles ambitions to a SQLite database in the save folder. When the next character finds a placed obelisk, they recover from one of their past lives.
+
+[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Death tracking and recovery run server-side; the in-game UI is pure Lua, so connecting players just need the mod. Built for dedicated / multiplayer servers.
 
 [hr][/hr]
 [url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
 
 [h2]Sponsors[/h2]
-[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
 [hr][/hr]
 
-Requires Storm mod loader.
+[h1]What gets snapshotted[/h1]
+[list]
+[*][b]Skills[/b]: perk level and XP for every non-zero perk.
+[*][b]Recipes[/b]: every recipe the character had learned.
+[*][b]Skill magazines and books[/b]: literature the character had already read.
+[*][b]Print media[/b]: newspapers and print magazines.
+[*][b]Watched VHS and CDs[/b]: per-tape line counts, so finished tapes stay finished.
+[*][b]Lifestyles learned songs[/b]: per-instrument song lists.
+[*][b]Lifestyles ambitions[/b]: in-progress and completed ambitions with their goal progress.
+[/list]
+
+[hr][/hr]
+
+[h1]Recovering[/h1]
+Right-click a placed obelisk and pick [b]Recover Skills[/b]. A window lists the current character's past lives, most recent first. Select one and confirm. A timed action plays. When it finishes the server reapplies the snapshot to the live character. Steam ID and username are checked on the server, so a player only recovers their own past lives.
+
+[hr][/hr]
+
+[h1]Recovery Percent[/h1]
+[b]Skill Recovery (%)[/b] scales how much of the snapshot the character gets back. Defaults to 100. Applies to perk XP and to numeric Lifestyles ambition goal progress. A character who had 4000 progress toward a 5000 goal restores with 4000 * percent / 100 toward the same 5000 goal. Perk levels and XP granted by traits and profession at creation are excluded from the scaling, so a new character never undercuts their starting stats.
+
+[hr][/hr]
+
+[h1]Obelisk Binding[/h1]
+Admins can right-click a placed obelisk and pick [b]Configure Obelisk[/b] to bind it to a specific perk. The bound perk restores at 100% from any past life regardless of Skill Recovery (%). Other perks still scale by the configured percent. Useful for themed obelisks scattered around the map: a Mechanics shrine, a Cooking shrine.
+
+[hr][/hr]
+
+[h1]Server Options[/h1]
+[list]
+[*][b]Recover Skills[/b]: toggle perk level and XP recovery. Default on.
+[*][b]Recover Recipes[/b]: toggle learned recipes recovery. Default on.
+[*][b]Recover Skill Magazines[/b]: toggle read literature recovery. Default on.
+[*][b]Recover Read Print Media[/b]: toggle read newspapers and magazines recovery. Default on.
+[*][b]Recover Watched VHS / CDs[/b]: toggle recorded media recovery. Default on.
+[*][b]Recover Learned Songs (Lifestyles)[/b]: toggle Lifestyles instrument song recovery. Default on. No effect if Lifestyles is not installed.
+[*][b]Recover Ambitions (Lifestyles)[/b]: toggle Lifestyles ambition recovery. Default on. Numeric goal progress is scaled by Skill Recovery (%). No effect if Lifestyles is not installed.
+[*][b]Skill Recovery (%)[/b]: 0 to 100, default 100. Scales perk XP and ambition goal progress.
+[/list]
+
+[hr][/hr]
 
 Tested and compatible with 42.19.0'''
 	modVersion = '1.0.0'

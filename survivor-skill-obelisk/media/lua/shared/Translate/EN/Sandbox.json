@@ -13,7 +13,7 @@
   "Sandbox_SkillObelisk_RecoverLearnedSongs": "Recover Learned Songs (Lifestyles)",
   "Sandbox_SkillObelisk_RecoverLearnedSongs_tooltip": "Lifestyles mod only — restore the instrument songs the character had learned. No effect if Lifestyles is not installed.",
   "Sandbox_SkillObelisk_RecoverAmbitions": "Recover Ambitions (Lifestyles)",
-  "Sandbox_SkillObelisk_RecoverAmbitions_tooltip": "Lifestyles mod only — restore in-progress and completed ambitions. No effect if Lifestyles is not installed.",
+  "Sandbox_SkillObelisk_RecoverAmbitions_tooltip": "Lifestyles mod only — restore in-progress and completed ambitions. Numeric goal progress is scaled by Skill Recovery (%). No effect if Lifestyles is not installed.",
   "Sandbox_SkillObelisk_SkillRecoveryPercent": "Skill Recovery (%)",
-  "Sandbox_SkillObelisk_SkillRecoveryPercent_tooltip": "Percentage (0-100) of perk levels and XP to restore when Recover Skills is on. 100 = full restore, 0 = nothing restored. Ignored when Recover Skills is off."
+  "Sandbox_SkillObelisk_SkillRecoveryPercent_tooltip": "Percentage (0-100) of perk XP and Lifestyles ambition progress to restore. 100 = full restore, 0 = nothing restored. Ignored for any slice whose Recover toggle is off."
 }
