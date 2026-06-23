@@ -71,7 +71,9 @@ public final class GetObeliskTypeHandler {
             GameServer.sendServerCommand(player, MODULE, REPLY_COMMAND, reply);
         } catch (Throwable t) {
             LOGGER.error(
-                    "[SurvivorSkillObelisk] Failed to send obeliskType reply: {}", t.getMessage(), t);
+                    "[SurvivorSkillObelisk] Failed to send obeliskType reply: {}",
+                    t.getMessage(),
+                    t);
         }
     }
 }
