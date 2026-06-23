@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,6 +96,34 @@ class SurvivorSkillObeliskDatabaseTest {
             assertTrue(rs.next());
             assertEquals(2, rs.getInt("c"));
         }
+    }
+
+    @Test
+    void insertSkillsWithZeroXpRoundTripThroughRepo() throws Exception {
+        // DeathEventHandler now saves every perk in PerkFactory.PerkList, including ones the dead
+        // character never earned anything in (level=baseline grant, xp=0). The recovery loop
+        // iterates these rows to reset the live character's matching perks back to baseline. The
+        // DB layer has to carry the xp=0 rows back out of listSkillsByDeath verbatim or the reset
+        // never happens.
+        long deathId = repo.insertDeath(4_000L, "dan", 11L, "Dan", "Park", 1.0, 0, 0f, 0f, 0f);
+        repo.insertSkill(deathId, "Strength", 5, 0f);
+        repo.insertSkill(deathId, "Fitness", 5, 0f);
+        repo.insertSkill(deathId, "Running", 0, 0f);
+        repo.insertSkill(deathId, "Cooking", 7, 12345.5f);
+
+        List<SurvivorSkillObeliskRepository.SkillRow> rows = repo.listSkillsByDeath(deathId);
+        assertEquals(4, rows.size(), "every inserted row should come back, including xp=0 ones");
+
+        Map<String, SurvivorSkillObeliskRepository.SkillRow> byPerk = new HashMap<>();
+        for (SurvivorSkillObeliskRepository.SkillRow row : rows) {
+            byPerk.put(row.perk(), row);
+        }
+        assertEquals(0f, byPerk.get("Strength").xp());
+        assertEquals(5, byPerk.get("Strength").level());
+        assertEquals(0f, byPerk.get("Running").xp());
+        assertEquals(0, byPerk.get("Running").level());
+        assertEquals(12345.5f, byPerk.get("Cooking").xp());
+        assertEquals(7, byPerk.get("Cooking").level());
     }
 
     @Test

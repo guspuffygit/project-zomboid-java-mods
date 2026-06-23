@@ -122,7 +122,6 @@ public final class RecoverSkillsHandler {
             return;
         }
         float configPercent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
-        boolean obeliskOverride = obeliskType != null && !NONE_TYPE.equals(obeliskType);
         Map<PerkFactory.Perk, Integer> grantedLevels =
                 DeathEventHandler.grantedLevelsAtCreation(player);
         float totalDelta = 0f;
@@ -136,12 +135,10 @@ public final class RecoverSkillsHandler {
                         player.getUsername());
                 continue;
             }
-            boolean obeliskMatch = obeliskOverride && obeliskType.equals(perk.getId());
+            boolean obeliskMatch = isObeliskTypeMatch(obeliskType, perk.getId());
             float percent = obeliskMatch ? 1.0F : configPercent;
             int grantedLevel = grantedLevels.getOrDefault(perk, 0);
-            float baselineXp = grantedLevel > 0 ? perk.getTotalXpForLevel(grantedLevel) : 0f;
-            float maxXp = perk.getTotalXpForLevel(10);
-            float targetXp = Math.min(baselineXp + row.xp() * percent, maxXp);
+            float targetXp = computeRecoveryTargetXp(perk, row.xp(), grantedLevel, percent);
 
             float beforeXp = player.getXp().getXP(perk);
             int beforeLevel = player.getPerkLevel(perk);
@@ -184,6 +181,33 @@ public final class RecoverSkillsHandler {
                 player.getUsername(),
                 deathId,
                 obeliskType);
+    }
+
+    /**
+     * Pure math: the XP we drive the live character's perk to. For {@code savedXp = 0} this returns
+     * the live baseline grant XP, which is the reset behavior — a perk the dead character never
+     * earned anything in walks back to the live character's creation-grant level (typically 0 for
+     * non-baseline perks, 5 for Strength/Fitness, plus any trait/profession boosts on top). For
+     * {@code savedXp > 0} the recovered amount is added on top, scaled by {@code percent} and
+     * clamped at level 10.
+     */
+    static float computeRecoveryTargetXp(
+            PerkFactory.Perk perk, float savedXp, int grantedLevel, float percent) {
+        float baselineXp = grantedLevel > 0 ? perk.getTotalXpForLevel(grantedLevel) : 0f;
+        float maxXp = perk.getTotalXpForLevel(10);
+        return Math.min(baselineXp + savedXp * percent, maxXp);
+    }
+
+    /**
+     * True when the obelisk is bound to this specific perk — recovery uses 100% for the matched
+     * perk regardless of the {@code Storm.SkillRecoveryPercent} config. A blank or {@code "None"}
+     * obelisk type never matches.
+     */
+    static boolean isObeliskTypeMatch(String obeliskType, String perkId) {
+        if (obeliskType == null || NONE_TYPE.equals(obeliskType)) {
+            return false;
+        }
+        return obeliskType.equals(perkId);
     }
 
     /**
