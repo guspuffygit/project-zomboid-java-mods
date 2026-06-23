@@ -1,0 +1,42 @@
+module Base
+{
+    item survivor_skill_obelisk_18
+    {
+        DisplayName = Survivor Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 20.0,
+        WorldObjectSprite = survivor_skill_obelisk_18,
+    }
+
+    item survivor_skill_obelisk_19
+    {
+        DisplayName = Survivor Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 20.0,
+        WorldObjectSprite = survivor_skill_obelisk_19,
+    }
+
+    item survivor_skill_obelisk_30
+    {
+        DisplayName = Survivor Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 20.0,
+        WorldObjectSprite = survivor_skill_obelisk_30,
+    }
+
+    item survivor_skill_obelisk_31
+    {
+        DisplayName = Survivor Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 20.0,
+        WorldObjectSprite = survivor_skill_obelisk_31,
+    }
+}

@@ -76,6 +76,9 @@ interface ModInfo {
 	Property<String> getWorkshopIdStage()
 	Property<String> getWorkshopIdProd()
 	Property<String> getWorkshopTags()
+
+	Property<String> getPack()
+	Property<String> getTiledef()
 }
 
 def getLocalProperty(String property, String defaultValue = null) {
@@ -164,13 +167,15 @@ subprojects { subproj ->
 		inputs.property("name", info.name)
 		inputs.property("id", info.id.orElse("${subproj.name}-b42${getEnvSuffix()}"))
 		inputs.property("description", info.description.orElse(""))
+		inputs.property("pack", info.pack.orElse(""))
+		inputs.property("tiledef", info.tiledef.orElse(""))
 
 		outputs.file(outputFile)
 
 		doLast {
 			def formattedDescription = info.description.getOrElse("").trim().split('\n').join('\ndescription=')
 			def f = outputFile.get().asFile
-			f.text = [
+			def lines = [
                 "name=${info.name.getOrElse("Unnamed Mod")}",
 				"author=SentientSimulations",
 				"url=https://github.com/guspuffygit/project-zomboid-java-mods",
@@ -179,7 +184,14 @@ subprojects { subproj ->
 				"id=${info.id.getOrElse("${subproj.name}-b42${getEnvSuffix()}")}",
 				"modversion=${info.modVersion.getOrElse("1.0")}",
 				"require=\\storm-core-b42${getEnvSuffix()}",
-            ].join('\n')
+            ]
+			if (info.pack.isPresent()) {
+				lines.add("pack=${info.pack.get()}")
+			}
+			if (info.tiledef.isPresent()) {
+				lines.add("tiledef=${info.tiledef.get()}")
+			}
+			f.text = lines.join('\n')
 		}
 	}
 

@@ -1,0 +1,67 @@
+VERSION = 1,
+
+option SkillObelisk.RecoverSkills
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverSkills,
+}
+
+option SkillObelisk.RecoverRecipes
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverRecipes,
+}
+
+option SkillObelisk.RecoverSkillMagazines
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverSkillMagazines,
+}
+
+option SkillObelisk.RecoverReadPrintMedia
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverReadPrintMedia,
+}
+
+option SkillObelisk.RecoverWatchedMedia
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverWatchedMedia,
+}
+
+option SkillObelisk.RecoverLearnedSongs
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverLearnedSongs,
+}
+
+option SkillObelisk.RecoverAmbitions
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverAmbitions,
+}
+
+option SkillObelisk.SkillRecoveryPercent
+{
+    type = integer,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = SkillObelisk,
+    translation = SkillObelisk_SkillRecoveryPercent,
+}

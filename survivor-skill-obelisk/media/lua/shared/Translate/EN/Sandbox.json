@@ -1,0 +1,19 @@
+{
+  "Sandbox_SkillObelisk": "Survivor Skill Obelisk",
+  "Sandbox_SkillObelisk_RecoverSkills": "Recover Skills",
+  "Sandbox_SkillObelisk_RecoverSkills_tooltip": "Restore the perk levels and XP the character had at death. The amount restored is scaled by Skill Recovery (%).",
+  "Sandbox_SkillObelisk_RecoverRecipes": "Recover Recipes",
+  "Sandbox_SkillObelisk_RecoverRecipes_tooltip": "Re-grant every recipe the character had learned. Most recipes are taught by skill magazines.",
+  "Sandbox_SkillObelisk_RecoverSkillMagazines": "Recover Skill Magazines",
+  "Sandbox_SkillObelisk_RecoverSkillMagazines_tooltip": "Mark skill magazines the character had already read as read.",
+  "Sandbox_SkillObelisk_RecoverReadPrintMedia": "Recover Read Print Media",
+  "Sandbox_SkillObelisk_RecoverReadPrintMedia_tooltip": "Mark newspapers and print magazines the character had already read as read.",
+  "Sandbox_SkillObelisk_RecoverWatchedMedia": "Recover Watched VHS / CDs",
+  "Sandbox_SkillObelisk_RecoverWatchedMedia_tooltip": "Mark VHS tapes and CDs the character had watched as watched, so they cannot be re-consumed for skill XP or moodles.",
+  "Sandbox_SkillObelisk_RecoverLearnedSongs": "Recover Learned Songs (Lifestyles)",
+  "Sandbox_SkillObelisk_RecoverLearnedSongs_tooltip": "Lifestyles mod only — restore the instrument songs the character had learned. No effect if Lifestyles is not installed.",
+  "Sandbox_SkillObelisk_RecoverAmbitions": "Recover Ambitions (Lifestyles)",
+  "Sandbox_SkillObelisk_RecoverAmbitions_tooltip": "Lifestyles mod only — restore in-progress and completed ambitions. No effect if Lifestyles is not installed.",
+  "Sandbox_SkillObelisk_SkillRecoveryPercent": "Skill Recovery (%)",
+  "Sandbox_SkillObelisk_SkillRecoveryPercent_tooltip": "Percentage (0-100) of perk levels and XP to restore when Recover Skills is on. 100 = full restore, 0 = nothing restored. Ignored when Recover Skills is off."
+}

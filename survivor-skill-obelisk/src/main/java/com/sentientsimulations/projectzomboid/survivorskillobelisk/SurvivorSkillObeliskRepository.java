@@ -34,6 +34,20 @@ public class SurvivorSkillObeliskRepository {
                  lines_watched, line_count, fully_watched)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
+    private static final String INSERT_LEARNED_SONG =
+            """
+            INSERT INTO death_learned_songs (death_id, instrument, song_name, sound)
+            VALUES (?, ?, ?, ?)""";
+
+    private static final String INSERT_AMBITION =
+            """
+            INSERT INTO death_ambitions
+                (death_id, name, category, completed, is_active, is_passive,
+                 goal1, goal2, goal3, goal4, goal5, goal6,
+                 goal1_progress, goal2_progress, goal3_progress,
+                 goal4_progress, goal5_progress, goal6_progress)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+
     private final Connection connection;
 
     public SurvivorSkillObeliskRepository(Connection connection) {
@@ -130,6 +144,52 @@ public class SurvivorSkillObeliskRepository {
             stmt.setInt(7, linesWatched);
             stmt.setInt(8, lineCount);
             stmt.setInt(9, fullyWatched ? 1 : 0);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void insertLearnedSong(long deathId, String instrument, String songName, String sound)
+            throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_LEARNED_SONG)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, instrument);
+            stmt.setString(3, songName);
+            stmt.setString(4, sound);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Lifestyles ambitions have heterogeneous goal types — a slot can be a number target (e.g.
+     * 5000), a string flag ("pain"), or unused. {@code goals} / {@code goalProgress} are each
+     * length 6; entries map slot index 0→goal1, 1→goal2, ... 5→goal6. Nulls store as SQL NULL.
+     */
+    public void insertAmbition(
+            long deathId,
+            String name,
+            String category,
+            boolean completed,
+            boolean isActive,
+            boolean isPassive,
+            String[] goals,
+            String[] goalProgress)
+            throws SQLException {
+        if (goals.length != 6 || goalProgress.length != 6) {
+            throw new IllegalArgumentException("goals/goalProgress must be length 6");
+        }
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_AMBITION)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, name);
+            stmt.setString(3, category);
+            stmt.setInt(4, completed ? 1 : 0);
+            stmt.setInt(5, isActive ? 1 : 0);
+            stmt.setInt(6, isPassive ? 1 : 0);
+            for (int i = 0; i < 6; i++) {
+                stmt.setString(7 + i, goals[i]);
+            }
+            for (int i = 0; i < 6; i++) {
+                stmt.setString(13 + i, goalProgress[i]);
+            }
             stmt.executeUpdate();
         }
     }

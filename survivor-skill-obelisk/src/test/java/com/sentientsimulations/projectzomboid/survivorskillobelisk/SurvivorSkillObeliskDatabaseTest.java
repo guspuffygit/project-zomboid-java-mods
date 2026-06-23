@@ -60,6 +60,9 @@ class SurvivorSkillObeliskDatabaseTest {
                 "death_read_print_media table should exist");
         assertTrue(
                 tables.contains("death_watched_media"), "death_watched_media table should exist");
+        assertTrue(
+                tables.contains("death_learned_songs"), "death_learned_songs table should exist");
+        assertTrue(tables.contains("death_ambitions"), "death_ambitions table should exist");
     }
 
     @Test
@@ -128,6 +131,73 @@ class SurvivorSkillObeliskDatabaseTest {
             assertEquals(2, rs.getInt("lines_watched"));
             assertEquals(3, rs.getInt("line_count"));
             assertEquals(0, rs.getInt("fully_watched"));
+        }
+    }
+
+    @Test
+    void insertLifestylesProgressionPersists() throws Exception {
+        long deathId =
+                repo.insertDeath(3_000L, "carol", 9L, "Carol", "Lee", 8.0, 4, 0.0f, 0.0f, 0.0f);
+
+        repo.insertLearnedSong(deathId, "Piano", "ContextMenu_00_01_B", "Piano00LastPost");
+        repo.insertLearnedSong(deathId, "Banjo", "ContextMenu_02_03_B", "Banjo02HappyBirthday");
+
+        repo.insertAmbition(
+                deathId,
+                "LSTerminator",
+                "Combat",
+                false,
+                true,
+                false,
+                new String[] {"5000", "pain", "0", null, null, null},
+                new String[] {"137", "false", "0", null, null, null});
+        repo.insertAmbition(
+                deathId,
+                "LSBladeMaster",
+                "Combat",
+                true,
+                false,
+                false,
+                new String[] {"100", null, null, null, null, null},
+                new String[] {"100", null, null, null, null, null});
+
+        assertEquals(2, countChildren("death_learned_songs", deathId));
+        assertEquals(2, countChildren("death_ambitions", deathId));
+
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT instrument, song_name, sound FROM death_learned_songs"
+                                        + " WHERE death_id = "
+                                        + deathId
+                                        + " ORDER BY id")) {
+            assertTrue(rs.next());
+            assertEquals("Piano", rs.getString("instrument"));
+            assertEquals("ContextMenu_00_01_B", rs.getString("song_name"));
+            assertEquals("Piano00LastPost", rs.getString("sound"));
+            assertTrue(rs.next());
+            assertEquals("Banjo", rs.getString("instrument"));
+        }
+
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT name, category, completed, is_active, goal1, goal2,"
+                                        + " goal1_progress FROM death_ambitions"
+                                        + " WHERE death_id = "
+                                        + deathId
+                                        + " ORDER BY id")) {
+            assertTrue(rs.next());
+            assertEquals("LSTerminator", rs.getString("name"));
+            assertEquals("Combat", rs.getString("category"));
+            assertEquals(0, rs.getInt("completed"));
+            assertEquals(1, rs.getInt("is_active"));
+            assertEquals("5000", rs.getString("goal1"));
+            assertEquals("pain", rs.getString("goal2"));
+            assertEquals("137", rs.getString("goal1_progress"));
+            assertTrue(rs.next());
+            assertEquals("LSBladeMaster", rs.getString("name"));
+            assertEquals(1, rs.getInt("completed"));
         }
     }
 

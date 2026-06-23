@@ -16,7 +16,8 @@ Requires Storm mod loader.
 
 Tested and compatible with 42.19.0'''
 	modVersion = '1.0.0'
+	pack = 'survivor_skill_obelisk'
+	tiledef = 'survivor_skill_obelisk 8801'
 }
 
 uploadWorkshop.enabled = false
-deployMod.enabled = false

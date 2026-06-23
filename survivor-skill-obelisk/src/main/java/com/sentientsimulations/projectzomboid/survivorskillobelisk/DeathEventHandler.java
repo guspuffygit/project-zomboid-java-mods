@@ -5,7 +5,11 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import se.krka.kahlua.vm.KahluaTable;
+import se.krka.kahlua.vm.KahluaTableIterator;
 import zombie.ZomboidFileSystem;
 import zombie.characters.IsoPlayer;
 import zombie.characters.skills.PerkFactory;
@@ -19,11 +23,34 @@ import zombie.radio.media.RecordedMedia;
  * writes to a database rather than a log file.
  *
  * <p>Captured per death: identity + perk levels/XP, known recipes, read literature (titles), read
- * print media, and watched recorded media (VHS tapes / CDs).
+ * print media, watched recorded media (VHS tapes / CDs), and — if the Lifestyles mod is installed —
+ * learned instrument songs and ambition progress.
  */
 public final class DeathEventHandler {
 
     private static final String DB_FILENAME = "survivor_skill_obelisk.db";
+
+    /**
+     * Instrument display name → Lifestyles per-instrument ModData key. Each value on {@code
+     * player:getModData()} is a Lua array of song records.
+     */
+    private static final Map<String, String> LIFESTYLES_INSTRUMENT_KEYS;
+
+    static {
+        Map<String, String> keys = new LinkedHashMap<>();
+        keys.put("Trumpet", "TrumpetLearnedTracks");
+        keys.put("GuitarA", "GuitarALearnedTracks");
+        keys.put("Banjo", "BanjoLearnedTracks");
+        keys.put("Keytar", "KeytarLearnedTracks");
+        keys.put("Saxophone", "SaxophoneLearnedTracks");
+        keys.put("GuitarEB", "GuitarEBLearnedTracks");
+        keys.put("GuitarE", "GuitarELearnedTracks");
+        keys.put("Flute", "FluteLearnedTracks");
+        keys.put("Piano", "PianoLearnedTracks");
+        keys.put("Violin", "ViolinLearnedTracks");
+        keys.put("Harmonica", "HarmonicaLearnedTracks");
+        LIFESTYLES_INSTRUMENT_KEYS = keys;
+    }
 
     private DeathEventHandler() {}
 
@@ -71,6 +98,8 @@ public final class DeathEventHandler {
             recordReadLiterature(repo, deathId, player);
             recordReadPrintMedia(repo, deathId, player);
             recordWatchedMedia(repo, deathId, player);
+            recordLearnedSongs(repo, deathId, player);
+            recordAmbitions(repo, deathId, player);
         }
     }
 
@@ -164,5 +193,109 @@ public final class DeathEventHandler {
                     lineCount,
                     recordedMedia.hasListenedToAll(player, media));
         }
+    }
+
+    /**
+     * Lifestyles-mod instrument songs the character has learned. Stored on {@code
+     * player:getModData()} under per-instrument keys (e.g. {@code PianoLearnedTracks}), each a Lua
+     * array of {@code {name, sound, level, length, isaddon}} entries. No-op if Lifestyles isn't
+     * installed (keys absent).
+     */
+    private static void recordLearnedSongs(
+            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        KahluaTable modData = player.getModData();
+        if (modData == null) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : LIFESTYLES_INSTRUMENT_KEYS.entrySet()) {
+            if (!(modData.rawget(entry.getValue()) instanceof KahluaTable songs)) {
+                continue;
+            }
+            KahluaTableIterator it = songs.iterator();
+            while (it.advance()) {
+                if (!(it.getValue() instanceof KahluaTable song)) {
+                    continue;
+                }
+                String name = asString(song.rawget("name"));
+                if (name == null) {
+                    continue;
+                }
+                repo.insertLearnedSong(
+                        deathId, entry.getKey(), name, asString(song.rawget("sound")));
+            }
+        }
+    }
+
+    /**
+     * Lifestyles-mod ambitions. Stored on {@code player:getModData().Ambitions} as a map keyed by
+     * ambition name (e.g. {@code LSTerminator}) → object with {@code cat}, progress flags, and
+     * goal1..goal6 targets / goal1progress..goal6progress values (goals can be numeric, string, or
+     * boolean — stored as TEXT). No-op if Lifestyles isn't installed.
+     */
+    private static void recordAmbitions(
+            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+        KahluaTable modData = player.getModData();
+        if (modData == null) {
+            return;
+        }
+        if (!(modData.rawget("Ambitions") instanceof KahluaTable ambitions)) {
+            return;
+        }
+        KahluaTableIterator it = ambitions.iterator();
+        while (it.advance()) {
+            if (!(it.getValue() instanceof KahluaTable ambition)) {
+                continue;
+            }
+            String name = asString(ambition.rawget("name"));
+            if (name == null) {
+                name = asString(it.getKey());
+            }
+            if (name == null) {
+                continue;
+            }
+            String[] goals = new String[6];
+            String[] progress = new String[6];
+            for (int i = 0; i < 6; i++) {
+                goals[i] = asString(ambition.rawget("goal" + (i + 1)));
+                progress[i] = asString(ambition.rawget("goal" + (i + 1) + "progress"));
+            }
+            repo.insertAmbition(
+                    deathId,
+                    name,
+                    asString(ambition.rawget("cat")),
+                    asBoolean(ambition.rawget("completed")),
+                    asBoolean(ambition.rawget("isActive")),
+                    asBoolean(ambition.rawget("isPassive")),
+                    goals,
+                    progress);
+        }
+    }
+
+    /**
+     * Render an arbitrary Lua value as a stable string for SQLite storage. Integers come back as
+     * {@code Double} from Kahlua; format whole numbers without trailing {@code .0} so consumers see
+     * e.g. {@code "5000"} instead of {@code "5000.0"}.
+     */
+    private static String asString(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof String s) {
+            return s;
+        }
+        if (o instanceof Double d) {
+            if (!Double.isInfinite(d) && !Double.isNaN(d) && d == Math.floor(d)) {
+                return Long.toString(d.longValue());
+            }
+            return d.toString();
+        }
+        if (o instanceof Boolean b) {
+            return b.toString();
+        }
+        return o.toString();
+    }
+
+    private static boolean asBoolean(Object o) {
+        return o instanceof Boolean b && b;
     }
 }

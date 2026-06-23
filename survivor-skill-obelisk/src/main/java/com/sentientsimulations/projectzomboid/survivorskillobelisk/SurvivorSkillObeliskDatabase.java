@@ -103,6 +103,50 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             "CREATE INDEX IF NOT EXISTS idx_death_watched_media_death "
                     + "ON death_watched_media(death_id)";
 
+    private static final String CREATE_DEATH_LEARNED_SONGS =
+            """
+            CREATE TABLE IF NOT EXISTS death_learned_songs (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id   INTEGER NOT NULL,
+                instrument TEXT NOT NULL,
+                song_name  TEXT NOT NULL,
+                sound      TEXT,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_LEARNED_SONGS_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_learned_songs_death "
+                    + "ON death_learned_songs(death_id)";
+
+    private static final String CREATE_DEATH_AMBITIONS =
+            """
+            CREATE TABLE IF NOT EXISTS death_ambitions (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id       INTEGER NOT NULL,
+                name           TEXT NOT NULL,
+                category       TEXT,
+                completed      INTEGER NOT NULL,
+                is_active      INTEGER NOT NULL,
+                is_passive     INTEGER NOT NULL,
+                goal1          TEXT,
+                goal2          TEXT,
+                goal3          TEXT,
+                goal4          TEXT,
+                goal5          TEXT,
+                goal6          TEXT,
+                goal1_progress TEXT,
+                goal2_progress TEXT,
+                goal3_progress TEXT,
+                goal4_progress TEXT,
+                goal5_progress TEXT,
+                goal6_progress TEXT,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_AMBITIONS_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_ambitions_death "
+                    + "ON death_ambitions(death_id)";
+
     private final Connection connection;
 
     public SurvivorSkillObeliskDatabase(String dbPath) throws SQLException {
@@ -128,6 +172,10 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             stmt.execute(CREATE_DEATH_READ_PRINT_MEDIA_INDEX);
             stmt.execute(CREATE_DEATH_WATCHED_MEDIA);
             stmt.execute(CREATE_DEATH_WATCHED_MEDIA_INDEX);
+            stmt.execute(CREATE_DEATH_LEARNED_SONGS);
+            stmt.execute(CREATE_DEATH_LEARNED_SONGS_INDEX);
+            stmt.execute(CREATE_DEATH_AMBITIONS);
+            stmt.execute(CREATE_DEATH_AMBITIONS_INDEX);
         }
     }
 
