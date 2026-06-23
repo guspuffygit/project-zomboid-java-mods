@@ -345,13 +345,8 @@ local function applySkills(player, skills)
             return
         end
         local targetXp = entry.xp or 0
-        local currentXp = player:getXp():getXP(perk)
-        local delta = targetXp - currentXp
-        if delta > 0 then
-            -- Mirror ISPlayerStatsUI's debug "Give XP" path: no boost, no multiplier, no
-            -- haloText (we render a summary at the end instead of per-perk floaters).
-            player:getXp():AddXP(perk, delta, false, false, false, false)
-        end
+        player:setPerkLevelDebug(perk, targetXp)
+        player:getXp():setXPToLevel(perk, targetXp)
     end)
 end
 
