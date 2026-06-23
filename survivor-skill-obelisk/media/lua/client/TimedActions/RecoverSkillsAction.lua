@@ -19,19 +19,21 @@ end
 
 function RecoverSkillsAction:start()
     self:setActionAnim("VehicleWorkOnMid")
-    self.sound = self.character:playSound("SurvivorSkillObeliskRecover")
+    self.sound = getSoundManager():playUISound("SurvivorSkillObeliskRecover")
 end
 
 function RecoverSkillsAction:stop()
     if self.sound ~= 0 then
-        self.character:getEmitter():stopSound(self.sound)
+        getSoundManager():stopUISound(self.sound)
+        self.sound = 0
     end
     ISBaseTimedAction.stop(self)
 end
 
 function RecoverSkillsAction:perform()
     if self.sound ~= 0 then
-        self.character:getEmitter():stopSound(self.sound)
+        getSoundManager():stopUISound(self.sound)
+        self.sound = 0
     end
 
     sendClientCommand(
@@ -57,7 +59,7 @@ function RecoverSkillsAction:new(character, deathId)
     -- ISReadABook derives maxTime from in-game minutes × 2 × minutesPerDay; substituting
     -- realSec × 24/minutesPerDay for in-game minutes cancels minutesPerDay out, so 1 real
     -- second is a fixed 48 maxTime units regardless of the world's day-length setting.
-    o.maxTime = 121 * 48
+    o.maxTime = 121 * 30
     if character:isTimedActionInstant() then
         o.maxTime = 1
     end
