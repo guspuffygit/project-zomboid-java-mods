@@ -8,15 +8,18 @@ require("TimedActions/RecoverSkillsAction")
 
 local MODULE = "SurvivorSkillObelisk"
 local LIST_COMMAND = "listDeaths"
+local SET_TYPE_COMMAND = "setObeliskType"
 local DEATHS_REPLY = "deathsList"
 local RECOVERED_REPLY = "recoveredData"
 -- SyncPlayerFieldsPacket bit flags: 1 = recipes, 4 = already-read books.
 local SYNC_RECIPES_AND_BOOKS = 1 + 4
 local SPRITE_PREFIX = "survivor_skill_obelisk_"
 local DEFAULT_LIMIT = 20
+local NONE_TYPE = "None"
 
 local SurvivorSkillObelisk = {}
 local openWindow = nil
+local openConfigureWindow = nil
 
 ---------------------------------------------------------------------------
 -- Helpers
@@ -48,6 +51,34 @@ local function findObeliskInWorldObjects(worldobjects)
         end
     end
     return nil
+end
+
+local function isPlayerAdmin()
+    if getDebug() then
+        return true
+    end
+    if isClient() and getAccessLevel() == "admin" then
+        return true
+    end
+    return false
+end
+
+local function collectSkillPerks()
+    local perks = {}
+    local list = PerkFactory.PerkList
+    if list == nil then
+        return perks
+    end
+    for i = 0, list:size() - 1 do
+        local perk = list:get(i)
+        if perk ~= nil then
+            table.insert(perks, { id = perk:getId(), name = perk:getName() })
+        end
+    end
+    table.sort(perks, function(a, b)
+        return a.name < b.name
+    end)
+    return perks
 end
 
 local function formatTime(tsMillis)
@@ -251,6 +282,144 @@ function RecoverSkillsWindow:close()
 end
 
 ---------------------------------------------------------------------------
+-- Configure Obelisk (admin)
+---------------------------------------------------------------------------
+
+local ConfigureObeliskWindow = ISCollapsableWindow:derive("ConfigureObeliskWindow")
+
+function ConfigureObeliskWindow:new(x, y, width, height, obeliskX, obeliskY, obeliskZ)
+    local o = ISCollapsableWindow:new(x, y, width, height)
+    setmetatable(o, self)
+    self.__index = self
+    o.title = "Configure Obelisk"
+    o.obeliskX = obeliskX
+    o.obeliskY = obeliskY
+    o.obeliskZ = obeliskZ
+    o.resizable = false
+    o.minimumWidth = width
+    o.minimumHeight = height
+    return o
+end
+
+function ConfigureObeliskWindow:createChildren()
+    ISCollapsableWindow.createChildren(self)
+
+    local titleBarH = self:titleBarHeight()
+    local padding = 10
+    local rowH = 24
+    local labelY = titleBarH + padding
+
+    self.skillLabel =
+        ISLabel:new(padding, labelY + 4, 18, "Skill type:", 1, 1, 1, 1, UIFont.Small, true)
+    self.skillLabel:initialise()
+    self.skillLabel:instantiate()
+    self:addChild(self.skillLabel)
+
+    local comboX = padding + 90
+    local comboW = self.width - comboX - padding
+    self.skillCombo = ISComboBox:new(comboX, labelY, comboW, rowH)
+    self.skillCombo:initialise()
+    self.skillCombo:instantiate()
+    self.skillCombo:addOptionWithData(NONE_TYPE, NONE_TYPE)
+    for _, perk in ipairs(collectSkillPerks()) do
+        self.skillCombo:addOptionWithData(perk.name, perk.id)
+    end
+    self.skillCombo.selected = 1
+    self:addChild(self.skillCombo)
+
+    local btnW = 100
+    local btnH = 24
+    local btnY = self.height - padding - btnH
+
+    self.saveBtn = ISButton:new(
+        self.width - padding - btnW,
+        btnY,
+        btnW,
+        btnH,
+        "Save",
+        self,
+        ConfigureObeliskWindow.onSave
+    )
+    self.saveBtn:initialise()
+    self.saveBtn:instantiate()
+    self.saveBtn.anchorTop = false
+    self.saveBtn.anchorBottom = true
+    self.saveBtn.anchorRight = true
+    self.saveBtn.anchorLeft = false
+    self:addChild(self.saveBtn)
+
+    self.cancelBtn = ISButton:new(
+        self.width - padding * 2 - btnW * 2,
+        btnY,
+        btnW,
+        btnH,
+        "Cancel",
+        self,
+        ConfigureObeliskWindow.onCancel
+    )
+    self.cancelBtn:initialise()
+    self.cancelBtn:instantiate()
+    self.cancelBtn.anchorTop = false
+    self.cancelBtn.anchorBottom = true
+    self.cancelBtn.anchorRight = true
+    self.cancelBtn.anchorLeft = false
+    self:addChild(self.cancelBtn)
+end
+
+function ConfigureObeliskWindow:onSave()
+    local player = getSpecificPlayer(0)
+    if player == nil then
+        return
+    end
+    local selected = self.skillCombo:getOptionData(self.skillCombo.selected)
+    if selected == nil then
+        selected = NONE_TYPE
+    end
+    sendClientCommand(player, MODULE, SET_TYPE_COMMAND, {
+        type = selected,
+        x = self.obeliskX,
+        y = self.obeliskY,
+        z = self.obeliskZ,
+    })
+    self:close()
+end
+
+function ConfigureObeliskWindow:onCancel()
+    self:close()
+end
+
+function ConfigureObeliskWindow:close()
+    openConfigureWindow = nil
+    self:setVisible(false)
+    self:removeFromUIManager()
+end
+
+function SurvivorSkillObelisk.openConfigureWindow(worldobjects)
+    local obj = findObeliskInWorldObjects(worldobjects)
+    if obj == nil then
+        return
+    end
+    local square = obj:getSquare()
+    if square == nil then
+        return
+    end
+    if openConfigureWindow ~= nil then
+        openConfigureWindow:close()
+    end
+    local width = 360
+    local height = 130
+    local screenW = getCore():getScreenWidth()
+    local screenH = getCore():getScreenHeight()
+    local x = math.floor(screenW / 2 - width / 2)
+    local y = math.floor(screenH / 2 - height / 2)
+    local w =
+        ConfigureObeliskWindow:new(x, y, width, height, square:getX(), square:getY(), square:getZ())
+    w:initialise()
+    w:addToUIManager()
+    openConfigureWindow = w
+end
+
+---------------------------------------------------------------------------
 -- Public API
 ---------------------------------------------------------------------------
 
@@ -300,6 +469,13 @@ local function onFillWorldObjectContextMenu(player, context, worldobjects, test)
         return
     end
     context:addOption("Recover Skills", worldobjects, SurvivorSkillObelisk.openRecoverWindow)
+    if isPlayerAdmin() then
+        context:addOption(
+            "Configure Obelisk",
+            worldobjects,
+            SurvivorSkillObelisk.openConfigureWindow
+        )
+    end
 end
 
 Events.OnFillWorldObjectContextMenu.Add(onFillWorldObjectContextMenu)

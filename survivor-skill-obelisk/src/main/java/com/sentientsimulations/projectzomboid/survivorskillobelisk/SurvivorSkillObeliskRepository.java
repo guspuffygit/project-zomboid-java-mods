@@ -114,6 +114,16 @@ public class SurvivorSkillObeliskRepository {
             INSERT INTO death_learned_songs (death_id, instrument, song_name, sound)
             VALUES (?, ?, ?, ?)""";
 
+    private static final String UPSERT_OBELISK_TYPE =
+            """
+            INSERT INTO obelisk_types (x, y, z, type, set_by_username, set_by_steam_id, set_ts)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(x, y, z) DO UPDATE SET
+                type = excluded.type,
+                set_by_username = excluded.set_by_username,
+                set_by_steam_id = excluded.set_by_steam_id,
+                set_ts = excluded.set_ts""";
+
     private static final String INSERT_AMBITION =
             """
             INSERT INTO death_ambitions
@@ -398,6 +408,21 @@ public class SurvivorSkillObeliskRepository {
             }
         }
         return rows;
+    }
+
+    public void upsertObeliskType(
+            int x, int y, int z, String type, String setByUsername, long setBySteamId, long setTs)
+            throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(UPSERT_OBELISK_TYPE)) {
+            stmt.setInt(1, x);
+            stmt.setInt(2, y);
+            stmt.setInt(3, z);
+            stmt.setString(4, type);
+            stmt.setString(5, setByUsername);
+            stmt.setLong(6, setBySteamId);
+            stmt.setLong(7, setTs);
+            stmt.executeUpdate();
+        }
     }
 
     private List<String> listStringColumn(String sql, String column, long deathId)
