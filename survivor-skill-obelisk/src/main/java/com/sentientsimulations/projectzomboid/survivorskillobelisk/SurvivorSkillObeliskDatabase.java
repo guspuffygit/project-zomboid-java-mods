@@ -104,6 +104,20 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             "CREATE INDEX IF NOT EXISTS idx_death_watched_media_death "
                     + "ON death_watched_media(death_id)";
 
+    private static final String CREATE_DEATH_WATCHED_MEDIA_LINES =
+            """
+            CREATE TABLE IF NOT EXISTS death_watched_media_lines (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id  INTEGER NOT NULL,
+                media_id  TEXT NOT NULL,
+                text_guid TEXT NOT NULL,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_WATCHED_MEDIA_LINES_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_watched_media_lines_death "
+                    + "ON death_watched_media_lines(death_id)";
+
     private final Connection connection;
 
     public SurvivorSkillObeliskDatabase(String dbPath) throws SQLException {
@@ -129,6 +143,8 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             stmt.execute(CREATE_DEATH_READ_PRINT_MEDIA_INDEX);
             stmt.execute(CREATE_DEATH_WATCHED_MEDIA);
             stmt.execute(CREATE_DEATH_WATCHED_MEDIA_INDEX);
+            stmt.execute(CREATE_DEATH_WATCHED_MEDIA_LINES);
+            stmt.execute(CREATE_DEATH_WATCHED_MEDIA_LINES_INDEX);
         }
     }
 

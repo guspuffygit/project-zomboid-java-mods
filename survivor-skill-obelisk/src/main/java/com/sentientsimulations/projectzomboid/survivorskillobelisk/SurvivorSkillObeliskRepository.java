@@ -35,6 +35,10 @@ public class SurvivorSkillObeliskRepository {
                  lines_watched, line_count, fully_watched)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
+    private static final String INSERT_WATCHED_MEDIA_LINE =
+            "INSERT INTO death_watched_media_lines (death_id, media_id, text_guid)"
+                    + " VALUES (?, ?, ?)";
+
     private final Connection connection;
 
     public SurvivorSkillObeliskRepository(Connection connection) {
@@ -133,6 +137,19 @@ public class SurvivorSkillObeliskRepository {
             stmt.setInt(7, linesWatched);
             stmt.setInt(8, lineCount);
             stmt.setInt(9, fullyWatched ? 1 : 0);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Lossless mirror of a single watched media line — the exact key in {@code knownMediaLines}.
+     */
+    public void insertWatchedMediaLine(long deathId, String mediaId, String textGuid)
+            throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_WATCHED_MEDIA_LINE)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, mediaId);
+            stmt.setString(3, textGuid);
             stmt.executeUpdate();
         }
     }

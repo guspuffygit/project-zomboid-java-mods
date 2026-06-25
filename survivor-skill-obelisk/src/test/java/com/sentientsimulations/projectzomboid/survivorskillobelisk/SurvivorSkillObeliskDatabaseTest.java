@@ -60,6 +60,9 @@ class SurvivorSkillObeliskDatabaseTest {
                 "death_read_print_media table should exist");
         assertTrue(
                 tables.contains("death_watched_media"), "death_watched_media table should exist");
+        assertTrue(
+                tables.contains("death_watched_media_lines"),
+                "death_watched_media_lines table should exist");
     }
 
     @Test
@@ -100,11 +103,14 @@ class SurvivorSkillObeliskDatabaseTest {
         repo.insertReadPrintMedia(deathId, "Base.Newspaper_Dispatch_Day1");
         repo.insertWatchedMedia(
                 deathId, "TapeHTV1", 5, "Home-VHS", 1, "Exercise Tape", 2, 3, false);
+        repo.insertWatchedMediaLine(deathId, "TapeHTV1", "TapeHTV1_line1");
+        repo.insertWatchedMediaLine(deathId, "TapeHTV1", "TapeHTV1_line2");
 
         assertEquals(1, countChildren("death_recipes", deathId));
         assertEquals(1, countChildren("death_read_literature", deathId));
         assertEquals(1, countChildren("death_read_print_media", deathId));
         assertEquals(1, countChildren("death_watched_media", deathId));
+        assertEquals(2, countChildren("death_watched_media_lines", deathId));
 
         try (Statement stmt = db.getConnection().createStatement();
                 ResultSet rs =

@@ -137,13 +137,14 @@ public final class DeathEventHandler {
 
         for (MediaData media : catalog) {
             int lineCount = media.getLineCount();
-            int linesWatched = 0;
+            List<String> watchedGuids = new ArrayList<>();
             for (int i = 0; i < lineCount; i++) {
                 MediaData.MediaLineData line = media.getLine(i);
                 if (line != null && player.isKnownMediaLine(line.getTextGuid())) {
-                    linesWatched++;
+                    watchedGuids.add(line.getTextGuid());
                 }
             }
+            int linesWatched = watchedGuids.size();
             if (linesWatched == 0) {
                 continue;
             }
@@ -158,6 +159,9 @@ public final class DeathEventHandler {
                     linesWatched,
                     lineCount,
                     recordedMedia.hasListenedToAll(player, media));
+            for (String textGuid : watchedGuids) {
+                repo.insertWatchedMediaLine(deathId, media.getId(), textGuid);
+            }
         }
     }
 }

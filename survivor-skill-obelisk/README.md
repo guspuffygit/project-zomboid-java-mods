@@ -110,6 +110,18 @@ are written.
 | line_count    | INTEGER | not null; total lines in the tape          |
 | fully_watched | INTEGER | not null; 0/1 (`RecordedMedia.hasListenedToAll`) |
 
+### `death_watched_media_lines`
+
+Lossless mirror of the character's `knownMediaLines` for the watched tapes — one row per watched
+line.
+
+| column    | type    | notes                                  |
+|-----------|---------|----------------------------------------|
+| id        | INTEGER | primary key                            |
+| death_id  | INTEGER | not null; FK → `deaths(id)`            |
+| media_id  | TEXT    | not null; owning `MediaData.getId()`   |
+| text_guid | TEXT    | not null; exact key in `knownMediaLines` |
+
 Each child table has an index on `death_id`. Only media with at least one watched line are written.
 
 ## Building
