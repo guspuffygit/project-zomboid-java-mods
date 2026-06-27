@@ -159,13 +159,17 @@ end
 
 local function buildMatch(config)
     if config.match ~= nil then
-        assert(type(config.match) == "function",
-            "UnpoweredGlow.register: 'match' must be a function")
+        assert(
+            type(config.match) == "function",
+            "UnpoweredGlow.register: 'match' must be a function"
+        )
         return config.match
     end
     local prefix = config.spritePrefix
-    assert(type(prefix) == "string" and #prefix > 0,
-        "UnpoweredGlow.register: provide 'spritePrefix' (string) or 'match' (function)")
+    assert(
+        type(prefix) == "string" and #prefix > 0,
+        "UnpoweredGlow.register: provide 'spritePrefix' (string) or 'match' (function)"
+    )
     local len = #prefix
     return function(name)
         return name ~= nil and string.sub(name, 1, len) == prefix

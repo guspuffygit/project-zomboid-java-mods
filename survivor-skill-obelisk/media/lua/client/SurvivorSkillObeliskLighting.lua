@@ -4,7 +4,7 @@
 -- bookkeeping lives in UnpoweredGlow.lua.
 --
 
-require "UnpoweredGlow"
+require("UnpoweredGlow")
 
 -- Warm gold glow, ~6 tile radius. Floats are 0..1.
 UnpoweredGlow.register({
