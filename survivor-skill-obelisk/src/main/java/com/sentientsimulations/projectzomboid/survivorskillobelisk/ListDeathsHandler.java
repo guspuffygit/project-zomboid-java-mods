@@ -27,7 +27,8 @@ import zombie.network.GameServer;
  *   <li>A single daemon worker thread blocks on {@link #PENDING}, runs the DB query in one
  *       transaction, and pushes the raw result onto {@link #COMPLETED}.
  *   <li>{@link #onTick} runs on the main thread every tick, drains {@link #COMPLETED}, builds the
- *       {@code KahluaTable} reply, and ships it via {@link GameServer#sendServerCommand}.
+ *       {@code KahluaTable} reply, and ships it via {@link
+ *       zombie.network.GameServer#sendServerCommand}.
  * </ol>
  *
  * Kahlua tables and {@code sendServerCommand} are not thread-safe, so all Lua construction stays on

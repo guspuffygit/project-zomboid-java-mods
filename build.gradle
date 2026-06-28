@@ -1,3 +1,5 @@
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.internal.os.OperatingSystem
 
 plugins {
@@ -101,6 +103,12 @@ tasks.register('deployAll') {
 
 tasks.register('uploadAll') {
 	dependsOn subprojects.uploadWorkshop
+}
+
+abstract class SteamcmdService implements BuildService<BuildServiceParameters.None> {}
+
+def steamcmdService = gradle.sharedServices.registerIfAbsent('steamcmd', SteamcmdService) {
+	maxParallelUsages = 1
 }
 
 def env = rootProject.hasProperty('env') ? rootProject.property('env') : 'dev'
@@ -322,6 +330,8 @@ subprojects { subproj ->
 	tasks.register('uploadWorkshop', Exec) {
 		group = 'publishing'
 		description = 'Uploads the mod to the Steam Workshop via steamcmd'
+
+		usesService(steamcmdService)
 
 		dependsOn 'writeWorkshopVdf', 'deployMod'
 
