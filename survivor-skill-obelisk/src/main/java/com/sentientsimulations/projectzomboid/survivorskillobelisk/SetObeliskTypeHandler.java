@@ -78,6 +78,7 @@ public final class SetObeliskTypeHandler {
                     y,
                     z,
                     type);
+            ObeliskBroadcast.obeliskUpdated(x, y, z, type);
         } catch (Exception e) {
             LOGGER.error(
                     "[SurvivorSkillObelisk] setObeliskType failed for {} ({}) at ({}, {}, {})"

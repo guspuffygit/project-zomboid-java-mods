@@ -232,6 +232,78 @@ class SurvivorSkillObeliskDatabaseTest {
         }
     }
 
+    @Test
+    void markObeliskNoneInsertsRowWithNoneType() throws Exception {
+        repo.markObeliskNone(100, 200, 0, 5_000L);
+
+        assertEquals("None", repo.findObeliskType(100, 200, 0));
+        assertEquals(1, countObeliskRows());
+
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT set_by_username, set_by_steam_id, set_ts"
+                                        + " FROM obelisk_types WHERE x = 100 AND y = 200"
+                                        + " AND z = 0")) {
+            assertTrue(rs.next());
+            assertEquals(null, rs.getString("set_by_username"));
+            assertEquals(0L, rs.getLong("set_by_steam_id"));
+            assertEquals(5_000L, rs.getLong("set_ts"));
+        }
+    }
+
+    @Test
+    void markObeliskNoneOverridesPriorAdminConfiguredType() throws Exception {
+        // Admin configures the obelisk.
+        repo.upsertObeliskType(100, 200, 0, "Strength", "admin", 42L, 1_000L);
+        assertEquals("Strength", repo.findObeliskType(100, 200, 0));
+
+        // Player picks it up + drops it back at the same spot — the placement event
+        // resets the type to None and clears setter attribution.
+        repo.markObeliskNone(100, 200, 0, 9_999L);
+
+        assertEquals("None", repo.findObeliskType(100, 200, 0));
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT set_by_username, set_by_steam_id, set_ts"
+                                        + " FROM obelisk_types WHERE x = 100 AND y = 200"
+                                        + " AND z = 0")) {
+            assertTrue(rs.next());
+            assertEquals(null, rs.getString("set_by_username"));
+            assertEquals(0L, rs.getLong("set_by_steam_id"));
+            assertEquals(9_999L, rs.getLong("set_ts"));
+        }
+    }
+
+    @Test
+    void deleteObeliskTypeRemovesRow() throws Exception {
+        repo.upsertObeliskType(50, 60, 1, "Aiming", "admin", 42L, 1_000L);
+        assertEquals(1, countObeliskRows());
+
+        repo.deleteObeliskType(50, 60, 1);
+
+        assertEquals(0, countObeliskRows());
+        assertEquals(null, repo.findObeliskType(50, 60, 1));
+    }
+
+    @Test
+    void deleteObeliskTypeIsNoOpWhenAbsent() throws Exception {
+        // Removal-event handlers may fire redundantly (e.g. OnDestroyIsoThumpable +
+        // OnObjectAboutToBeRemoved + OnTileRemoved for one sledgehammer hit). DELETE
+        // against a missing row must not throw.
+        repo.deleteObeliskType(0, 0, 0);
+        assertEquals(0, countObeliskRows());
+    }
+
+    private int countObeliskRows() throws Exception {
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT COUNT(*) AS c FROM obelisk_types")) {
+            assertTrue(rs.next());
+            return rs.getInt("c");
+        }
+    }
+
     private int countChildren(String table, long deathId) throws Exception {
         try (Statement stmt = db.getConnection().createStatement();
                 ResultSet rs =

@@ -36,6 +36,8 @@ public class SurvivorSkillObeliskRepository {
 
     public record LearnedSongRow(String instrument, String songName, String sound) {}
 
+    public record ObeliskTypeRow(int x, int y, int z, String type) {}
+
     public record AmbitionRow(
             String name,
             String category,
@@ -117,6 +119,8 @@ public class SurvivorSkillObeliskRepository {
     private static final String FIND_OBELISK_TYPE =
             "SELECT type FROM obelisk_types WHERE x = ? AND y = ? AND z = ?";
 
+    private static final String LIST_ALL_OBELISK_TYPES = "SELECT x, y, z, type FROM obelisk_types";
+
     private static final String UPSERT_OBELISK_TYPE =
             """
             INSERT INTO obelisk_types (x, y, z, type, set_by_username, set_by_steam_id, set_ts)
@@ -126,6 +130,19 @@ public class SurvivorSkillObeliskRepository {
                 set_by_username = excluded.set_by_username,
                 set_by_steam_id = excluded.set_by_steam_id,
                 set_ts = excluded.set_ts""";
+
+    private static final String MARK_OBELISK_NONE =
+            """
+            INSERT INTO obelisk_types (x, y, z, type, set_by_username, set_by_steam_id, set_ts)
+            VALUES (?, ?, ?, 'None', NULL, 0, ?)
+            ON CONFLICT(x, y, z) DO UPDATE SET
+                type = 'None',
+                set_by_username = NULL,
+                set_by_steam_id = 0,
+                set_ts = excluded.set_ts""";
+
+    private static final String DELETE_OBELISK_TYPE =
+            "DELETE FROM obelisk_types WHERE x = ? AND y = ? AND z = ?";
 
     private static final String INSERT_AMBITION =
             """
@@ -439,6 +456,47 @@ public class SurvivorSkillObeliskRepository {
             stmt.setString(5, setByUsername);
             stmt.setLong(6, setBySteamId);
             stmt.setLong(7, setTs);
+            stmt.executeUpdate();
+        }
+    }
+
+    public List<ObeliskTypeRow> listAllObeliskTypes() throws SQLException {
+        List<ObeliskTypeRow> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(LIST_ALL_OBELISK_TYPES);
+                ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                rows.add(
+                        new ObeliskTypeRow(
+                                rs.getInt("x"),
+                                rs.getInt("y"),
+                                rs.getInt("z"),
+                                rs.getString("type")));
+            }
+        }
+        return rows;
+    }
+
+    /**
+     * Idempotently records that an obelisk exists at the given square with no configured type.
+     * Resets {@code type} to {@code "None"} and clears setter attribution on conflict — every fresh
+     * placement (pickup + drop, admin re-spawn) starts unconfigured.
+     */
+    public void markObeliskNone(int x, int y, int z, long setTs) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(MARK_OBELISK_NONE)) {
+            stmt.setInt(1, x);
+            stmt.setInt(2, y);
+            stmt.setInt(3, z);
+            stmt.setLong(4, setTs);
+            stmt.executeUpdate();
+        }
+    }
+
+    /** No-op when no row matches — safe to call from redundant removal-event handlers. */
+    public void deleteObeliskType(int x, int y, int z) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(DELETE_OBELISK_TYPE)) {
+            stmt.setInt(1, x);
+            stmt.setInt(2, y);
+            stmt.setInt(3, z);
             stmt.executeUpdate();
         }
     }
