@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import se.krka.kahlua.vm.KahluaTable;
 import se.krka.kahlua.vm.KahluaTableIterator;
 import zombie.ZomboidFileSystem;
@@ -30,6 +32,11 @@ import zombie.scripting.objects.CharacterTrait;
  * <p>Captured per death: identity + perk levels/XP, known recipes, read literature (titles), read
  * print media, watched recorded media (VHS tapes / CDs), and — if the Lifestyles mod is installed —
  * learned instrument songs and ambition progress.
+ *
+ * <p>Same two-thread split as {@link ListDeathsHandler}: the main thread snapshots all per-player
+ * state (IsoPlayer, ZomboidRadio, and Kahlua mod-data tables are not thread-safe) into plain Java
+ * records, and a daemon worker writes the death + all related rows to SQLite. No client reply, so
+ * there's no completion-tick handler.
  */
 public final class DeathEventHandler {
 
@@ -57,6 +64,56 @@ public final class DeathEventHandler {
         LIFESTYLES_INSTRUMENT_KEYS = keys;
     }
 
+    private record SkillSnapshot(String perkId, int level, float xp) {}
+
+    private record WatchedMediaSnapshot(
+            String mediaId,
+            int mediaIndex,
+            String category,
+            byte mediaType,
+            String title,
+            int linesWatched,
+            int lineCount,
+            boolean fullyListened) {}
+
+    private record LearnedSongSnapshot(String instrument, String name, String sound) {}
+
+    private record AmbitionSnapshot(
+            String name,
+            String category,
+            boolean completed,
+            boolean isActive,
+            boolean isPassive,
+            String[] goals,
+            String[] progress) {}
+
+    private record DeathSnapshot(
+            String username,
+            long steamId,
+            String forename,
+            String surname,
+            double hoursSurvived,
+            int zombieKills,
+            float x,
+            float y,
+            float z,
+            List<SkillSnapshot> skills,
+            List<String> recipes,
+            List<String> readLiterature,
+            List<String> readPrintMedia,
+            List<WatchedMediaSnapshot> watchedMedia,
+            List<LearnedSongSnapshot> learnedSongs,
+            List<AmbitionSnapshot> ambitions) {}
+
+    private static final BlockingQueue<DeathSnapshot> PENDING = new LinkedBlockingQueue<>();
+
+    static {
+        Thread worker =
+                new Thread(DeathEventHandler::workerLoop, "SurvivorSkillObelisk-DeathEvent-Worker");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
     private DeathEventHandler() {}
 
     static String getDbPath() {
@@ -69,18 +126,59 @@ public final class DeathEventHandler {
             return;
         }
         try {
-            recordDeath(player);
-            LOGGER.info(
-                    "[SurvivorSkillObelisk] Recorded death of player: {}", player.getUsername());
+            DeathSnapshot snapshot = snapshot(player);
+            PENDING.offer(snapshot);
         } catch (Exception e) {
             LOGGER.error(
-                    "[SurvivorSkillObelisk] Failed to record death for player: {}",
+                    "[SurvivorSkillObelisk] Failed to snapshot death for player: {}",
                     player.getUsername(),
                     e);
         }
     }
 
-    private static void recordDeath(IsoPlayer player) throws Exception {
+    private static DeathSnapshot snapshot(IsoPlayer player) {
+        return new DeathSnapshot(
+                player.getUsername(),
+                player.getSteamID(),
+                player.getDescriptor().getForename(),
+                player.getDescriptor().getSurname(),
+                player.getHoursSurvived(),
+                player.getZombieKills(),
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                snapshotSkills(player),
+                snapshotRecipes(player),
+                snapshotReadLiterature(player),
+                snapshotReadPrintMedia(player),
+                snapshotWatchedMedia(player),
+                snapshotLearnedSongs(player),
+                snapshotAmbitions(player));
+    }
+
+    private static void workerLoop() {
+        while (true) {
+            DeathSnapshot snapshot;
+            try {
+                snapshot = PENDING.take();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            try {
+                writeDeath(snapshot);
+                LOGGER.info(
+                        "[SurvivorSkillObelisk] Recorded death of player: {}", snapshot.username());
+            } catch (Throwable t) {
+                LOGGER.error(
+                        "[SurvivorSkillObelisk] Failed to record death for player: {}",
+                        snapshot.username(),
+                        t);
+            }
+        }
+    }
+
+    private static void writeDeath(DeathSnapshot s) throws Exception {
         try (SurvivorSkillObeliskDatabase db = new SurvivorSkillObeliskDatabase(getDbPath())) {
             SurvivorSkillObeliskRepository repo =
                     new SurvivorSkillObeliskRepository(db.getConnection());
@@ -88,23 +186,54 @@ public final class DeathEventHandler {
             long deathId =
                     repo.insertDeath(
                             System.currentTimeMillis(),
-                            player.getUsername(),
-                            player.getSteamID(),
-                            player.getDescriptor().getForename(),
-                            player.getDescriptor().getSurname(),
-                            player.getHoursSurvived(),
-                            player.getZombieKills(),
-                            player.getX(),
-                            player.getY(),
-                            player.getZ());
+                            s.username(),
+                            s.steamId(),
+                            s.forename(),
+                            s.surname(),
+                            s.hoursSurvived(),
+                            s.zombieKills(),
+                            s.x(),
+                            s.y(),
+                            s.z());
 
-            recordSkills(repo, deathId, player);
-            recordRecipes(repo, deathId, player);
-            recordReadLiterature(repo, deathId, player);
-            recordReadPrintMedia(repo, deathId, player);
-            recordWatchedMedia(repo, deathId, player);
-            recordLearnedSongs(repo, deathId, player);
-            recordAmbitions(repo, deathId, player);
+            for (SkillSnapshot skill : s.skills()) {
+                repo.insertSkill(deathId, skill.perkId(), skill.level(), skill.xp());
+            }
+            for (String recipe : s.recipes()) {
+                repo.insertRecipe(deathId, recipe);
+            }
+            for (String title : s.readLiterature()) {
+                repo.insertReadLiterature(deathId, title);
+            }
+            for (String mediaId : s.readPrintMedia()) {
+                repo.insertReadPrintMedia(deathId, mediaId);
+            }
+            for (WatchedMediaSnapshot w : s.watchedMedia()) {
+                repo.insertWatchedMedia(
+                        deathId,
+                        w.mediaId(),
+                        w.mediaIndex(),
+                        w.category(),
+                        w.mediaType(),
+                        w.title(),
+                        w.linesWatched(),
+                        w.lineCount(),
+                        w.fullyListened());
+            }
+            for (LearnedSongSnapshot song : s.learnedSongs()) {
+                repo.insertLearnedSong(deathId, song.instrument(), song.name(), song.sound());
+            }
+            for (AmbitionSnapshot a : s.ambitions()) {
+                repo.insertAmbition(
+                        deathId,
+                        a.name(),
+                        a.category(),
+                        a.completed(),
+                        a.isActive(),
+                        a.isPassive(),
+                        a.goals(),
+                        a.progress());
+            }
         }
     }
 
@@ -117,16 +246,17 @@ public final class DeathEventHandler {
      * "restore THIS death's progression", not a cumulative merge across multiple deaths — chaining
      * D1's high Running into D2's high Strength is intentionally blocked.
      */
-    private static void recordSkills(
-            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+    private static List<SkillSnapshot> snapshotSkills(IsoPlayer player) {
         Map<PerkFactory.Perk, Integer> grantedLevels = grantedLevelsAtCreation(player);
+        List<SkillSnapshot> result = new ArrayList<>(PerkFactory.PerkList.size());
         for (PerkFactory.Perk perk : PerkFactory.PerkList) {
             int level = player.getPerkLevel(perk);
             float rawXp = player.getXp().getXP(perk);
             int granted = grantedLevels.getOrDefault(perk, 0);
             float xpToSave = computeXpToSave(rawXp, granted, perk);
-            repo.insertSkill(deathId, perk.getId(), level, xpToSave);
+            result.add(new SkillSnapshot(perk.getId(), level, xpToSave));
         }
+        return result;
     }
 
     /**
@@ -201,13 +331,14 @@ public final class DeathEventHandler {
     }
 
     /** Recipes the character has learned — most are taught by reading skill magazines. */
-    private static void recordRecipes(
-            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+    private static List<String> snapshotRecipes(IsoPlayer player) {
+        List<String> result = new ArrayList<>();
         for (String recipeName : player.getKnownRecipes()) {
             if (recipeName != null) {
-                repo.insertRecipe(deathId, recipeName);
+                result.add(recipeName);
             }
         }
+        return result;
     }
 
     /**
@@ -216,23 +347,25 @@ public final class DeathEventHandler {
      * RecipeCodeHelper}) — NOT item full-types. The map's value is a "last-read day" stamp used by
      * the literature cooldown sandbox option, not a pages-read count, so we store membership only.
      */
-    private static void recordReadLiterature(
-            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+    private static List<String> snapshotReadLiterature(IsoPlayer player) {
+        List<String> result = new ArrayList<>();
         for (String literatureTitle : player.getReadLiterature().keySet()) {
             if (literatureTitle != null) {
-                repo.insertReadLiterature(deathId, literatureTitle);
+                result.add(literatureTitle);
             }
         }
+        return result;
     }
 
     /** Newspapers / print magazines the character has read. */
-    private static void recordReadPrintMedia(
-            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+    private static List<String> snapshotReadPrintMedia(IsoPlayer player) {
+        List<String> result = new ArrayList<>();
         for (String mediaId : player.getReadPrintMedia()) {
             if (mediaId != null) {
-                repo.insertReadPrintMedia(deathId, mediaId);
+                result.add(mediaId);
             }
         }
+        return result;
     }
 
     /**
@@ -240,15 +373,15 @@ public final class DeathEventHandler {
      * line on the character ({@code knownMediaLines}); there is no public getter, so we iterate the
      * global catalog and test each tape's lines against the player.
      */
-    private static void recordWatchedMedia(
-            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+    private static List<WatchedMediaSnapshot> snapshotWatchedMedia(IsoPlayer player) {
+        List<WatchedMediaSnapshot> result = new ArrayList<>();
         ZomboidRadio radio = ZomboidRadio.getInstance();
         if (radio == null) {
-            return;
+            return result;
         }
         RecordedMedia recordedMedia = radio.getRecordedMedia();
         if (recordedMedia == null) {
-            return;
+            return result;
         }
 
         List<MediaData> catalog = new ArrayList<>();
@@ -268,17 +401,18 @@ public final class DeathEventHandler {
                 continue;
             }
             String title = media.hasTitle() ? media.getTranslatedTitle() : media.getTitleEN();
-            repo.insertWatchedMedia(
-                    deathId,
-                    media.getId(),
-                    media.getIndex(),
-                    media.getCategory(),
-                    media.getMediaType(),
-                    title,
-                    linesWatched,
-                    lineCount,
-                    recordedMedia.hasListenedToAll(player, media));
+            result.add(
+                    new WatchedMediaSnapshot(
+                            media.getId(),
+                            media.getIndex(),
+                            media.getCategory(),
+                            media.getMediaType(),
+                            title,
+                            linesWatched,
+                            lineCount,
+                            recordedMedia.hasListenedToAll(player, media)));
         }
+        return result;
     }
 
     /**
@@ -287,11 +421,11 @@ public final class DeathEventHandler {
      * array of {@code {name, sound, level, length, isaddon}} entries. No-op if Lifestyles isn't
      * installed (keys absent).
      */
-    private static void recordLearnedSongs(
-            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+    private static List<LearnedSongSnapshot> snapshotLearnedSongs(IsoPlayer player) {
+        List<LearnedSongSnapshot> result = new ArrayList<>();
         KahluaTable modData = player.getModData();
         if (modData == null) {
-            return;
+            return result;
         }
         for (Map.Entry<String, String> entry : LIFESTYLES_INSTRUMENT_KEYS.entrySet()) {
             if (!(modData.rawget(entry.getValue()) instanceof KahluaTable songs)) {
@@ -306,10 +440,12 @@ public final class DeathEventHandler {
                 if (name == null) {
                     continue;
                 }
-                repo.insertLearnedSong(
-                        deathId, entry.getKey(), name, asString(song.rawget("sound")));
+                result.add(
+                        new LearnedSongSnapshot(
+                                entry.getKey(), name, asString(song.rawget("sound"))));
             }
         }
+        return result;
     }
 
     /**
@@ -318,14 +454,14 @@ public final class DeathEventHandler {
      * goal1..goal6 targets / goal1progress..goal6progress values (goals can be numeric, string, or
      * boolean — stored as TEXT). No-op if Lifestyles isn't installed.
      */
-    private static void recordAmbitions(
-            SurvivorSkillObeliskRepository repo, long deathId, IsoPlayer player) throws Exception {
+    private static List<AmbitionSnapshot> snapshotAmbitions(IsoPlayer player) {
+        List<AmbitionSnapshot> result = new ArrayList<>();
         KahluaTable modData = player.getModData();
         if (modData == null) {
-            return;
+            return result;
         }
         if (!(modData.rawget("Ambitions") instanceof KahluaTable ambitions)) {
-            return;
+            return result;
         }
         KahluaTableIterator it = ambitions.iterator();
         while (it.advance()) {
@@ -345,16 +481,17 @@ public final class DeathEventHandler {
                 goals[i] = asString(ambition.rawget("goal" + (i + 1)));
                 progress[i] = asString(ambition.rawget("goal" + (i + 1) + "progress"));
             }
-            repo.insertAmbition(
-                    deathId,
-                    name,
-                    asString(ambition.rawget("cat")),
-                    asBoolean(ambition.rawget("completed")),
-                    asBoolean(ambition.rawget("isActive")),
-                    asBoolean(ambition.rawget("isPassive")),
-                    goals,
-                    progress);
+            result.add(
+                    new AmbitionSnapshot(
+                            name,
+                            asString(ambition.rawget("cat")),
+                            asBoolean(ambition.rawget("completed")),
+                            asBoolean(ambition.rawget("isActive")),
+                            asBoolean(ambition.rawget("isPassive")),
+                            goals,
+                            progress));
         }
+        return result;
     }
 
     /**

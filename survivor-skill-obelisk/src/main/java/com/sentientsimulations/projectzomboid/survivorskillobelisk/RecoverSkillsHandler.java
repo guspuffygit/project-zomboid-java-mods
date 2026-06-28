@@ -3,8 +3,14 @@ package com.sentientsimulations.projectzomboid.survivorskillobelisk;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import io.pzstorm.storm.event.core.OnClientCommand;
+import io.pzstorm.storm.event.core.SubscribeEvent;
+import io.pzstorm.storm.event.lua.OnTickEvent;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;
 import zombie.characters.IsoPlayer;
@@ -16,12 +22,53 @@ import zombie.network.GameServer;
  * requesting player actually owns the death row, loads each tracked progression slice from the
  * SQLite DB, filters / scales it per {@link SurvivorSkillObeliskConfig}, and ships a {@code
  * recoveredData} payload back to the client that applies it locally via the standard PZ APIs.
+ *
+ * <p>Same two-thread split as {@link ListDeathsHandler}: the main thread validates basic packet
+ * fields and enqueues, a daemon worker checks ownership and reads all recovery data, and the next
+ * tick applies XP authoritatively to the live {@code IsoPlayer}, builds the Kahlua reply, and ships
+ * it. XP application and Kahlua construction stay on the main thread; the worker only handles plain
+ * Java records.
  */
 public final class RecoverSkillsHandler {
 
     private static final String MODULE = "SurvivorSkillObelisk";
     private static final String REPLY_COMMAND = "recoveredData";
     private static final String NONE_TYPE = "None";
+
+    private record PendingRequest(
+            IsoPlayer player,
+            long steamId,
+            String username,
+            long deathId,
+            Integer obeliskX,
+            Integer obeliskY,
+            Integer obeliskZ) {}
+
+    private record QueryResult(
+            String obeliskType,
+            List<SurvivorSkillObeliskRepository.SkillRow> skills,
+            List<String> recipes,
+            List<String> literature,
+            List<String> printMedia,
+            List<SurvivorSkillObeliskRepository.WatchedMediaRow> watchedMedia,
+            List<SurvivorSkillObeliskRepository.LearnedSongRow> learnedSongs,
+            List<SurvivorSkillObeliskRepository.AmbitionRow> ambitions) {}
+
+    private record CompletedRequest(
+            IsoPlayer player, String username, long deathId, QueryResult result) {}
+
+    private static final BlockingQueue<PendingRequest> PENDING = new LinkedBlockingQueue<>();
+    private static final ConcurrentLinkedQueue<CompletedRequest> COMPLETED =
+            new ConcurrentLinkedQueue<>();
+
+    static {
+        Thread worker =
+                new Thread(
+                        RecoverSkillsHandler::workerLoop,
+                        "SurvivorSkillObelisk-RecoverSkills-Worker");
+        worker.setDaemon(true);
+        worker.start();
+    }
 
     private RecoverSkillsHandler() {}
 
@@ -47,45 +94,160 @@ public final class RecoverSkillsHandler {
                     steamId);
             return;
         }
+        PENDING.offer(
+                new PendingRequest(
+                        player,
+                        steamId,
+                        username,
+                        deathId,
+                        event.getX(),
+                        event.getY(),
+                        event.getZ()));
+    }
 
+    @SubscribeEvent
+    public static void onTick(OnTickEvent event) {
+        CompletedRequest done;
+        while ((done = COMPLETED.poll()) != null) {
+            applyAndReply(done);
+        }
+    }
+
+    private static void workerLoop() {
+        while (true) {
+            PendingRequest req;
+            try {
+                req = PENDING.take();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            try {
+                QueryResult result = runQuery(req);
+                if (result != null) {
+                    COMPLETED.offer(
+                            new CompletedRequest(
+                                    req.player(), req.username(), req.deathId(), result));
+                }
+            } catch (Throwable t) {
+                LOGGER.error(
+                        "[SurvivorSkillObelisk] worker loop iteration failed for {} ({}) death"
+                                + " id={}: {}",
+                        req.username(),
+                        req.steamId(),
+                        req.deathId(),
+                        t.getMessage(),
+                        t);
+            }
+        }
+    }
+
+    private static QueryResult runQuery(PendingRequest req) {
         try (SurvivorSkillObeliskDatabase db =
                 new SurvivorSkillObeliskDatabase(DeathEventHandler.getDbPath())) {
-            SurvivorSkillObeliskRepository repo =
-                    new SurvivorSkillObeliskRepository(db.getConnection());
+            Connection conn = db.getConnection();
+            // Bracket all reads in one transaction so SQLite skips the implicit BEGIN/COMMIT
+            // (and SHARED-lock acquire/release) it would otherwise run per statement.
+            conn.setAutoCommit(false);
+            SurvivorSkillObeliskRepository repo = new SurvivorSkillObeliskRepository(conn);
 
-            SurvivorSkillObeliskRepository.DeathOwner owner = repo.findDeathOwner(deathId);
+            SurvivorSkillObeliskRepository.DeathOwner owner = repo.findDeathOwner(req.deathId());
             if (owner == null) {
                 LOGGER.warn(
                         "[SurvivorSkillObelisk] recoverSkills: death id={} not found (requested"
                                 + " by {} / {})",
-                        deathId,
-                        username,
-                        steamId);
-                return;
+                        req.deathId(),
+                        req.username(),
+                        req.steamId());
+                conn.commit();
+                return null;
             }
-            if (owner.steamId() != steamId || !username.equals(owner.username())) {
+            if (owner.steamId() != req.steamId() || !req.username().equals(owner.username())) {
                 LOGGER.warn(
                         "[SurvivorSkillObelisk] recoverSkills: death id={} owner mismatch (db: {}"
                                 + " / {} | request: {} / {})",
-                        deathId,
+                        req.deathId(),
                         owner.username(),
                         owner.steamId(),
-                        username,
-                        steamId);
-                return;
+                        req.username(),
+                        req.steamId());
+                conn.commit();
+                return null;
             }
 
-            String obeliskType = resolveObeliskType(repo, event);
-            KahluaTable reply = buildReply(repo, deathId);
-            applySkillsAuthoritatively(player, repo, deathId, obeliskType);
-            GameServer.sendServerCommand(player, MODULE, REPLY_COMMAND, reply);
+            String obeliskType = resolveObeliskType(repo, req);
+            List<SurvivorSkillObeliskRepository.SkillRow> skills =
+                    SurvivorSkillObeliskConfig.isRecoverSkills()
+                            ? repo.listSkillsByDeath(req.deathId())
+                            : List.of();
+            List<String> recipes =
+                    SurvivorSkillObeliskConfig.isRecoverRecipes()
+                            ? repo.listRecipesByDeath(req.deathId())
+                            : null;
+            List<String> literature =
+                    SurvivorSkillObeliskConfig.isRecoverSkillMagazines()
+                            ? repo.listReadLiteratureByDeath(req.deathId())
+                            : null;
+            List<String> printMedia =
+                    SurvivorSkillObeliskConfig.isRecoverReadPrintMedia()
+                            ? repo.listReadPrintMediaByDeath(req.deathId())
+                            : null;
+            List<SurvivorSkillObeliskRepository.WatchedMediaRow> watchedMedia =
+                    SurvivorSkillObeliskConfig.isRecoverWatchedMedia()
+                            ? repo.listWatchedMediaByDeath(req.deathId())
+                            : null;
+            List<SurvivorSkillObeliskRepository.LearnedSongRow> learnedSongs =
+                    SurvivorSkillObeliskConfig.isRecoverLearnedSongs()
+                            ? repo.listLearnedSongsByDeath(req.deathId())
+                            : null;
+            List<SurvivorSkillObeliskRepository.AmbitionRow> ambitions =
+                    SurvivorSkillObeliskConfig.isRecoverAmbitions()
+                            ? repo.listAmbitionsByDeath(req.deathId())
+                            : null;
+            conn.commit();
+            return new QueryResult(
+                    obeliskType,
+                    skills,
+                    recipes,
+                    literature,
+                    printMedia,
+                    watchedMedia,
+                    learnedSongs,
+                    ambitions);
         } catch (Exception e) {
             LOGGER.error(
                     "[SurvivorSkillObelisk] recoverSkills failed for {} ({}) death id={}",
-                    username,
-                    steamId,
-                    deathId,
+                    req.username(),
+                    req.steamId(),
+                    req.deathId(),
                     e);
+            return null;
+        }
+    }
+
+    private static String resolveObeliskType(
+            SurvivorSkillObeliskRepository repo, PendingRequest req) throws Exception {
+        if (req.obeliskX() == null || req.obeliskY() == null || req.obeliskZ() == null) {
+            return NONE_TYPE;
+        }
+        String stored = repo.findObeliskType(req.obeliskX(), req.obeliskY(), req.obeliskZ());
+        return (stored == null || stored.isBlank()) ? NONE_TYPE : stored;
+    }
+
+    private static void applyAndReply(CompletedRequest done) {
+        try {
+            applySkillsAuthoritatively(done.player(), done.result(), done.deathId());
+            KahluaTable reply = buildReply(done.result());
+            // If the player disconnected while the query was in-flight, sendServerCommand is a
+            // no-op (it gates on PlayerToAddressMap).
+            GameServer.sendServerCommand(done.player(), MODULE, REPLY_COMMAND, reply);
+        } catch (Throwable t) {
+            LOGGER.error(
+                    "[SurvivorSkillObelisk] recoverSkills apply/reply failed for {} death id={}: {}",
+                    done.username(),
+                    done.deathId(),
+                    t.getMessage(),
+                    t);
         }
     }
 
@@ -111,8 +273,7 @@ public final class RecoverSkillsHandler {
      * respawn — a player who farmed some skill before reaching the obelisk would over-level.
      */
     private static void applySkillsAuthoritatively(
-            IsoPlayer player, SurvivorSkillObeliskRepository repo, long deathId, String obeliskType)
-            throws Exception {
+            IsoPlayer player, QueryResult result, long deathId) {
         if (!SurvivorSkillObeliskConfig.isRecoverSkills()) {
             LOGGER.info(
                     "[SurvivorSkillObelisk] recoverSkills: skill recovery disabled, skipping XP"
@@ -124,9 +285,10 @@ public final class RecoverSkillsHandler {
         float configPercent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
         Map<PerkFactory.Perk, Integer> grantedLevels =
                 DeathEventHandler.grantedLevelsAtCreation(player);
+        String obeliskType = result.obeliskType();
         float totalDelta = 0f;
         int applied = 0;
-        for (SurvivorSkillObeliskRepository.SkillRow row : repo.listSkillsByDeath(deathId)) {
+        for (SurvivorSkillObeliskRepository.SkillRow row : result.skills()) {
             PerkFactory.Perk perk = PerkFactory.Perks.FromString(row.perk());
             if (perk == null || perk == PerkFactory.Perks.MAX) {
                 LOGGER.debug(
@@ -211,48 +373,30 @@ public final class RecoverSkillsHandler {
     }
 
     /**
-     * Resolves the obelisk's configured skill type from the request coords. Returns {@code "None"}
-     * when coords are missing, no row exists, or the stored value is blank — the recovery loop uses
-     * this to decide whether to override per-perk recovery percent.
-     */
-    private static String resolveObeliskType(
-            SurvivorSkillObeliskRepository repo, RecoverSkillsCommand event) throws Exception {
-        Integer x = event.getX();
-        Integer y = event.getY();
-        Integer z = event.getZ();
-        if (x == null || y == null || z == null) {
-            return NONE_TYPE;
-        }
-        String stored = repo.findObeliskType(x, y, z);
-        return (stored == null || stored.isBlank()) ? NONE_TYPE : stored;
-    }
-
-    /**
      * Build the payload the client will apply. Filtered server-side by the {@code SkillObelisk.*}
-     * sandbox toggles. Skills are not in the payload — they're applied server-side and synced down
-     * via the periodic {@code PlayerXp} packet.
+     * sandbox toggles (the worker leaves disabled slices as {@code null}). Skills are not in the
+     * payload — they're applied server-side and synced down via the periodic {@code PlayerXp}
+     * packet.
      */
-    private static KahluaTable buildReply(SurvivorSkillObeliskRepository repo, long deathId)
-            throws Exception {
+    private static KahluaTable buildReply(QueryResult result) {
         KahluaTable reply = LuaManager.platform.newTable();
 
-        if (SurvivorSkillObeliskConfig.isRecoverRecipes()) {
-            reply.rawset("recipes", stringList(repo.listRecipesByDeath(deathId)));
+        if (result.recipes() != null) {
+            reply.rawset("recipes", stringList(result.recipes()));
         }
 
-        if (SurvivorSkillObeliskConfig.isRecoverSkillMagazines()) {
-            reply.rawset("literature", stringList(repo.listReadLiteratureByDeath(deathId)));
+        if (result.literature() != null) {
+            reply.rawset("literature", stringList(result.literature()));
         }
 
-        if (SurvivorSkillObeliskConfig.isRecoverReadPrintMedia()) {
-            reply.rawset("printMedia", stringList(repo.listReadPrintMediaByDeath(deathId)));
+        if (result.printMedia() != null) {
+            reply.rawset("printMedia", stringList(result.printMedia()));
         }
 
-        if (SurvivorSkillObeliskConfig.isRecoverWatchedMedia()) {
+        if (result.watchedMedia() != null) {
             KahluaTable media = LuaManager.platform.newTable();
             int i = 1;
-            for (SurvivorSkillObeliskRepository.WatchedMediaRow row :
-                    repo.listWatchedMediaByDeath(deathId)) {
+            for (SurvivorSkillObeliskRepository.WatchedMediaRow row : result.watchedMedia()) {
                 KahluaTable t = LuaManager.platform.newTable();
                 t.rawset("mediaId", row.mediaId());
                 t.rawset("mediaType", (double) row.mediaType());
@@ -264,11 +408,10 @@ public final class RecoverSkillsHandler {
             reply.rawset("watchedMedia", media);
         }
 
-        if (SurvivorSkillObeliskConfig.isRecoverLearnedSongs()) {
+        if (result.learnedSongs() != null) {
             KahluaTable songs = LuaManager.platform.newTable();
             int i = 1;
-            for (SurvivorSkillObeliskRepository.LearnedSongRow row :
-                    repo.listLearnedSongsByDeath(deathId)) {
+            for (SurvivorSkillObeliskRepository.LearnedSongRow row : result.learnedSongs()) {
                 KahluaTable t = LuaManager.platform.newTable();
                 t.rawset("instrument", row.instrument());
                 t.rawset("name", row.songName());
@@ -280,11 +423,10 @@ public final class RecoverSkillsHandler {
             reply.rawset("learnedSongs", songs);
         }
 
-        if (SurvivorSkillObeliskConfig.isRecoverAmbitions()) {
+        if (result.ambitions() != null) {
             KahluaTable ambitions = LuaManager.platform.newTable();
             int i = 1;
-            for (SurvivorSkillObeliskRepository.AmbitionRow row :
-                    repo.listAmbitionsByDeath(deathId)) {
+            for (SurvivorSkillObeliskRepository.AmbitionRow row : result.ambitions()) {
                 KahluaTable t = LuaManager.platform.newTable();
                 t.rawset("name", row.name());
                 if (row.category() != null) {
