@@ -1,7 +1,7 @@
 --
 -- SurvivorSkillObeliskMap.lua
--- Draws every placed obelisk as a gold dot on the in-game world map. Configured
--- obelisks additionally show a label with the bound perk's display name.
+-- Draws every placed obelisk as a gold dot on the in-game world map with a
+-- label underneath ("<Perk> Obelisk" when configured, "Obelisk" otherwise).
 -- Positions and types live server-side in obelisk_types (kept in sync by
 -- ObeliskLifecycleHandler + SetObeliskTypeHandler); the client receives a full
 -- list once per session and per-obelisk deltas thereafter.
@@ -16,8 +16,7 @@ local UPDATED_REPLY = "obeliskUpdated"
 local REMOVED_REPLY = "obeliskRemoved"
 local NONE_TYPE = "None"
 
--- Warm gold matching SurvivorSkillObeliskLighting.lua's glow.
-local DOT_R, DOT_G, DOT_B = 1.0, 0.75, 0.35
+local DOT_R, DOT_G, DOT_B = 52 / 255, 88 / 255, 235 / 255
 local DOT_ALPHA_CONFIGURED = 0.95
 local DOT_ALPHA_UNCONFIGURED = 0.55
 -- Fixed pixel size so the dot is visible at every zoom level. World-tile-sized
@@ -196,15 +195,13 @@ end
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 
-local function perkDisplayName(typeId)
+local function obeliskLabel(typeId)
     if typeId == nil or typeId == "" or typeId == NONE_TYPE then
-        return nil
+        return "Obelisk", false
     end
     local perk = PerkFactory.Perks.FromString(typeId)
-    if perk == nil then
-        return typeId
-    end
-    return perk:getName()
+    local perkName = perk and perk:getName() or typeId
+    return perkName .. " Obelisk", true
 end
 
 local function renderObeliskLabel(javaObject, sx, sy, name)
@@ -222,8 +219,8 @@ local function renderObelisk(mapUI, obelisk)
     local cx = PZMath.floor(api:worldToUIX(obelisk.x, obelisk.y))
     local cy = PZMath.floor(api:worldToUIY(obelisk.x, obelisk.y))
 
-    local label = perkDisplayName(obelisk.type)
-    local alpha = label and DOT_ALPHA_CONFIGURED or DOT_ALPHA_UNCONFIGURED
+    local label, configured = obeliskLabel(obelisk.type)
+    local alpha = configured and DOT_ALPHA_CONFIGURED or DOT_ALPHA_UNCONFIGURED
     local half = DOT_SIZE_PX / 2
 
     javaObject:DrawTextureScaledColor(
@@ -238,9 +235,7 @@ local function renderObelisk(mapUI, obelisk)
         alpha
     )
 
-    if label then
-        renderObeliskLabel(javaObject, cx, cy + half, label)
-    end
+    renderObeliskLabel(javaObject, cx, cy + half, label)
 end
 
 local originalRender = ISWorldMap.render
