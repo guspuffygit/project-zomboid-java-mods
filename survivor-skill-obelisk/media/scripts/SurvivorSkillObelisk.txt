@@ -6,7 +6,7 @@ module Base
         DisplayCategory = Furniture,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
-        Weight = 40.0,
+        Weight = 80.0,
         WorldObjectSprite = survivor_skill_obelisk_18,
     }
 
@@ -16,7 +16,7 @@ module Base
         DisplayCategory = Furniture,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
-        Weight = 40.0,
+        Weight = 80.0,
         WorldObjectSprite = survivor_skill_obelisk_19,
     }
 
@@ -26,7 +26,7 @@ module Base
         DisplayCategory = Hidden,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
-        Weight = 40.0,
+        Weight = 80.0,
         WorldObjectSprite = survivor_skill_obelisk_30,
     }
 
@@ -36,7 +36,7 @@ module Base
         DisplayCategory = Hidden,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
-        Weight = 40.0,
+        Weight = 80.0,
         WorldObjectSprite = survivor_skill_obelisk_31,
     }
 }
