@@ -131,8 +131,10 @@ Layout:
 ```
 art/survivor_skill_obelisk.png        # 8x8 tilesheet, 128x256 per tile
 tiles/survivor_skill_obelisk.tiles.txt # human-editable tile properties
-media/tiledefinitions/*.tiles          # GENERATED (do not hand-edit)
-media/texturepacks/*.pack              # GENERATED (do not hand-edit)
+media/<name>.tiles                     # GENERATED — PZ loads .tiles from media/<name>.tiles
+                                       #   per mod.info's `tiledef=<name> N` line; NOT from
+                                       #   media/tiledefinitions/. Do not hand-edit.
+media/texturepacks/<name>.pack         # GENERATED (do not hand-edit)
 ```
 
 ### Add a new obelisk

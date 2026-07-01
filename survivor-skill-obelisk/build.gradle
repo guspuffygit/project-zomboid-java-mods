@@ -19,15 +19,13 @@ tasks.register('packageTexturepack', Exec) {
 
 tasks.register('packageTiledefs', Exec) {
 	group = 'build'
-	description = 'Compiles tiles/*.tiles.txt into media/tiledefinitions/*.tiles via pztool.'
+	description = 'Compiles tiles/*.tiles.txt into media/*.tiles via pztool. PZ loads .tiles from media/<name>.tiles per the mod.info tiledef=<name> N line — not from media/tiledefinitions/.'
 
 	def source = project.file("tiles/${packName}.tiles.txt")
-	def outFile = project.file("media/tiledefinitions/${packName}.tiles")
+	def outFile = project.file("media/${packName}.tiles")
 
 	inputs.file(source)
 	outputs.file(outFile)
-
-	doFirst { outFile.parentFile.mkdirs() }
 
 	commandLine 'pztool', 'tiles', 'pack', source.absolutePath, '-o', outFile.absolutePath
 }
