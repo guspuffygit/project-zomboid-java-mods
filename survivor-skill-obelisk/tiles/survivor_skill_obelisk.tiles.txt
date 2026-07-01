@@ -1,0 +1,95 @@
+version = 1
+tileset
+{
+    file = survivor_skill_obelisk
+    size = 8,8
+    id = 1
+    // survivor_skill_obelisk_18
+    tile
+    {
+        xy = 2,2
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_18
+        CustomName = Survivor Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // survivor_skill_obelisk_19
+    tile
+    {
+        xy = 3,2
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_19
+        CustomName = Survivor Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // survivor_skill_obelisk_30
+    tile
+    {
+        xy = 6,3
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_30
+        CustomName = Survivor Skill Obelisk
+        Facing = W
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // survivor_skill_obelisk_31
+    tile
+    {
+        xy = 7,3
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_31
+        CustomName = Survivor Skill Obelisk
+        Facing = N
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+}

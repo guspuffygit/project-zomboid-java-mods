@@ -1,3 +1,45 @@
+def packName = 'survivor_skill_obelisk'
+
+tasks.register('packageTexturepack', Exec) {
+	group = 'build'
+	description = 'Packs art/ tilesheets into media/texturepacks/*.pack via pztool.'
+
+	def artDir = project.file('art')
+	def outFile = project.file("media/texturepacks/${packName}.pack")
+
+	inputs.dir(artDir)
+	outputs.file(outFile)
+
+	doFirst { outFile.parentFile.mkdirs() }
+
+	commandLine 'pztool', 'pack', 'pack', artDir.absolutePath,
+			'-o', outFile.absolutePath,
+			'--pack-name', packName
+}
+
+tasks.register('packageTiledefs', Exec) {
+	group = 'build'
+	description = 'Compiles tiles/*.tiles.txt into media/tiledefinitions/*.tiles via pztool.'
+
+	def source = project.file("tiles/${packName}.tiles.txt")
+	def outFile = project.file("media/tiledefinitions/${packName}.tiles")
+
+	inputs.file(source)
+	outputs.file(outFile)
+
+	doFirst { outFile.parentFile.mkdirs() }
+
+	commandLine 'pztool', 'tiles', 'pack', source.absolutePath, '-o', outFile.absolutePath
+}
+
+tasks.register('packageAssets') {
+	group = 'build'
+	description = 'Rebuilds all binary art assets (pack + tiledefs) from sources under art/ and tiles/.'
+	dependsOn 'packageTexturepack', 'packageTiledefs'
+}
+
+tasks.named('deployMod') { dependsOn 'packageAssets' }
+
 modInfo {
 	name = 'Survivor Skill Obelisk by Gus Puffy'
 	workshopId = '3750314291'

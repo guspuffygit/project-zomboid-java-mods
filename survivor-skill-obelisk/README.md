@@ -119,6 +119,42 @@ Each child table has an index on `death_id`. Only media with at least one watche
 ./gradlew :survivor-skill-obelisk:spotlessApply :survivor-skill-obelisk:test
 ```
 
+## Art pipeline
+
+The binary `.tiles` and `.pack` files under `media/tiledefinitions/` and
+`media/texturepacks/` are **generated** from sources under `art/` and `tiles/`
+by [`pztool`](https://github.com/guspuffygit/project-zomboid-tile-cli).
+Install `pztool` on `PATH` — a prebuilt binary lives at
+`../../project-zomboid-tile-cli/dist/pztool-<os>-<arch>`.
+
+Layout:
+```
+art/survivor_skill_obelisk.png        # 8x8 tilesheet, 128x256 per tile
+tiles/survivor_skill_obelisk.tiles.txt # human-editable tile properties
+media/tiledefinitions/*.tiles          # GENERATED (do not hand-edit)
+media/texturepacks/*.pack              # GENERATED (do not hand-edit)
+```
+
+### Add a new obelisk
+
+1. Paint the new tile(s) onto `art/survivor_skill_obelisk.png` — four cells
+   (N/E/S/W). The 4 stub obelisks currently occupy grid positions `(2,2)`,
+   `(3,2)`, `(6,3)`, `(7,3)`; drop new ones into any empty cell.
+2. Append tile-property blocks to `tiles/survivor_skill_obelisk.tiles.txt`.
+   `xy = <col>,<row>` picks the tilesheet cell; the sprite name PZ ends up
+   with is `survivor_skill_obelisk_<row * 8 + col>` (this is what `CustomItem`
+   and `WorldObjectSprite` reference).
+3. Add matching `item` definitions to `media/scripts/SurvivorSkillObelisk.txt`
+   pointing at those sprites.
+4. Rebuild:
+   ```bash
+   ./gradlew :survivor-skill-obelisk:packageAssets
+   ```
+   `deployMod` depends on `packageAssets`, so a full deploy also rebuilds.
+
+Fully-transparent grid cells get dropped by the packer — the sprite must have
+non-transparent pixels to end up in the atlas.
+
 ## Tests
 
 `SurvivorSkillObeliskDatabaseTest` — schema bootstrap (all tables exist) and the insert paths for
