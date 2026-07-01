@@ -42,7 +42,7 @@ modInfo {
 	name = 'Survivor Skill Obelisk by Gus Puffy'
 	workshopId = '3750314291'
 	workshopIdStage = ''
-	workshopIdProd = ''
+	workshopIdProd = '3755686015'
 	description = '''[h1]Survivor Skill Obelisk[/h1]
 An in-world obelisk that carries part of a dead character's progression forward to their next life. On death the server snapshots the character's skills, books, recipes, watched media, and Lifestyles ambitions to a SQLite database in the save folder. When the next character finds a placed obelisk, they recover from one of their past lives.
 
