@@ -6,11 +6,11 @@
 
 require("UnpoweredGlow")
 
--- Warm gold glow, ~6 tile radius. Floats are 0..1.
+-- Cool blue glow, ~3 tile radius. Floats are 0..1.
 UnpoweredGlow.register({
     spritePrefix = "survivor_skill_obelisk_",
-    r = 1.00,
-    g = 0.75,
-    b = 0.35,
-    radius = 6,
+    r = 0.15,
+    g = 0.35,
+    b = 1.00,
+    radius = 3,
 })
