@@ -3,6 +3,7 @@ package com.sentientsimulations.projectzomboid.survivorlootrespawn;
 import zombie.SandboxOptions;
 import zombie.iso.IsoGridSquare;
 import zombie.iso.IsoObject;
+import zombie.iso.IsoWorld;
 import zombie.iso.areas.SafeHouse;
 import zombie.iso.objects.IsoCompost;
 import zombie.iso.objects.IsoDeadBody;
@@ -26,7 +27,11 @@ public final class VanillaLootRespawnGate {
     private VanillaLootRespawnGate() {}
 
     public static boolean passesSquareGate(IsoGridSquare sq) {
-        Zone zone = sq.getZone();
+        // Map zones exist only at z=0 (Zone.contains rejects any other z), and vanilla
+        // respawnInChunk evaluates this gate on the ground-floor square then applies the verdict
+        // to the whole column. Resolve the column's z=0 zone — sq.getZone() is null on every
+        // square above (or below) ground, which silently exempted all non-ground floors.
+        Zone zone = IsoWorld.instance.getMetaGrid().getZoneAt(sq.getX(), sq.getY(), 0);
         if (zone == null) {
             return false;
         }
