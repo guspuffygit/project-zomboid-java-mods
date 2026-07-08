@@ -15,7 +15,7 @@ local RECOVERED_REPLY = "recoveredData"
 local TYPE_REPLY = "obeliskType"
 -- SyncPlayerFieldsPacket bit flags: 1 = recipes, 4 = already-read books.
 local SYNC_RECIPES_AND_BOOKS = 1 + 4
-local SPRITE_PREFIX = "survivor_skill_obelisk_"
+local SPRITE_PREFIX = "atf_obelisks_"
 local DEFAULT_LIMIT = 20
 local NONE_TYPE = "None"
 
@@ -27,6 +27,22 @@ local openConfigureWindow = nil
 -- Helpers
 ---------------------------------------------------------------------------
 
+local function isObeliskSpriteName(name)
+    if name == nil then
+        return false
+    end
+    if string.sub(name, 1, #SPRITE_PREFIX) ~= SPRITE_PREFIX then
+        return false
+    end
+    -- The `_on` companion tilesheets are packed with the base sprites but
+    -- never appear as world objects; belt-and-braces filter in case a future
+    -- refactor changes that.
+    if string.find(name, "_on_", 1, true) then
+        return false
+    end
+    return true
+end
+
 local function isObeliskObject(obj)
     if obj == nil then
         return false
@@ -35,11 +51,7 @@ local function isObeliskObject(obj)
     if sprite == nil then
         return false
     end
-    local name = sprite:getName()
-    if name == nil then
-        return false
-    end
-    return string.sub(name, 1, #SPRITE_PREFIX) == SPRITE_PREFIX
+    return isObeliskSpriteName(sprite:getName())
 end
 
 local function findObeliskInWorldObjects(worldobjects)

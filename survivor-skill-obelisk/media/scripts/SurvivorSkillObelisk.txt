@@ -1,42 +1,283 @@
 module Base
 {
-    item survivor_skill_obelisk_18
+    item survivor_skill_obelisk_lg_0
     {
-        DisplayName = Survivor Skill Obelisk,
+        DisplayName = Onyx Large Skill Obelisk,
         DisplayCategory = Furniture,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
         Weight = 80.0,
-        WorldObjectSprite = survivor_skill_obelisk_18,
+        WorldObjectSprite = atf_obelisks_lg_01_0,
     }
 
-    item survivor_skill_obelisk_19
+    item survivor_skill_obelisk_lg_1
     {
-        DisplayName = Survivor Skill Obelisk,
+        DisplayName = Silver Large Skill Obelisk,
         DisplayCategory = Furniture,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
         Weight = 80.0,
-        WorldObjectSprite = survivor_skill_obelisk_19,
+        WorldObjectSprite = atf_obelisks_lg_01_1,
     }
 
-    item survivor_skill_obelisk_30
+    item survivor_skill_obelisk_lg_2
     {
-        DisplayName = Survivor Skill Obelisk,
+        DisplayName = Ruby Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_2,
+    }
+
+    item survivor_skill_obelisk_lg_3
+    {
+        DisplayName = Magenta Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_3,
+    }
+
+    item survivor_skill_obelisk_lg_4
+    {
+        DisplayName = Amethyst Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_4,
+    }
+
+    item survivor_skill_obelisk_lg_5
+    {
+        DisplayName = Sapphire Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_5,
+    }
+
+    item survivor_skill_obelisk_lg_6
+    {
+        DisplayName = Cobalt Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_6,
+    }
+
+    item survivor_skill_obelisk_lg_7
+    {
+        DisplayName = Turquoise Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_7,
+    }
+
+    item survivor_skill_obelisk_lg_8
+    {
+        DisplayName = Aqua Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_8,
+    }
+
+    item survivor_skill_obelisk_lg_9
+    {
+        DisplayName = Emerald Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_9,
+    }
+
+    item survivor_skill_obelisk_lg_10
+    {
+        DisplayName = Peridot Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_10,
+    }
+
+    item survivor_skill_obelisk_lg_11
+    {
+        DisplayName = Topaz Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_11,
+    }
+
+    item survivor_skill_obelisk_lg_12
+    {
+        DisplayName = Citrine Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_12,
+    }
+
+    item survivor_skill_obelisk_lg_13
+    {
+        DisplayName = Amber Large Skill Obelisk,
+        DisplayCategory = Furniture,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_lg_01_13,
+    }
+
+    item survivor_skill_obelisk_sm_0
+    {
+        DisplayName = Onyx Small Skill Obelisk,
         DisplayCategory = Hidden,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
         Weight = 80.0,
-        WorldObjectSprite = survivor_skill_obelisk_30,
+        WorldObjectSprite = atf_obelisks_sm_01_0,
     }
 
-    item survivor_skill_obelisk_31
+    item survivor_skill_obelisk_sm_1
     {
-        DisplayName = Survivor Skill Obelisk,
+        DisplayName = Silver Small Skill Obelisk,
         DisplayCategory = Hidden,
         ItemType = base:moveable,
         Icon = SurvivorSkillObelisk,
         Weight = 80.0,
-        WorldObjectSprite = survivor_skill_obelisk_31,
+        WorldObjectSprite = atf_obelisks_sm_01_1,
     }
+
+    item survivor_skill_obelisk_sm_2
+    {
+        DisplayName = Ruby Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_2,
+    }
+
+    item survivor_skill_obelisk_sm_3
+    {
+        DisplayName = Magenta Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_3,
+    }
+
+    item survivor_skill_obelisk_sm_4
+    {
+        DisplayName = Amethyst Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_4,
+    }
+
+    item survivor_skill_obelisk_sm_5
+    {
+        DisplayName = Sapphire Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_5,
+    }
+
+    item survivor_skill_obelisk_sm_6
+    {
+        DisplayName = Cobalt Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_6,
+    }
+
+    item survivor_skill_obelisk_sm_7
+    {
+        DisplayName = Turquoise Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_7,
+    }
+
+    item survivor_skill_obelisk_sm_8
+    {
+        DisplayName = Aqua Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_8,
+    }
+
+    item survivor_skill_obelisk_sm_9
+    {
+        DisplayName = Emerald Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_9,
+    }
+
+    item survivor_skill_obelisk_sm_10
+    {
+        DisplayName = Peridot Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_10,
+    }
+
+    item survivor_skill_obelisk_sm_11
+    {
+        DisplayName = Topaz Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_11,
+    }
+
+    item survivor_skill_obelisk_sm_12
+    {
+        DisplayName = Citrine Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_12,
+    }
+
+    item survivor_skill_obelisk_sm_13
+    {
+        DisplayName = Amber Small Skill Obelisk,
+        DisplayCategory = Hidden,
+        ItemType = base:moveable,
+        Icon = SurvivorSkillObelisk,
+        Weight = 80.0,
+        WorldObjectSprite = atf_obelisks_sm_01_13,
+    }
+
 }

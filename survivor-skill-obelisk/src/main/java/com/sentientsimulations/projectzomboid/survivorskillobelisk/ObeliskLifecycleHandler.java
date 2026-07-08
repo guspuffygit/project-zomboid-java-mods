@@ -29,7 +29,7 @@ import zombie.iso.sprite.IsoSprite;
  */
 public final class ObeliskLifecycleHandler {
 
-    private static final String SPRITE_PREFIX = "survivor_skill_obelisk_";
+    private static final String SPRITE_PREFIX = "atf_obelisks_";
     private static final String NONE_TYPE = "None";
 
     private record PendingOp(int x, int y, int z, boolean placement) {}
@@ -165,6 +165,9 @@ public final class ObeliskLifecycleHandler {
             return false;
         }
         String name = sprite.getName();
-        return name != null && name.startsWith(SPRITE_PREFIX);
+        if (name == null || !name.startsWith(SPRITE_PREFIX)) {
+            return false;
+        }
+        return !name.contains("_on_");
     }
 }

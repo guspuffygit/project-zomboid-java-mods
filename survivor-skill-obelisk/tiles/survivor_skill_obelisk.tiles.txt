@@ -1,41 +1,19 @@
 version = 1
 tileset
 {
-    file = survivor_skill_obelisk
+    file = atf_obelisks_lg_01
     size = 8,8
     id = 1
-    // survivor_skill_obelisk_18
+    // atf_obelisks_lg_01_0
     tile
     {
-        xy = 2,2
+        xy = 0,0
         BlocksPlacement = 
         CanScrap = 
         ContainerCapacity = 15
         ContainerPosition = Low
-        CustomItem = Base.survivor_skill_obelisk_18
-        CustomName = Survivor Skill Obelisk
-        Facing = E
-        GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        Material = MetalPlates
-        Material2 = MetalScrap
-        Material3 = MetalScrap
-        PickUpTool = Hammer
-        PickUpWeight = 20
-        PlaceTool = Hammer
-        Surface = 34
-        container = SurvivorSkillObelisk
-    }
-    // survivor_skill_obelisk_19
-    tile
-    {
-        xy = 3,2
-        BlocksPlacement = 
-        CanScrap = 
-        ContainerCapacity = 15
-        ContainerPosition = Low
-        CustomItem = Base.survivor_skill_obelisk_19
-        CustomName = Survivor Skill Obelisk
+        CustomItem = Base.survivor_skill_obelisk_lg_0
+        CustomName = Onyx Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
         IsMoveAble = 
@@ -48,17 +26,17 @@ tileset
         Surface = 34
         container = SurvivorSkillObelisk
     }
-    // survivor_skill_obelisk_30
+    // atf_obelisks_lg_01_1
     tile
     {
-        xy = 6,3
+        xy = 1,0
         BlocksPlacement = 
         CanScrap = 
         ContainerCapacity = 15
         ContainerPosition = Low
-        CustomItem = Base.survivor_skill_obelisk_30
-        CustomName = Survivor Skill Obelisk
-        Facing = W
+        CustomItem = Base.survivor_skill_obelisk_lg_1
+        CustomName = Silver Large Skill Obelisk
+        Facing = S
         GroupName = Survivor Skill Obelisks
         IsMoveAble = 
         Material = MetalPlates
@@ -70,17 +48,17 @@ tileset
         Surface = 34
         container = SurvivorSkillObelisk
     }
-    // survivor_skill_obelisk_31
+    // atf_obelisks_lg_01_2
     tile
     {
-        xy = 7,3
+        xy = 2,0
         BlocksPlacement = 
         CanScrap = 
         ContainerCapacity = 15
         ContainerPosition = Low
-        CustomItem = Base.survivor_skill_obelisk_31
-        CustomName = Survivor Skill Obelisk
-        Facing = N
+        CustomItem = Base.survivor_skill_obelisk_lg_2
+        CustomName = Ruby Large Skill Obelisk
+        Facing = S
         GroupName = Survivor Skill Obelisks
         IsMoveAble = 
         Material = MetalPlates
@@ -91,5 +69,585 @@ tileset
         PlaceTool = Hammer
         Surface = 34
         container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_3
+    tile
+    {
+        xy = 3,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_3
+        CustomName = Magenta Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_4
+    tile
+    {
+        xy = 4,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_4
+        CustomName = Amethyst Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_5
+    tile
+    {
+        xy = 5,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_5
+        CustomName = Sapphire Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_6
+    tile
+    {
+        xy = 6,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_6
+        CustomName = Cobalt Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_7
+    tile
+    {
+        xy = 7,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_7
+        CustomName = Turquoise Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_8
+    tile
+    {
+        xy = 0,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_8
+        CustomName = Aqua Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_9
+    tile
+    {
+        xy = 1,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_9
+        CustomName = Emerald Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_10
+    tile
+    {
+        xy = 2,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_10
+        CustomName = Peridot Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_11
+    tile
+    {
+        xy = 3,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_11
+        CustomName = Topaz Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_12
+    tile
+    {
+        xy = 4,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_12
+        CustomName = Citrine Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_13
+    tile
+    {
+        xy = 5,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_13
+        CustomName = Amber Large Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+}
+tileset
+{
+    file = atf_obelisks_lg_01_on
+    size = 8,8
+    id = 2
+    // atf_obelisks_lg_01_on_0
+    tile
+    {
+        xy = 0,0
+        TileOverlay = 
+    }
+}
+tileset
+{
+    file = atf_obelisks_sm_01
+    size = 8,8
+    id = 3
+    // atf_obelisks_sm_01_0
+    tile
+    {
+        xy = 0,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_0
+        CustomName = Onyx Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_1
+    tile
+    {
+        xy = 1,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_1
+        CustomName = Silver Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_2
+    tile
+    {
+        xy = 2,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_2
+        CustomName = Ruby Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_3
+    tile
+    {
+        xy = 3,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_3
+        CustomName = Magenta Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_4
+    tile
+    {
+        xy = 4,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_4
+        CustomName = Amethyst Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_5
+    tile
+    {
+        xy = 5,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_5
+        CustomName = Sapphire Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_6
+    tile
+    {
+        xy = 6,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_6
+        CustomName = Cobalt Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_7
+    tile
+    {
+        xy = 7,0
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_7
+        CustomName = Turquoise Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_8
+    tile
+    {
+        xy = 0,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_8
+        CustomName = Aqua Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_9
+    tile
+    {
+        xy = 1,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_9
+        CustomName = Emerald Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_10
+    tile
+    {
+        xy = 2,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_10
+        CustomName = Peridot Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_11
+    tile
+    {
+        xy = 3,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_11
+        CustomName = Topaz Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_12
+    tile
+    {
+        xy = 4,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_12
+        CustomName = Citrine Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_sm_01_13
+    tile
+    {
+        xy = 5,1
+        BlocksPlacement = 
+        CanScrap = 
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_sm_13
+        CustomName = Amber Small Skill Obelisk
+        Facing = S
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble = 
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+}
+tileset
+{
+    file = atf_obelisks_sm_01_on
+    size = 8,8
+    id = 4
+    // atf_obelisks_sm_01_on_0
+    tile
+    {
+        xy = 0,0
+        TileOverlay = 
     }
 }
