@@ -65,3 +65,13 @@ option SkillObelisk.SkillRecoveryPercent
     page = SkillObelisk,
     translation = SkillObelisk_SkillRecoveryPercent,
 }
+
+option SkillObelisk.MapObeliskVisibility
+{
+    type = enum,
+    numValues = 3,
+    default = 1,
+    page = SkillObelisk,
+    translation = SkillObelisk_MapObeliskVisibility,
+    valueTranslation = SkillObelisk_MapObeliskVisibility_Values,
+}

@@ -16,6 +16,11 @@ local UPDATED_REPLY = "obeliskUpdated"
 local REMOVED_REPLY = "obeliskRemoved"
 local NONE_TYPE = "None"
 
+-- SkillObelisk.MapObeliskVisibility enum values (1-based, matches sandbox-options.txt).
+local VISIBILITY_ALL = 1
+local VISIBILITY_GENERAL_ONLY = 2
+local VISIBILITY_NONE = 3
+
 local DOT_R, DOT_G, DOT_B = 52 / 255, 88 / 255, 235 / 255
 local DOT_ALPHA_CONFIGURED = 0.95
 local DOT_ALPHA_UNCONFIGURED = 0.55
@@ -238,6 +243,28 @@ local function renderObelisk(mapUI, obelisk)
     renderObeliskLabel(javaObject, cx, cy + half, label)
 end
 
+-- Sandbox-synced to the client by PZ; nil before world load, so guard and fall
+-- back to "show all" (option1) to match the compiled-in default.
+local function getVisibilityMode()
+    local sv = SandboxVars and SandboxVars.SkillObelisk
+    local mode = sv and sv.MapObeliskVisibility
+    if type(mode) ~= "number" then
+        return VISIBILITY_ALL
+    end
+    return mode
+end
+
+local function shouldRenderObelisk(obelisk, mode)
+    if mode == VISIBILITY_NONE then
+        return false
+    end
+    if mode == VISIBILITY_GENERAL_ONLY then
+        local t = obelisk.type
+        return t == nil or t == "" or t == NONE_TYPE
+    end
+    return true
+end
+
 local originalRender = ISWorldMap.render
 
 function ISWorldMap:render()
@@ -247,7 +274,14 @@ function ISWorldMap:render()
         return
     end
 
+    local mode = getVisibilityMode()
+    if mode == VISIBILITY_NONE then
+        return
+    end
+
     for _, obelisk in pairs(SurvivorSkillObeliskMapCache.obelisks) do
-        renderObelisk(self, obelisk)
+        if shouldRenderObelisk(obelisk, mode) then
+            renderObelisk(self, obelisk)
+        end
     end
 end
