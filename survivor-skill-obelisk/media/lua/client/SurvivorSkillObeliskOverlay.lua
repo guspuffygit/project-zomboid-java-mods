@@ -18,6 +18,7 @@
 
 SurvivorSkillObeliskOverlay = SurvivorSkillObeliskOverlay or {}
 
+local BASE_PATTERN_MIRROR = "^atf_obelisks_(lg_01_mirror)_(%d+)$"
 local BASE_PATTERN = "^atf_obelisks_(lg_01)_(%d+)$"
 local BASE_PATTERN_SM = "^atf_obelisks_(sm_01)_(%d+)$"
 
@@ -25,7 +26,10 @@ local function overlayNameFor(spriteName)
     if spriteName == nil then
         return nil
     end
-    local kind, idx = string.match(spriteName, BASE_PATTERN)
+    local kind, idx = string.match(spriteName, BASE_PATTERN_MIRROR)
+    if kind == nil then
+        kind, idx = string.match(spriteName, BASE_PATTERN)
+    end
     if kind == nil then
         kind, idx = string.match(spriteName, BASE_PATTERN_SM)
     end

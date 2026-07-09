@@ -30,11 +30,22 @@ local CONFIGS = {
     { "Amber", 13, 0.75, 0.35, 0.10, 3 },
 }
 
+-- Sheet is 8 columns wide, row-major, and horizontally flipped for E: row 0
+-- (idx 0-7) maps to 7-idx, row 1 (idx 8-13) maps to 23-idx. No sm_01 mirror
+-- sheet exists yet, so only the lg mirror name is added here.
+local function largeMirrorIndex(idx)
+    if idx < 8 then
+        return 7 - idx
+    end
+    return 23 - idx
+end
+
 local function matcherFor(idx)
     local smallName = "atf_obelisks_sm_01_" .. idx
     local largeName = "atf_obelisks_lg_01_" .. idx
+    local largeMirrorName = "atf_obelisks_lg_01_mirror_" .. largeMirrorIndex(idx)
     return function(name)
-        return name == smallName or name == largeName
+        return name == smallName or name == largeName or name == largeMirrorName
     end
 end
 

@@ -648,6 +648,332 @@ tileset
     tile
     {
         xy = 0,0
-        TileOverlay = 
+        TileOverlay =
+    }
+}
+tileset
+{
+    file = atf_obelisks_lg_01_mirror
+    size = 8,8
+    id = 5
+    // atf_obelisks_lg_01_mirror_7 — Onyx (E), pairs with S at xy=0,0
+    tile
+    {
+        xy = 7,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_0
+        CustomName = Onyx Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_6 — Silver (E), pairs with S at xy=1,0
+    tile
+    {
+        xy = 6,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_1
+        CustomName = Silver Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_5 — Ruby (E), pairs with S at xy=2,0
+    tile
+    {
+        xy = 5,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_2
+        CustomName = Ruby Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_4 — Magenta (E), pairs with S at xy=3,0
+    tile
+    {
+        xy = 4,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_3
+        CustomName = Magenta Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_3 — Amethyst (E), pairs with S at xy=4,0
+    tile
+    {
+        xy = 3,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_4
+        CustomName = Amethyst Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_2 — Sapphire (E), pairs with S at xy=5,0
+    tile
+    {
+        xy = 2,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_5
+        CustomName = Sapphire Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_1 — Cobalt (E), pairs with S at xy=6,0
+    tile
+    {
+        xy = 1,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_6
+        CustomName = Cobalt Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_0 — Turquoise (E), pairs with S at xy=7,0
+    tile
+    {
+        xy = 0,0
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_7
+        CustomName = Turquoise Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_15 — Aqua (E), pairs with S at xy=0,1
+    tile
+    {
+        xy = 7,1
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_8
+        CustomName = Aqua Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_14 — Emerald (E), pairs with S at xy=1,1
+    tile
+    {
+        xy = 6,1
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_9
+        CustomName = Emerald Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_13 — Peridot (E), pairs with S at xy=2,1
+    tile
+    {
+        xy = 5,1
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_10
+        CustomName = Peridot Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_12 — Topaz (E), pairs with S at xy=3,1
+    tile
+    {
+        xy = 4,1
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_11
+        CustomName = Topaz Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_11 — Citrine (E), pairs with S at xy=4,1
+    tile
+    {
+        xy = 3,1
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_12
+        CustomName = Citrine Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+    // atf_obelisks_lg_01_mirror_10 — Amber (E), pairs with S at xy=5,1
+    tile
+    {
+        xy = 2,1
+        BlocksPlacement =
+        CanScrap =
+        ContainerCapacity = 15
+        ContainerPosition = Low
+        CustomItem = Base.survivor_skill_obelisk_lg_13
+        CustomName = Amber Large Skill Obelisk
+        Facing = E
+        GroupName = Survivor Skill Obelisks
+        IsMoveAble =
+        Material = MetalPlates
+        Material2 = MetalScrap
+        Material3 = MetalScrap
+        PickUpTool = Hammer
+        PickUpWeight = 20
+        PlaceTool = Hammer
+        Surface = 34
+        container = SurvivorSkillObelisk
+    }
+}
+tileset
+{
+    file = atf_obelisks_lg_01_mirror_on
+    size = 8,8
+    id = 6
+    // atf_obelisks_lg_01_mirror_on_0
+    tile
+    {
+        xy = 0,0
+        TileOverlay =
     }
 }
