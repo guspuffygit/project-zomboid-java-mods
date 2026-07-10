@@ -15,8 +15,6 @@ tileset
         CustomName = Onyx Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -31,8 +29,6 @@ tileset
         CustomName = Silver Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -47,8 +43,6 @@ tileset
         CustomName = Ruby Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -63,8 +57,6 @@ tileset
         CustomName = Magenta Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -79,8 +71,6 @@ tileset
         CustomName = Amethyst Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -95,8 +85,6 @@ tileset
         CustomName = Sapphire Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -111,8 +99,6 @@ tileset
         CustomName = Cobalt Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -127,8 +113,6 @@ tileset
         CustomName = Turquoise Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -143,8 +127,6 @@ tileset
         CustomName = Aqua Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -159,8 +141,6 @@ tileset
         CustomName = Emerald Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -175,8 +155,6 @@ tileset
         CustomName = Peridot Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -191,8 +169,6 @@ tileset
         CustomName = Topaz Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -207,8 +183,6 @@ tileset
         CustomName = Citrine Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -223,8 +197,6 @@ tileset
         CustomName = Amber Large Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -257,8 +229,6 @@ tileset
         CustomName = Onyx Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -273,8 +243,6 @@ tileset
         CustomName = Silver Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -289,8 +257,6 @@ tileset
         CustomName = Ruby Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -305,8 +271,6 @@ tileset
         CustomName = Magenta Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -321,8 +285,6 @@ tileset
         CustomName = Amethyst Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -337,8 +299,6 @@ tileset
         CustomName = Sapphire Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -353,8 +313,6 @@ tileset
         CustomName = Cobalt Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -369,8 +327,6 @@ tileset
         CustomName = Turquoise Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -385,8 +341,6 @@ tileset
         CustomName = Aqua Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -401,8 +355,6 @@ tileset
         CustomName = Emerald Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -417,8 +369,6 @@ tileset
         CustomName = Peridot Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -433,8 +383,6 @@ tileset
         CustomName = Topaz Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -449,8 +397,6 @@ tileset
         CustomName = Citrine Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -465,8 +411,6 @@ tileset
         CustomName = Amber Small Skill Obelisk
         Facing = S
         GroupName = Survivor Skill Obelisks
-        IsMoveAble = 
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -500,7 +444,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -516,7 +459,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -532,7 +474,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -548,7 +489,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -564,7 +504,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -580,7 +519,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -596,7 +534,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -612,7 +549,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -628,7 +564,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -644,7 +579,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -660,7 +594,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -676,7 +609,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -692,7 +624,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -708,7 +639,6 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         IsMoveAble =
-        PickUpWeight = 80
         Surface = 34
         container = SurvivorSkillObelisk
     }
