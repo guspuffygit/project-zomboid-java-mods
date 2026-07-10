@@ -443,7 +443,6 @@ tileset
         CustomName = Onyx Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -458,7 +457,6 @@ tileset
         CustomName = Silver Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -473,7 +471,6 @@ tileset
         CustomName = Ruby Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -488,7 +485,6 @@ tileset
         CustomName = Magenta Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -503,7 +499,6 @@ tileset
         CustomName = Amethyst Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -518,7 +513,6 @@ tileset
         CustomName = Sapphire Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -533,7 +527,6 @@ tileset
         CustomName = Cobalt Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -548,7 +541,6 @@ tileset
         CustomName = Turquoise Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -563,7 +555,6 @@ tileset
         CustomName = Aqua Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -578,7 +569,6 @@ tileset
         CustomName = Emerald Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -593,7 +583,6 @@ tileset
         CustomName = Peridot Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -608,7 +597,6 @@ tileset
         CustomName = Topaz Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -623,7 +611,6 @@ tileset
         CustomName = Citrine Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
@@ -638,7 +625,6 @@ tileset
         CustomName = Amber Large Skill Obelisk
         Facing = E
         GroupName = Survivor Skill Obelisks
-        IsMoveAble =
         Surface = 34
         container = SurvivorSkillObelisk
     }
