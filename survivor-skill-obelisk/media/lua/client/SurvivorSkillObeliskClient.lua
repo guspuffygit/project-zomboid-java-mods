@@ -4,6 +4,7 @@
 -- ISCollapsableWindow with the player's past deaths fetched from the server.
 --
 
+require("ISUI/ISCollapsableWindowJoypad")
 require("TimedActions/RecoverSkillsAction")
 
 local MODULE = "SurvivorSkillObelisk"
@@ -127,10 +128,27 @@ end
 -- Window
 ---------------------------------------------------------------------------
 
-local RecoverSkillsWindow = ISCollapsableWindow:derive("RecoverSkillsWindow")
+-- List subclass so a controller player can press A on a highlighted past life
+-- to recover it, and B to close the whole window in one press.
+local RecoverDeathList = ISScrollingListBox:derive("RecoverDeathList")
 
-function RecoverSkillsWindow:new(x, y, width, height)
-    local o = ISCollapsableWindow:new(x, y, width, height)
+function RecoverDeathList:onJoypadDown(button, joypadData)
+    if button == Joypad.BButton and self.recoverWindow then
+        self.recoverWindow:close()
+        return
+    end
+    -- Base impl indexes items[selected] unconditionally on A; that crashes on an
+    -- empty list (still loading, or no past lives). Swallow the press instead.
+    if button == Joypad.AButton and (#self.items == 0 or not self.items[self.selected]) then
+        return
+    end
+    ISScrollingListBox.onJoypadDown(self, button, joypadData)
+end
+
+local RecoverSkillsWindow = ISCollapsableWindowJoypad:derive("RecoverSkillsWindow")
+
+function RecoverSkillsWindow:new(x, y, width, height, playerNum)
+    local o = ISCollapsableWindowJoypad.new(self, x, y, width, height)
     setmetatable(o, self)
     self.__index = self
     o.baseTitle = "Recover Skills"
@@ -144,6 +162,7 @@ function RecoverSkillsWindow:new(x, y, width, height)
     o.resizable = false
     o.minimumWidth = width
     o.minimumHeight = height
+    o.playerNum = playerNum or 0
     return o
 end
 
@@ -163,7 +182,7 @@ function RecoverSkillsWindow:setObeliskType(typeId)
 end
 
 function RecoverSkillsWindow:createChildren()
-    ISCollapsableWindow.createChildren(self)
+    ISCollapsableWindowJoypad.createChildren(self)
 
     local titleBarH = self:titleBarHeight()
     local padding = 6
@@ -187,7 +206,7 @@ function RecoverSkillsWindow:createChildren()
 
     local listY = titleBarH + padding + 22
     local listH = self.height - listY - padding - btnH - padding
-    self.listBox = ISScrollingListBox:new(padding, listY, self.width - padding * 2, listH)
+    self.listBox = RecoverDeathList:new(padding, listY, self.width - padding * 2, listH)
     self.listBox:initialise()
     self.listBox:instantiate()
     self.listBox.itemheight = 22
@@ -196,6 +215,8 @@ function RecoverSkillsWindow:createChildren()
     self.listBox.doDrawItem = RecoverSkillsWindow.drawListItem
     self.listBox.onMouseDown = RecoverSkillsWindow.onRowClicked
     self.listBox.target = self
+    self.listBox.recoverWindow = self
+    self.listBox.overrideAButtonFunction = RecoverSkillsWindow.onListJoypadA
     self:addChild(self.listBox)
 
     self.recoverBtn = ISButton:new(
@@ -215,6 +236,38 @@ function RecoverSkillsWindow:createChildren()
     self.recoverBtn.anchorRight = true
     self.recoverBtn.anchorLeft = false
     self:addChild(self.recoverBtn)
+end
+
+function RecoverSkillsWindow.onListJoypadA(window, item)
+    if window == nil or item == nil or item.id == nil then
+        return
+    end
+    window.selectedDeathId = item.id
+    window:onRecover()
+end
+
+function RecoverSkillsWindow:onGainJoypadFocus(joypadData)
+    ISCollapsableWindowJoypad.onGainJoypadFocus(self, joypadData)
+    self.drawJoypadFocus = false
+    if self.listBox then
+        self.listBox:setJoypadFocused(true, joypadData)
+        setJoypadFocus(self.playerNum, self.listBox)
+    end
+end
+
+function RecoverSkillsWindow:onLoseJoypadFocus(joypadData)
+    ISCollapsableWindowJoypad.onLoseJoypadFocus(self, joypadData)
+    if self.listBox then
+        self.listBox:setJoypadFocused(false, joypadData)
+    end
+end
+
+function RecoverSkillsWindow:onJoypadDown(button, joypadData)
+    if button == Joypad.BButton then
+        self:close()
+        return
+    end
+    ISCollapsableWindowJoypad.onJoypadDown(self, button, joypadData)
 end
 
 function RecoverSkillsWindow:drawListItem(y, item, alt)
@@ -311,7 +364,7 @@ function RecoverSkillsWindow:onRecover()
     if self.selectedDeathId == nil then
         return
     end
-    local player = getSpecificPlayer(0)
+    local player = getSpecificPlayer(self.playerNum or 0)
     if player == nil then
         return
     end
@@ -331,6 +384,9 @@ function RecoverSkillsWindow:close()
     openWindow = nil
     self:setVisible(false)
     self:removeFromUIManager()
+    if JoypadState.players and JoypadState.players[(self.playerNum or 0) + 1] then
+        setJoypadFocus(self.playerNum or 0, nil)
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -522,20 +578,26 @@ function SurvivorSkillObelisk.requestDeaths()
     })
 end
 
-function SurvivorSkillObelisk.openRecoverWindow(worldobjects)
+function SurvivorSkillObelisk.openRecoverWindow(worldobjects, playerNum)
+    playerNum = playerNum or 0
     local obj = findObeliskInWorldObjects(worldobjects)
     local square = obj and obj:getSquare() or nil
     local ox = square and square:getX() or nil
     local oy = square and square:getY() or nil
     local oz = square and square:getZ() or nil
+    local usingJoypad = JoypadState.players and JoypadState.players[playerNum + 1] ~= nil
 
     if openWindow ~= nil then
+        openWindow.playerNum = playerNum
         openWindow:setObelisk(ox, oy, oz)
         openWindow:setVisible(true)
         openWindow:addToUIManager()
         openWindow.loading = true
         openWindow:updateStatus()
         SurvivorSkillObelisk.requestDeaths()
+        if usingJoypad then
+            setJoypadFocus(playerNum, openWindow)
+        end
         return
     end
     local width = 560
@@ -548,12 +610,15 @@ function SurvivorSkillObelisk.openRecoverWindow(worldobjects)
     if y < 40 then
         y = 40
     end
-    local w = RecoverSkillsWindow:new(x, y, width, height)
+    local w = RecoverSkillsWindow:new(x, y, width, height, playerNum)
     w:setObelisk(ox, oy, oz)
     w:initialise()
     w:addToUIManager()
     openWindow = w
     SurvivorSkillObelisk.requestDeaths()
+    if usingJoypad then
+        setJoypadFocus(playerNum, w)
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -561,13 +626,21 @@ end
 ---------------------------------------------------------------------------
 
 local function onFillWorldObjectContextMenu(player, context, worldobjects, test)
-    if test and ISWorldObjectContextMenu.Test then
-        return true
-    end
     if findObeliskInWorldObjects(worldobjects) == nil then
         return
     end
-    context:addOption("Recover Skills", worldobjects, SurvivorSkillObelisk.openRecoverWindow)
+    -- On controller, PZ calls this once with test=true just to see if any handler
+    -- has anything to add. setTest() signals that we do; the menu will then be
+    -- opened for real and this function called again with test=false.
+    if test == true then
+        return ISWorldObjectContextMenu.setTest()
+    end
+    context:addOption(
+        "Recover Skills",
+        worldobjects,
+        SurvivorSkillObelisk.openRecoverWindow,
+        player
+    )
     if isPlayerAdmin() then
         context:addOption(
             "Configure Obelisk",
