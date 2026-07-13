@@ -2,6 +2,9 @@ module Base
 {
     sound SurvivorSkillObeliskRecover
     {
-        clip { file = media/sound/skill-recovery.ogg, }
+        clip {
+            file = media/sound/skill-recovery.ogg,
+            volume = 0.5,
+        }
     }
 }
