@@ -1,9 +1,24 @@
 local OnISEquippedItemInitialize = ISEquippedItem.initialise
 
-local lifeboardIcon = getTexture("media/ui/Lifeboard_Icon_Off.png")
-local lifeboardIconOn = getTexture("media/ui/Lifeboard_Icon_On.png")
+-- Deferred: getTexture() at file-load time can return nil (and poison PZ's
+-- shared nullTextures cache) if the mod's media/ dir isn't fully registered
+-- when this file first parses. Vanilla ISEquippedItem loads its icons inside
+-- new(), not at load time, for the same reason. Loading lazily in initialise
+-- means the first lookup happens after the mod system is up.
+local lifeboardIcon
+local lifeboardIconOn
 local lifeboardButton
 local lifeboardWindow
+
+local function loadLifeboardIcons()
+    if not lifeboardIcon then
+        lifeboardIcon = getTexture("media/ui/Lifeboard_Icon_Off.png")
+    end
+    if not lifeboardIconOn then
+        lifeboardIconOn = getTexture("media/ui/Lifeboard_Icon_On.png")
+    end
+    return lifeboardIcon ~= nil and lifeboardIconOn ~= nil
+end
 
 local function getTableLength(table)
     local count = 0
@@ -330,6 +345,10 @@ function ISEquippedItem:initialise()
     local menu = OnISEquippedItemInitialize(self)
 
     if getWorld():getGameMode() == "Multiplayer" then
+        if not loadLifeboardIcons() then
+            print("[Survivor Leaderboard] icon textures unavailable, skipping button")
+            return menu
+        end
         local y = self.mapBtn:getY() + self.mapIconOff:getHeightOrig() + 270
         local texWid = lifeboardIcon:getWidthOrig()
         local texHgt = lifeboardIcon:getHeightOrig()

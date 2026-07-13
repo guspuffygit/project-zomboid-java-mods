@@ -6,9 +6,13 @@ import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import se.krka.kahlua.vm.KahluaTable;
@@ -23,11 +27,21 @@ import zombie.network.GameServer;
  * SQLite DB, filters / scales it per {@link SurvivorSkillObeliskConfig}, and ships a {@code
  * recoveredData} payload back to the client that applies it locally via the standard PZ APIs.
  *
+ * <p>XP recovery is ADDITIVE with an anti-stacking ledger: the recovered earned XP (scaled by
+ * recovery percent) is added on top of whatever the live character currently has, and the amounts
+ * actually granted are persisted per player in the {@code recoveries} / {@code recovery_skills}
+ * tables. Recovering a different death later first subtracts the previously granted amounts, so
+ * chaining recoveries can never accumulate more than one death's worth of recovered XP — while XP
+ * earned by playing since respawn (or since the last recovery) is always kept. Dying deletes the
+ * ledger (see {@link DeathEventHandler}) because the new death snapshot already contains everything
+ * the character held, recovered XP included.
+ *
  * <p>Same two-thread split as {@link ListDeathsHandler}: the main thread validates basic packet
  * fields and enqueues, a daemon worker checks ownership and reads all recovery data, and the next
  * tick applies XP authoritatively to the live {@code IsoPlayer}, builds the Kahlua reply, and ships
- * it. XP application and Kahlua construction stay on the main thread; the worker only handles plain
- * Java records.
+ * it. The ledger write then goes back to the worker. A per-player in-flight guard rejects a second
+ * recover request until the first one's ledger write lands, so two rapid requests can't both read
+ * the pre-recovery ledger and double-grant.
  */
 public final class RecoverSkillsHandler {
 
@@ -42,11 +56,13 @@ public final class RecoverSkillsHandler {
             long deathId,
             Integer obeliskX,
             Integer obeliskY,
-            Integer obeliskZ) {}
+            Integer obeliskZ,
+            long deathEpoch) {}
 
     private record QueryResult(
             String obeliskType,
             List<SurvivorSkillObeliskRepository.SkillRow> skills,
+            Map<String, Float> previousGrants,
             List<String> recipes,
             List<String> literature,
             List<String> printMedia,
@@ -55,11 +71,31 @@ public final class RecoverSkillsHandler {
             List<SurvivorSkillObeliskRepository.AmbitionRow> ambitions) {}
 
     private record CompletedRequest(
-            IsoPlayer player, String username, long deathId, QueryResult result) {}
+            IsoPlayer player,
+            long steamId,
+            String username,
+            long deathId,
+            long deathEpoch,
+            QueryResult result) {}
 
-    private static final BlockingQueue<PendingRequest> PENDING = new LinkedBlockingQueue<>();
+    private static final BlockingQueue<Runnable> WORK = new LinkedBlockingQueue<>();
     private static final ConcurrentLinkedQueue<CompletedRequest> COMPLETED =
             new ConcurrentLinkedQueue<>();
+
+    /**
+     * Players with a recovery mid-pipeline (query enqueued but ledger write not yet landed). A
+     * request arriving while its owner is in here is dropped, otherwise both requests would read
+     * the same pre-recovery ledger and each grant would be applied in full.
+     */
+    private static final Set<String> IN_FLIGHT = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Bumped from the main thread on every player death ({@link #notifyDeath}). A recovery request
+     * snapshots the epoch on arrival; if it changed by apply/write time the player died mid-flight,
+     * so the XP apply and the ledger write are both dropped — the death handler is deleting the
+     * ledger, and writing after that would charge the respawned character for XP it never received.
+     */
+    private static final ConcurrentHashMap<String, Long> DEATH_EPOCHS = new ConcurrentHashMap<>();
 
     static {
         Thread worker =
@@ -71,6 +107,19 @@ public final class RecoverSkillsHandler {
     }
 
     private RecoverSkillsHandler() {}
+
+    /** Called from the main thread when a player dies — invalidates any in-flight recovery. */
+    static void notifyDeath(long steamId, String username) {
+        DEATH_EPOCHS.merge(inFlightKey(steamId, username), 1L, Long::sum);
+    }
+
+    private static String inFlightKey(long steamId, String username) {
+        return steamId + "|" + username;
+    }
+
+    private static long deathEpoch(long steamId, String username) {
+        return DEATH_EPOCHS.getOrDefault(inFlightKey(steamId, username), 0L);
+    }
 
     @OnClientCommand
     public static void onRecoverSkills(RecoverSkillsCommand event) {
@@ -94,7 +143,14 @@ public final class RecoverSkillsHandler {
                     steamId);
             return;
         }
-        PENDING.offer(
+        if (!IN_FLIGHT.add(inFlightKey(steamId, username))) {
+            LOGGER.warn(
+                    "[SurvivorSkillObelisk] recoverSkills from {} while a recovery is already in"
+                            + " flight; dropping",
+                    username);
+            return;
+        }
+        PendingRequest req =
                 new PendingRequest(
                         player,
                         steamId,
@@ -102,7 +158,9 @@ public final class RecoverSkillsHandler {
                         deathId,
                         event.getX(),
                         event.getY(),
-                        event.getZ()));
+                        event.getZ(),
+                        deathEpoch(steamId, username));
+        WORK.offer(() -> queryTask(req));
     }
 
     @SubscribeEvent
@@ -115,31 +173,38 @@ public final class RecoverSkillsHandler {
 
     private static void workerLoop() {
         while (true) {
-            PendingRequest req;
+            Runnable task;
             try {
-                req = PENDING.take();
+                task = WORK.take();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
             }
             try {
-                QueryResult result = runQuery(req);
-                if (result != null) {
-                    COMPLETED.offer(
-                            new CompletedRequest(
-                                    req.player(), req.username(), req.deathId(), result));
-                }
+                task.run();
             } catch (Throwable t) {
                 LOGGER.error(
-                        "[SurvivorSkillObelisk] worker loop iteration failed for {} ({}) death"
-                                + " id={}: {}",
-                        req.username(),
-                        req.steamId(),
-                        req.deathId(),
+                        "[SurvivorSkillObelisk] worker loop iteration failed: {}",
                         t.getMessage(),
                         t);
             }
         }
+    }
+
+    private static void queryTask(PendingRequest req) {
+        QueryResult result = runQuery(req);
+        if (result == null) {
+            IN_FLIGHT.remove(inFlightKey(req.steamId(), req.username()));
+            return;
+        }
+        COMPLETED.offer(
+                new CompletedRequest(
+                        req.player(),
+                        req.steamId(),
+                        req.username(),
+                        req.deathId(),
+                        req.deathEpoch(),
+                        result));
     }
 
     private static QueryResult runQuery(PendingRequest req) {
@@ -180,6 +245,10 @@ public final class RecoverSkillsHandler {
                     SurvivorSkillObeliskConfig.isRecoverSkills()
                             ? repo.listSkillsByDeath(req.deathId())
                             : List.of();
+            Map<String, Float> previousGrants =
+                    SurvivorSkillObeliskConfig.isRecoverSkills()
+                            ? repo.findRecoveryGrants(req.steamId(), req.username())
+                            : Map.of();
             List<String> recipes =
                     SurvivorSkillObeliskConfig.isRecoverRecipes()
                             ? repo.listRecipesByDeath(req.deathId())
@@ -208,6 +277,7 @@ public final class RecoverSkillsHandler {
             return new QueryResult(
                     obeliskType,
                     skills,
+                    previousGrants,
                     recipes,
                     literature,
                     printMedia,
@@ -235,13 +305,31 @@ public final class RecoverSkillsHandler {
     }
 
     private static void applyAndReply(CompletedRequest done) {
+        String key = inFlightKey(done.steamId(), done.username());
         try {
-            applySkillsAuthoritatively(done.player(), done.result(), done.deathId());
+            if (done.player().isDead()
+                    || deathEpoch(done.steamId(), done.username()) != done.deathEpoch()) {
+                LOGGER.info(
+                        "[SurvivorSkillObelisk] recoverSkills: {} died while recovery of death"
+                                + " id={} was in flight; dropping",
+                        done.username(),
+                        done.deathId());
+                IN_FLIGHT.remove(key);
+                return;
+            }
+            Map<String, Float> newGrants =
+                    applySkillsAuthoritatively(done.player(), done.result(), done.deathId());
             KahluaTable reply = buildReply(done.result());
             // If the player disconnected while the query was in-flight, sendServerCommand is a
             // no-op (it gates on PlayerToAddressMap).
             GameServer.sendServerCommand(done.player(), MODULE, REPLY_COMMAND, reply);
+            if (newGrants != null) {
+                WORK.offer(() -> writeGrantsTask(done, newGrants, key));
+            } else {
+                IN_FLIGHT.remove(key);
+            }
         } catch (Throwable t) {
+            IN_FLIGHT.remove(key);
             LOGGER.error(
                     "[SurvivorSkillObelisk] recoverSkills apply/reply failed for {} death id={}: {}",
                     done.username(),
@@ -252,10 +340,58 @@ public final class RecoverSkillsHandler {
     }
 
     /**
-     * Drive each perk's XP to {@code (this character's creation-grant baseline XP) + (recovered
-     * earned XP × recovery%)} by computing the delta from current and feeding it to {@code AddXP}.
-     * The delta is negative when the live character has out-earned the recovery target — recovery
-     * is a SET, not an ADD, so we walk the XP back down to the grant + recovered amount.
+     * Persist the ledger of what this recovery actually granted, replacing the previous one. The
+     * epoch re-check narrows the window where a death lands between the main-thread apply and this
+     * write: the death handler's worker is concurrently deleting the ledger, and writing ours after
+     * its delete would charge the respawned character for XP it never received.
+     */
+    private static void writeGrantsTask(
+            CompletedRequest done, Map<String, Float> newGrants, String key) {
+        try {
+            if (deathEpoch(done.steamId(), done.username()) != done.deathEpoch()) {
+                LOGGER.info(
+                        "[SurvivorSkillObelisk] recoverSkills: {} died before the recovery ledger"
+                                + " for death id={} was written; dropping write",
+                        done.username(),
+                        done.deathId());
+                return;
+            }
+            try (SurvivorSkillObeliskDatabase db =
+                    new SurvivorSkillObeliskDatabase(DeathEventHandler.getDbPath())) {
+                Connection conn = db.getConnection();
+                conn.setAutoCommit(false);
+                new SurvivorSkillObeliskRepository(conn)
+                        .replaceRecovery(
+                                done.steamId(),
+                                done.username(),
+                                done.deathId(),
+                                System.currentTimeMillis(),
+                                newGrants);
+                conn.commit();
+            }
+        } catch (Exception e) {
+            LOGGER.error(
+                    "[SurvivorSkillObelisk] recoverSkills: failed to write recovery ledger for {}"
+                            + " death id={}",
+                    done.username(),
+                    done.deathId(),
+                    e);
+        } finally {
+            IN_FLIGHT.remove(key);
+        }
+    }
+
+    /**
+     * Add each perk's recovered earned XP (scaled by recovery percent) on top of the live
+     * character's current XP, minus whatever a previous recovery already granted, via {@code
+     * AddXP}. XP earned by playing is never touched: for {@code previousGrant = 0} the delta is
+     * pure addition; when switching to a different death the delta first walks back the old grant
+     * (and can go negative for perks only the old death was strong in).
+     *
+     * <p>Returns the new ledger — per perk, the recovery-sourced XP now present in the character
+     * (measured from what {@code AddXP} actually changed, so a level-10 clamp shrinks the recorded
+     * grant too). {@code null} when skill recovery is disabled, meaning there is nothing to persist
+     * and the existing ledger must be left alone.
      *
      * <p>PZ's {@code NetworkPlayerManager} pushes a full {@code PlayerXp} packet to the owning
      * client every ~1s, which calls {@code IsoGameCharacter.XP.load()} (clears and rebuilds {@code
@@ -266,13 +402,8 @@ public final class RecoverSkillsHandler {
      * loops that fire {@code LevelPerk} Lua events, which Lifestyles and other mods listen to for
      * downstream state (ambition progress, fitness/strength stat sync, etc). Direct {@code
      * xpMap.put} would skip those.
-     *
-     * <p>Why set instead of add-recovered: the DB stores XP with the dead character's creation
-     * grant already subtracted (see {@link DeathEventHandler#computeXpToSave}). Adding the stored
-     * amount on top of the live XP map double-counts whatever this character has earned since
-     * respawn — a player who farmed some skill before reaching the obelisk would over-level.
      */
-    private static void applySkillsAuthoritatively(
+    private static Map<String, Float> applySkillsAuthoritatively(
             IsoPlayer player, QueryResult result, long deathId) {
         if (!SurvivorSkillObeliskConfig.isRecoverSkills()) {
             LOGGER.info(
@@ -280,33 +411,51 @@ public final class RecoverSkillsHandler {
                             + " application for {} (death id={})",
                     player.getUsername(),
                     deathId);
-            return;
+            return null;
         }
         float configPercent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
-        Map<PerkFactory.Perk, Integer> grantedLevels =
-                DeathEventHandler.grantedLevelsAtCreation(player);
         String obeliskType = result.obeliskType();
+        Map<String, Float> previousGrants = result.previousGrants();
+
+        // Union of the death's saved perks and the previous ledger's perks: DeathEventHandler
+        // saves every perk, but a ledger written under a different mod list can hold perks this
+        // death lacks — their old grant still has to be walked back (savedXp = 0).
+        Map<String, Float> savedByPerk = new LinkedHashMap<>();
+        for (SurvivorSkillObeliskRepository.SkillRow row : result.skills()) {
+            savedByPerk.put(row.perk(), row.xp());
+        }
+        for (String perkId : previousGrants.keySet()) {
+            savedByPerk.putIfAbsent(perkId, 0f);
+        }
+
+        Map<String, Float> newGrants = new HashMap<>();
         float totalDelta = 0f;
         int applied = 0;
-        for (SurvivorSkillObeliskRepository.SkillRow row : result.skills()) {
-            PerkFactory.Perk perk = PerkFactory.Perks.FromString(row.perk());
+        for (Map.Entry<String, Float> saved : savedByPerk.entrySet()) {
+            PerkFactory.Perk perk = PerkFactory.Perks.FromString(saved.getKey());
             if (perk == null || perk == PerkFactory.Perks.MAX) {
                 LOGGER.debug(
                         "[SurvivorSkillObelisk] recoverSkills: skipping unknown perk '{}' for {}",
-                        row.perk(),
+                        saved.getKey(),
                         player.getUsername());
                 continue;
             }
             boolean obeliskMatch = isObeliskTypeMatch(obeliskType, perk.getId());
             float percent = obeliskMatch ? 1.0F : configPercent;
-            int grantedLevel = grantedLevels.getOrDefault(perk, 0);
-            float targetXp = computeRecoveryTargetXp(perk, row.xp(), grantedLevel, percent);
+            float previousGrant = previousGrants.getOrDefault(saved.getKey(), 0f);
 
             float beforeXp = player.getXp().getXP(perk);
             int beforeLevel = player.getPerkLevel(perk);
+            float targetXp =
+                    computeAdditiveTargetXp(
+                            perk, beforeXp, saved.getValue(), previousGrant, percent);
             float delta = targetXp - beforeXp;
-            // Sub-XP noise isn't worth firing a LevelPerk pass over.
+            // Sub-XP noise isn't worth firing a LevelPerk pass over; the previous grant carries
+            // forward unchanged so the ledger stays honest.
             if (Math.abs(delta) < 0.5f) {
+                if (previousGrant > 0f) {
+                    newGrants.put(saved.getKey(), previousGrant);
+                }
                 continue;
             }
 
@@ -317,12 +466,17 @@ public final class RecoverSkillsHandler {
             player.getXp().AddXP(perk, delta, false, false, false, false);
             float afterXp = player.getXp().getXP(perk);
             int afterLevel = player.getPerkLevel(perk);
+            // Ledger from the observed change, not the requested delta — if AddXP clamped or
+            // tweaked it, the next recovery must subtract only what really landed.
+            float newGrant = Math.max(0f, previousGrant + (afterXp - beforeXp));
+            if (newGrant > 0f) {
+                newGrants.put(saved.getKey(), newGrant);
+            }
             totalDelta += afterXp - beforeXp;
             applied++;
             LOGGER.info(
                     "[SurvivorSkillObelisk] recoverSkills: {} {} -> level {}->{} ({} -> {} XP,"
-                            + " delta={}) (stored earned={}, percent={}%{}, baseline grant"
-                            + " level={})",
+                            + " delta={}) (stored earned={}, percent={}%{}, previous grant={})",
                     player.getUsername(),
                     perk.getName(),
                     beforeLevel,
@@ -330,10 +484,10 @@ public final class RecoverSkillsHandler {
                     beforeXp,
                     afterXp,
                     delta,
-                    row.xp(),
+                    saved.getValue(),
                     Math.round(percent * 100),
                     obeliskMatch ? " [obelisk type override]" : "",
-                    grantedLevel);
+                    previousGrant);
         }
         LOGGER.info(
                 "[SurvivorSkillObelisk] recoverSkills: applied {} perks, net {} XP delta for"
@@ -343,21 +497,25 @@ public final class RecoverSkillsHandler {
                 player.getUsername(),
                 deathId,
                 obeliskType);
+        return newGrants;
     }
 
     /**
-     * Pure math: the XP we drive the live character's perk to. For {@code savedXp = 0} this returns
-     * the live baseline grant XP, which is the reset behavior — a perk the dead character never
-     * earned anything in walks back to the live character's creation-grant level (typically 0 for
-     * non-baseline perks, 5 for Strength/Fitness, plus any trait/profession boosts on top). For
-     * {@code savedXp > 0} the recovered amount is added on top, scaled by {@code percent} and
-     * clamped at level 10.
+     * Pure math: the XP we drive the live character's perk to. Additive — the recovered earned XP
+     * (scaled by {@code percent}) lands on top of {@code currentXp}, after subtracting {@code
+     * previousGrantXp} (what an earlier recovery already contributed, so switching deaths swaps the
+     * grant instead of stacking it). Clamped to {@code [0, level-10 XP]}; XP the player earned by
+     * playing always survives because it is part of {@code currentXp} and never subtracted.
      */
-    static float computeRecoveryTargetXp(
-            PerkFactory.Perk perk, float savedXp, int grantedLevel, float percent) {
-        float baselineXp = grantedLevel > 0 ? perk.getTotalXpForLevel(grantedLevel) : 0f;
+    static float computeAdditiveTargetXp(
+            PerkFactory.Perk perk,
+            float currentXp,
+            float savedXp,
+            float previousGrantXp,
+            float percent) {
+        float target = currentXp + savedXp * percent - previousGrantXp;
         float maxXp = perk.getTotalXpForLevel(10);
-        return Math.min(baselineXp + savedXp * percent, maxXp);
+        return Math.max(0f, Math.min(target, maxXp));
     }
 
     /**

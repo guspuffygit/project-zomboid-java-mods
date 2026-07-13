@@ -6,7 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** All SQL for the Survivor Skill Obelisk mod. Holds no business logic. */
 public class SurvivorSkillObeliskRepository {
@@ -115,6 +117,21 @@ public class SurvivorSkillObeliskRepository {
             """
             INSERT INTO death_learned_songs (death_id, instrument, song_name, sound)
             VALUES (?, ?, ?, ?)""";
+
+    private static final String FIND_RECOVERY_GRANTS =
+            "SELECT perk, xp FROM recovery_skills WHERE steam_id = ? AND username = ?";
+
+    private static final String DELETE_RECOVERY =
+            "DELETE FROM recoveries WHERE steam_id = ? AND username = ?";
+
+    private static final String DELETE_RECOVERY_SKILLS =
+            "DELETE FROM recovery_skills WHERE steam_id = ? AND username = ?";
+
+    private static final String INSERT_RECOVERY =
+            "INSERT INTO recoveries (steam_id, username, death_id, ts) VALUES (?, ?, ?, ?)";
+
+    private static final String INSERT_RECOVERY_SKILL =
+            "INSERT INTO recovery_skills (steam_id, username, perk, xp) VALUES (?, ?, ?, ?)";
 
     private static final String FIND_OBELISK_TYPE =
             "SELECT type FROM obelisk_types WHERE x = ? AND y = ? AND z = ?";
@@ -428,6 +445,68 @@ public class SurvivorSkillObeliskRepository {
             }
         }
         return rows;
+    }
+
+    /**
+     * The XP amounts (per perk) actually granted to this player by their most recent obelisk
+     * recovery. Empty map when the player has never recovered, or has died since — recovery-granted
+     * XP is subtracted before the next grant is applied, so this ledger is what makes recovery
+     * additive-but-not-stackable.
+     */
+    public Map<String, Float> findRecoveryGrants(long steamId, String username)
+            throws SQLException {
+        Map<String, Float> grants = new HashMap<>();
+        try (PreparedStatement stmt = connection.prepareStatement(FIND_RECOVERY_GRANTS)) {
+            stmt.setLong(1, steamId);
+            stmt.setString(2, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    grants.put(rs.getString("perk"), rs.getFloat("xp"));
+                }
+            }
+        }
+        return grants;
+    }
+
+    /**
+     * Replace the player's recovery ledger with the given per-perk granted amounts. Caller is
+     * responsible for wrapping in a transaction — the delete + inserts must land atomically or a
+     * crash mid-write would let the player re-recover without the old grant being subtracted.
+     */
+    public void replaceRecovery(
+            long steamId, String username, long deathId, long ts, Map<String, Float> grants)
+            throws SQLException {
+        deleteRecovery(steamId, username);
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_RECOVERY)) {
+            stmt.setLong(1, steamId);
+            stmt.setString(2, username);
+            stmt.setLong(3, deathId);
+            stmt.setLong(4, ts);
+            stmt.executeUpdate();
+        }
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_RECOVERY_SKILL)) {
+            for (Map.Entry<String, Float> grant : grants.entrySet()) {
+                stmt.setLong(1, steamId);
+                stmt.setString(2, username);
+                stmt.setString(3, grant.getKey());
+                stmt.setFloat(4, grant.getValue());
+                stmt.executeUpdate();
+            }
+        }
+    }
+
+    /** No-op when the player has no recovery record — safe to call on every death. */
+    public void deleteRecovery(long steamId, String username) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(DELETE_RECOVERY)) {
+            stmt.setLong(1, steamId);
+            stmt.setString(2, username);
+            stmt.executeUpdate();
+        }
+        try (PreparedStatement stmt = connection.prepareStatement(DELETE_RECOVERY_SKILLS)) {
+            stmt.setLong(1, steamId);
+            stmt.setString(2, username);
+            stmt.executeUpdate();
+        }
     }
 
     /** Returns {@code null} when no row exists for the coordinates — caller defaults to "None". */

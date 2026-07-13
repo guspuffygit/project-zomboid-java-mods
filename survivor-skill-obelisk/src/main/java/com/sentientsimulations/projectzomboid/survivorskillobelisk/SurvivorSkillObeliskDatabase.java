@@ -147,6 +147,26 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             "CREATE INDEX IF NOT EXISTS idx_death_ambitions_death "
                     + "ON death_ambitions(death_id)";
 
+    private static final String CREATE_RECOVERIES =
+            """
+            CREATE TABLE IF NOT EXISTS recoveries (
+                steam_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                death_id INTEGER NOT NULL,
+                ts       INTEGER NOT NULL,
+                PRIMARY KEY (steam_id, username)
+            )""";
+
+    private static final String CREATE_RECOVERY_SKILLS =
+            """
+            CREATE TABLE IF NOT EXISTS recovery_skills (
+                steam_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                perk     TEXT NOT NULL,
+                xp       REAL NOT NULL,
+                PRIMARY KEY (steam_id, username, perk)
+            )""";
+
     private static final String CREATE_OBELISK_TYPES =
             """
             CREATE TABLE IF NOT EXISTS obelisk_types (
@@ -189,6 +209,8 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             stmt.execute(CREATE_DEATH_LEARNED_SONGS_INDEX);
             stmt.execute(CREATE_DEATH_AMBITIONS);
             stmt.execute(CREATE_DEATH_AMBITIONS_INDEX);
+            stmt.execute(CREATE_RECOVERIES);
+            stmt.execute(CREATE_RECOVERY_SKILLS);
             stmt.execute(CREATE_OBELISK_TYPES);
         }
     }

@@ -126,6 +126,9 @@ public final class DeathEventHandler {
             return;
         }
         try {
+            // Invalidate any recovery mid-pipeline for this player before the snapshot is queued —
+            // its XP apply / ledger write must not land for the respawned character.
+            RecoverSkillsHandler.notifyDeath(player.getSteamID(), player.getUsername());
             DeathSnapshot snapshot = snapshot(player);
             PENDING.offer(snapshot);
         } catch (Exception e) {
@@ -183,6 +186,11 @@ public final class DeathEventHandler {
             SurvivorSkillObeliskRepository repo =
                     new SurvivorSkillObeliskRepository(db.getConnection());
 
+            // The new snapshot below captures everything the character held, recovered XP
+            // included, so the old recovery ledger is spent — deleting it lets the respawned
+            // character recover any death at full value with nothing to subtract.
+            repo.deleteRecovery(s.steamId(), s.username());
+
             long deathId =
                     repo.insertDeath(
                             System.currentTimeMillis(),
@@ -239,12 +247,11 @@ public final class DeathEventHandler {
 
     /**
      * Insert every perk in {@link PerkFactory#PerkList}, including ones the dead character left at
-     * level 0 with no earned XP. Recovery iterates the full saved snapshot and drives every perk on
-     * the live character to {@code (live baseline + saved xp × recovery%)} — so perks the dead
-     * character never earned anything in carry an {@code xp=0} row that resets the live character's
-     * progression in that perk back to baseline. That's the point: each obelisk recovery is a clean
-     * "restore THIS death's progression", not a cumulative merge across multiple deaths — chaining
-     * D1's high Running into D2's high Strength is intentionally blocked.
+     * level 0 with no earned XP. Recovery is additive ({@link RecoverSkillsHandler}) but subtracts
+     * what the previous recovery granted — the {@code xp=0} rows are what carry that subtraction
+     * for perks the newly-recovered death never earned anything in. That's what blocks the
+     * cumulative merge: chaining D1's high Running into D2's high Strength walks the Running grant
+     * back out when D2 is recovered.
      */
     private static List<SkillSnapshot> snapshotSkills(IsoPlayer player) {
         Map<PerkFactory.Perk, Integer> grantedLevels = grantedLevelsAtCreation(player);

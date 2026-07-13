@@ -66,6 +66,66 @@ class SurvivorSkillObeliskDatabaseTest {
         assertTrue(
                 tables.contains("death_learned_songs"), "death_learned_songs table should exist");
         assertTrue(tables.contains("death_ambitions"), "death_ambitions table should exist");
+        assertTrue(tables.contains("recoveries"), "recoveries table should exist");
+        assertTrue(tables.contains("recovery_skills"), "recovery_skills table should exist");
+    }
+
+    @Test
+    void recoveryGrantsEmptyWhenPlayerNeverRecovered() throws Exception {
+        assertTrue(repo.findRecoveryGrants(42L, "alice").isEmpty());
+    }
+
+    @Test
+    void replaceRecoveryRoundTripsGrants() throws Exception {
+        Map<String, Float> grants = new HashMap<>();
+        grants.put("Cooking", 1234.5f);
+        grants.put("Strength", 500f);
+        repo.replaceRecovery(42L, "alice", 7L, 1_000L, grants);
+
+        Map<String, Float> readBack = repo.findRecoveryGrants(42L, "alice");
+        assertEquals(2, readBack.size());
+        assertEquals(1234.5f, readBack.get("Cooking"));
+        assertEquals(500f, readBack.get("Strength"));
+
+        try (Statement stmt = db.getConnection().createStatement();
+                ResultSet rs =
+                        stmt.executeQuery(
+                                "SELECT death_id, ts FROM recoveries"
+                                        + " WHERE steam_id = 42 AND username = 'alice'")) {
+            assertTrue(rs.next());
+            assertEquals(7L, rs.getLong("death_id"));
+            assertEquals(1_000L, rs.getLong("ts"));
+        }
+    }
+
+    @Test
+    void replaceRecoveryOverwritesPreviousLedger() throws Exception {
+        // Recovering a second death replaces the ledger wholesale — perks the new recovery didn't
+        // grant must vanish, not linger and get subtracted again on the third recovery.
+        repo.replaceRecovery(42L, "alice", 7L, 1_000L, Map.of("Cooking", 3000f));
+        repo.replaceRecovery(42L, "alice", 9L, 2_000L, Map.of("Strength", 800f));
+
+        Map<String, Float> readBack = repo.findRecoveryGrants(42L, "alice");
+        assertEquals(1, readBack.size());
+        assertEquals(800f, readBack.get("Strength"));
+    }
+
+    @Test
+    void deleteRecoveryClearsLedgerForOnePlayerOnly() throws Exception {
+        repo.replaceRecovery(42L, "alice", 7L, 1_000L, Map.of("Cooking", 3000f));
+        repo.replaceRecovery(43L, "bob", 8L, 1_500L, Map.of("Aiming", 100f));
+
+        repo.deleteRecovery(42L, "alice");
+
+        assertTrue(repo.findRecoveryGrants(42L, "alice").isEmpty());
+        assertEquals(100f, repo.findRecoveryGrants(43L, "bob").get("Aiming"));
+    }
+
+    @Test
+    void deleteRecoveryIsNoOpWhenAbsent() throws Exception {
+        // Every death deletes the ledger, including deaths of players who never recovered.
+        repo.deleteRecovery(42L, "alice");
+        assertTrue(repo.findRecoveryGrants(42L, "alice").isEmpty());
     }
 
     @Test
