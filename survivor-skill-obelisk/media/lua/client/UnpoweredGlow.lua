@@ -12,6 +12,17 @@
 -- Each registered config keeps its own per-square dedup table, so the same square
 -- can host glows from multiple configs without them clobbering each other.
 --
+-- LoadGridsquare fires for every square that streams in, so onLoadGridsquare is
+-- a hot path: it must walk a square's objects exactly once and resolve each
+-- sprite name against all configs together, never once per config. register()
+-- maintains a three-tier match index to make that possible:
+--   * exactIndex: sprite name -> configs (from `sprites` lists)
+--   * prefixGroups: one entry per distinct spritePrefix, so N configs sharing a
+--     prefix cost one string compare
+--   * funcConfigs: custom `match` functions — the slow tier, called once per
+--     sprite name. Prefer `sprites` or `spritePrefix` whenever the names are
+--     known up front.
+--
 -- Survives `reload`: two paths, depending on which file you actually reloaded.
 --   * Full reload (this file re-executes): prior-load state is stashed on the
 --     global UnpoweredGlow table (Events listeners and IsoLightSource objects
@@ -28,13 +39,22 @@
 -- Usage:
 --     require "UnpoweredGlow"
 --     UnpoweredGlow.register({
---         spritePrefix = "survivor_skill_obelisk_",
+--         spritePrefix = "after_the_fall_economy_",
 --         r = 1.0, g = 0.75, b = 0.35,
 --         radius = 6,
 --     })
 --
--- Custom matcher instead of a prefix:
+-- Exact sprite names (fastest — hash lookup per streamed object):
 --     UnpoweredGlow.register({
+--         name = "weird_lanterns",
+--         sprites = { "weird_lantern_07", "weird_lantern_08" },
+--         r = 0.3, g = 0.9, b = 1.0, radius = 4,
+--     })
+--
+-- Custom matcher (slowest — runs for every streamed sprite name; use only when
+-- the names aren't enumerable):
+--     UnpoweredGlow.register({
+--         name = "weird_lanterns",
 --         match = function(spriteName) return spriteName == "weird_lantern_07" end,
 --         r = 0.3, g = 0.9, b = 1.0, radius = 4,
 --     })
@@ -67,6 +87,43 @@ local configs = {}
 local hooks = {}
 UnpoweredGlow._state = { configs = configs, hooks = hooks }
 
+-- Match index (see header). Rebuilt from `configs` on every register() so the
+-- hot path never iterates configs directly.
+local exactIndex = {}
+local prefixGroups = {}
+local funcConfigs = {}
+
+local function rebuildMatchIndex()
+    exactIndex = {}
+    prefixGroups = {}
+    funcConfigs = {}
+    local groupsByPrefix = {}
+    for i = 1, #configs do
+        local cfg = configs[i]
+        if cfg.sprites ~= nil then
+            for j = 1, #cfg.sprites do
+                local spriteName = cfg.sprites[j]
+                local list = exactIndex[spriteName]
+                if list == nil then
+                    list = {}
+                    exactIndex[spriteName] = list
+                end
+                list[#list + 1] = cfg
+            end
+        elseif cfg.spritePrefix ~= nil then
+            local group = groupsByPrefix[cfg.spritePrefix]
+            if group == nil then
+                group = { prefix = cfg.spritePrefix, len = #cfg.spritePrefix, configs = {} }
+                groupsByPrefix[cfg.spritePrefix] = group
+                prefixGroups[#prefixGroups + 1] = group
+            end
+            group.configs[#group.configs + 1] = cfg
+        else
+            funcConfigs[#funcConfigs + 1] = cfg
+        end
+    end
+end
+
 local function keyOf(x, y, z)
     return x .. "," .. y .. "," .. z
 end
@@ -90,19 +147,59 @@ local function spriteNameOf(obj)
     return sprite:getName()
 end
 
-local function matchersFor(spriteName)
-    if spriteName == nil then
+-- Returns an array of every config matching `name`, or nil. Allocates only on
+-- a hit; misses (the overwhelming majority of streamed sprites) cost one hash
+-- lookup plus one prefix compare per distinct prefix.
+local function matchConfigsFor(name)
+    if name == nil then
         return nil
     end
     local matched = nil
-    for i = 1, #configs do
-        local cfg = configs[i]
-        if cfg.match(spriteName) then
+    local exact = exactIndex[name]
+    if exact ~= nil then
+        matched = {}
+        for i = 1, #exact do
+            matched[#matched + 1] = exact[i]
+        end
+    end
+    for i = 1, #prefixGroups do
+        local group = prefixGroups[i]
+        if string.sub(name, 1, group.len) == group.prefix then
+            matched = matched or {}
+            local groupConfigs = group.configs
+            for j = 1, #groupConfigs do
+                matched[#matched + 1] = groupConfigs[j]
+            end
+        end
+    end
+    for i = 1, #funcConfigs do
+        local cfg = funcConfigs[i]
+        if cfg.match(name) then
             matched = matched or {}
             matched[#matched + 1] = cfg
         end
     end
     return matched
+end
+
+-- Single-config predicate for the rare paths (reload cleanup, register-replace
+-- relight). The hot streaming path goes through matchConfigsFor instead.
+local function configMatchesName(cfg, name)
+    if name == nil then
+        return false
+    end
+    if cfg.sprites ~= nil then
+        for i = 1, #cfg.sprites do
+            if cfg.sprites[i] == name then
+                return true
+            end
+        end
+        return false
+    end
+    if cfg.spritePrefix ~= nil then
+        return string.sub(name, 1, #cfg.spritePrefix) == cfg.spritePrefix
+    end
+    return cfg.match(name)
 end
 
 local function squareHasMatch(square, cfg)
@@ -113,8 +210,7 @@ local function squareHasMatch(square, cfg)
         return false
     end
     for i = 0, objects:size() - 1 do
-        local name = spriteNameOf(objects:get(i))
-        if name ~= nil and cfg.match(name) then
+        if configMatchesName(cfg, spriteNameOf(objects:get(i))) then
             return true
         end
     end
@@ -148,20 +244,31 @@ local function unlightSquare(cfg, x, y, z)
 end
 
 local function onLoadGridsquare(square)
-    if square == nil then
+    if square == nil or #configs == 0 then
         return
     end
-    local x, y, z = square:getX(), square:getY(), square:getZ()
-    for i = 1, #configs do
-        local cfg = configs[i]
-        if squareHasMatch(square, cfg) then
-            lightSquare(cfg, x, y, z)
+    local objects = square:getObjects()
+    if objects == nil then
+        return
+    end
+    -- x/y/z resolved lazily: most streamed squares match nothing, and the
+    -- three Java getters would otherwise run for every one of them.
+    local x, y, z
+    for i = 0, objects:size() - 1 do
+        local matched = matchConfigsFor(spriteNameOf(objects:get(i)))
+        if matched ~= nil then
+            if x == nil then
+                x, y, z = square:getX(), square:getY(), square:getZ()
+            end
+            for j = 1, #matched do
+                lightSquare(matched[j], x, y, z)
+            end
         end
     end
 end
 
 local function onObjectAdded(obj)
-    local matched = matchersFor(spriteNameOf(obj))
+    local matched = matchConfigsFor(spriteNameOf(obj))
     if matched == nil then
         return
     end
@@ -176,7 +283,7 @@ local function onObjectAdded(obj)
 end
 
 local function onObjectAboutToBeRemoved(obj)
-    local matched = matchersFor(spriteNameOf(obj))
+    local matched = matchConfigsFor(spriteNameOf(obj))
     if matched == nil then
         return
     end
@@ -254,23 +361,32 @@ if previousState ~= nil then
     Events.OnTick.Add(refreshAfterReload)
 end
 
-local function buildMatch(config)
-    if config.match ~= nil then
+local function validateMatcher(config)
+    if config.sprites ~= nil then
         assert(
-            type(config.match) == "function",
-            "UnpoweredGlow.register: 'match' must be a function"
+            type(config.sprites) == "table" and #config.sprites > 0,
+            "UnpoweredGlow.register: 'sprites' must be a non-empty array of sprite names"
         )
-        return config.match
+        for i = 1, #config.sprites do
+            assert(
+                type(config.sprites[i]) == "string",
+                "UnpoweredGlow.register: 'sprites' entries must be strings"
+            )
+        end
+        return
     end
-    local prefix = config.spritePrefix
+    if config.spritePrefix ~= nil then
+        assert(
+            type(config.spritePrefix) == "string" and #config.spritePrefix > 0,
+            "UnpoweredGlow.register: 'spritePrefix' must be a non-empty string"
+        )
+        return
+    end
     assert(
-        type(prefix) == "string" and #prefix > 0,
-        "UnpoweredGlow.register: provide 'spritePrefix' (string) or 'match' (function)"
+        type(config.match) == "function",
+        "UnpoweredGlow.register: provide 'sprites' (array), 'spritePrefix' (string),"
+            .. " or 'match' (function)"
     )
-    local len = #prefix
-    return function(name)
-        return name ~= nil and string.sub(name, 1, len) == prefix
-    end
 end
 
 -- Drops every IsoLightSource we tracked for `oldEntry` from the cell and
@@ -295,9 +411,10 @@ end
 
 function UnpoweredGlow.register(config)
     assert(type(config) == "table", "UnpoweredGlow.register: config must be a table")
+    validateMatcher(config)
     -- The identity used to dedupe across reloads. Defaults to spritePrefix so
-    -- the common case is reload-safe out of the box; custom-matcher configs
-    -- must pass an explicit `name` to opt into replace-on-reregister.
+    -- the common case is reload-safe out of the box; sprites/custom-matcher
+    -- configs must pass an explicit `name` to opt into replace-on-reregister.
     local name = config.name or config.spritePrefix
     assert(
         type(name) == "string" and #name > 0,
@@ -306,7 +423,9 @@ function UnpoweredGlow.register(config)
     )
     local entry = {
         name = name,
-        match = buildMatch(config),
+        sprites = config.sprites,
+        spritePrefix = config.spritePrefix,
+        match = config.match,
         r = config.r or 1.0,
         g = config.g or 1.0,
         b = config.b or 1.0,
@@ -321,6 +440,7 @@ function UnpoweredGlow.register(config)
             local cell = getCell()
             local positions = dropLightsAndCollectPositions(configs[i], cell)
             configs[i] = entry
+            rebuildMatchIndex()
             installHooks()
             if cell ~= nil then
                 for j = 1, #positions do
@@ -335,6 +455,7 @@ function UnpoweredGlow.register(config)
         end
     end
     configs[#configs + 1] = entry
+    rebuildMatchIndex()
     installHooks()
     return entry
 end

@@ -17,7 +17,7 @@
   "Sandbox_SkillObelisk_SkillRecoveryPercent": "Skill Recovery (%)",
   "Sandbox_SkillObelisk_SkillRecoveryPercent_tooltip": "Percentage (0-100) of perk XP and Lifestyles ambition progress to restore. 100 = full restore, 0 = nothing restored. Ignored for any slice whose Recover toggle is off.",
   "Sandbox_SkillObelisk_MapObeliskVisibility": "Show Obelisks On Map",
-  "Sandbox_SkillObelisk_MapObeliskVisibility_tooltip": "Which placed obelisks appear as gold dots on the world map. Show All = every obelisk visible (default). Show General Only = only unconfigured (\"None\" type) obelisks visible; skill-specific obelisks hidden. Hide All = no obelisks visible.",
+  "Sandbox_SkillObelisk_MapObeliskVisibility_tooltip": "Which placed obelisks appear as dots on the world map. Show All = every obelisk visible (default). Show General Only = only unconfigured (\"None\" type) obelisks visible; skill-specific obelisks hidden. Hide All = no obelisks visible.",
   "Sandbox_SkillObelisk_MapObeliskVisibility_Values_option1": "Show All Obelisks",
   "Sandbox_SkillObelisk_MapObeliskVisibility_Values_option2": "Show General Only",
   "Sandbox_SkillObelisk_MapObeliskVisibility_Values_option3": "Hide All Obelisks"

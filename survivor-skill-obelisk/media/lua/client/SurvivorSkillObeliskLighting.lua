@@ -40,13 +40,16 @@ local function largeMirrorIndex(idx)
     return 23 - idx
 end
 
-local function matcherFor(idx)
-    local smallName = "atf_obelisks_sm_01_" .. idx
-    local largeName = "atf_obelisks_lg_01_" .. idx
-    local largeMirrorName = "atf_obelisks_lg_01_mirror_" .. largeMirrorIndex(idx)
-    return function(name)
-        return name == smallName or name == largeName or name == largeMirrorName
-    end
+-- Exact `sprites` lists (not a `match` closure) so UnpoweredGlow can serve all
+-- 13 registrations from one hash lookup per streamed object — LoadGridsquare
+-- fires per streamed square, and 13 closures × 3 compares each was measurably
+-- hot in dense areas.
+local function spritesFor(idx)
+    return {
+        "atf_obelisks_sm_01_" .. idx,
+        "atf_obelisks_lg_01_" .. idx,
+        "atf_obelisks_lg_01_mirror_" .. largeMirrorIndex(idx),
+    }
 end
 
 for i = 1, #CONFIGS do
@@ -54,7 +57,7 @@ for i = 1, #CONFIGS do
     local color, idx, r, g, b, radius = cfg[1], cfg[2], cfg[3], cfg[4], cfg[5], cfg[6]
     UnpoweredGlow.register({
         name = "survivor_skill_obelisk_" .. color,
-        match = matcherFor(idx),
+        sprites = spritesFor(idx),
         r = r,
         g = g,
         b = b,

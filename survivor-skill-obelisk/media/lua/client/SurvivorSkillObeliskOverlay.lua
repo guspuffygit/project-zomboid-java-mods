@@ -22,9 +22,23 @@ local BASE_PATTERN_MIRROR = "^atf_obelisks_(lg_01_mirror)_(%d+)$"
 local BASE_PATTERN = "^atf_obelisks_(lg_01)_(%d+)$"
 local BASE_PATTERN_SM = "^atf_obelisks_(sm_01)_(%d+)$"
 
-local function overlayNameFor(spriteName)
-    if spriteName == nil then
-        return nil
+-- onLoadGridsquare visits every object of every streamed square, so the match
+-- must reject non-obelisks with one cheap substring compare before any pattern
+-- runs (same indexed-walk lesson as UnpoweredGlow v2).
+local OBELISK_PREFIX = "atf_obelisks_"
+local OBELISK_PREFIX_LEN = string.len(OBELISK_PREFIX)
+
+-- base sprite name -> resolved overlay sprite, or false for "no overlay".
+-- Obelisk sprite names are a small fixed population, so this never grows.
+local overlayCache = {}
+
+local function overlaySpriteFor(spriteName)
+    local cached = overlayCache[spriteName]
+    if cached ~= nil then
+        if cached == false then
+            return nil
+        end
+        return cached
     end
     local kind, idx = string.match(spriteName, BASE_PATTERN_MIRROR)
     if kind == nil then
@@ -33,10 +47,13 @@ local function overlayNameFor(spriteName)
     if kind == nil then
         kind, idx = string.match(spriteName, BASE_PATTERN_SM)
     end
-    if kind == nil then
-        return nil
+    local overlaySprite = nil
+    if kind ~= nil then
+        overlaySprite =
+            IsoSpriteManager.instance:getSprite("atf_obelisks_" .. kind .. "_on_" .. idx)
     end
-    return "atf_obelisks_" .. kind .. "_on_" .. idx
+    overlayCache[spriteName] = overlaySprite or false
+    return overlaySprite
 end
 
 local function attachOverlay(obj)
@@ -47,11 +64,11 @@ local function attachOverlay(obj)
     if sprite == nil then
         return
     end
-    local overlayName = overlayNameFor(sprite:getName())
-    if overlayName == nil then
+    local name = sprite:getName()
+    if name == nil or string.sub(name, 1, OBELISK_PREFIX_LEN) ~= OBELISK_PREFIX then
         return
     end
-    local overlaySprite = IsoSpriteManager.instance:getSprite(overlayName)
+    local overlaySprite = overlaySpriteFor(name)
     if overlaySprite == nil then
         return
     end
