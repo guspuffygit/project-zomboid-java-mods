@@ -223,8 +223,21 @@ local function lightSquare(cfg, x, y, z)
         return
     end
     local k = keyOf(x, y, z)
-    if cfg.lights[k] ~= nil then
-        return
+    local tracked = cfg.lights[k]
+    if tracked ~= nil then
+        -- LightingJNI.checkLights drops any light whose position falls outside
+        -- every player's chunk-map bounds — so when chunks stream out, the game
+        -- removes our light from lamppostPositions but our tracked handle here
+        -- survives. A plain nil-check would then skip re-adding on the next
+        -- LoadGridsquare and leave the sprite dark forever. Verify the handle
+        -- is still in the list; if not, treat as unlit and fall through.
+        local list = cell:getLamppostPositions()
+        for i = 0, list:size() - 1 do
+            if list:get(i) == tracked then
+                return
+            end
+        end
+        cfg.lights[k] = nil
     end
     cfg.lights[k] = cell:addLamppost(x, y, z, cfg.r, cfg.g, cfg.b, cfg.radius)
 end
