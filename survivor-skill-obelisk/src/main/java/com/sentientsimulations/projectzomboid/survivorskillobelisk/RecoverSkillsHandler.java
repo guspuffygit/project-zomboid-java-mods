@@ -20,6 +20,9 @@ import zombie.Lua.LuaManager;
 import zombie.characters.IsoPlayer;
 import zombie.characters.skills.PerkFactory;
 import zombie.network.GameServer;
+import zombie.radio.ZomboidRadio;
+import zombie.radio.media.MediaData;
+import zombie.radio.media.RecordedMedia;
 
 /**
  * Handles the {@code SurvivorSkillObelisk:recoverSkills} client command. Validates that the
@@ -319,6 +322,7 @@ public final class RecoverSkillsHandler {
             }
             Map<String, Float> newGrants =
                     applySkillsAuthoritatively(done.player(), done.result(), done.deathId());
+            applyRemainingAuthoritatively(done.player(), done.result());
             KahluaTable reply = buildReply(done.result());
             // If the player disconnected while the query was in-flight, sendServerCommand is a
             // no-op (it gates on PlayerToAddressMap).
@@ -501,6 +505,282 @@ public final class RecoverSkillsHandler {
     }
 
     /**
+     * Apply every non-XP recovery slice to the live server-side {@link IsoPlayer}. Skills go
+     * through {@link #applySkillsAuthoritatively} (and rely on the ~1s {@code PlayerXp} packet to
+     * mirror to the client); this method covers the rest — recipes, read literature, read print
+     * media, watched media, learned songs, and ambitions — writing to the fields that {@code
+     * IsoPlayer.save()} persists so a server restart doesn't wipe them.
+     *
+     * <p>The client still applies the same payload in {@code SurvivorSkillObeliskClient.lua
+     * onRecoveredData} for immediate UI feedback — magazines flip to "read" instantly, no wait for
+     * the next full-player sync. This is the authoritative copy: {@code
+     * ServerPlayerDB.NetworkCharacterData} snapshots the server-side player, so this is what
+     * survives a reboot. {@code transmitModData()} is called at the end so the client's session
+     * copy of modData matches the freshly-mutated server copy without waiting for a sync.
+     *
+     * <p>Per-slice failures are logged and skipped so a single bad DB row can't tank the whole
+     * apply.
+     */
+    private static void applyRemainingAuthoritatively(IsoPlayer player, QueryResult result) {
+        boolean modDataMutated = false;
+        if (result.recipes() != null) {
+            for (String recipe : result.recipes()) {
+                if (recipe == null) {
+                    continue;
+                }
+                try {
+                    player.learnRecipe(recipe);
+                } catch (Throwable t) {
+                    LOGGER.warn(
+                            "[SurvivorSkillObelisk] recoverSkills: learnRecipe({}) failed for {}:"
+                                    + " {}",
+                            recipe,
+                            player.getUsername(),
+                            t.getMessage());
+                }
+            }
+        }
+        if (result.literature() != null) {
+            for (String title : result.literature()) {
+                if (title == null) {
+                    continue;
+                }
+                try {
+                    player.addReadLiterature(title);
+                } catch (Throwable t) {
+                    LOGGER.warn(
+                            "[SurvivorSkillObelisk] recoverSkills: addReadLiterature({}) failed for"
+                                    + " {}: {}",
+                            title,
+                            player.getUsername(),
+                            t.getMessage());
+                }
+            }
+        }
+        if (result.printMedia() != null) {
+            for (String id : result.printMedia()) {
+                if (id == null) {
+                    continue;
+                }
+                try {
+                    player.addReadPrintMedia(id);
+                } catch (Throwable t) {
+                    LOGGER.warn(
+                            "[SurvivorSkillObelisk] recoverSkills: addReadPrintMedia({}) failed for"
+                                    + " {}: {}",
+                            id,
+                            player.getUsername(),
+                            t.getMessage());
+                }
+            }
+        }
+        if (result.watchedMedia() != null) {
+            applyWatchedMediaAuthoritatively(player, result.watchedMedia());
+        }
+        if (result.learnedSongs() != null && !result.learnedSongs().isEmpty()) {
+            if (applyLearnedSongsAuthoritatively(player, result.learnedSongs())) {
+                modDataMutated = true;
+            }
+        }
+        if (result.ambitions() != null && !result.ambitions().isEmpty()) {
+            if (applyAmbitionsAuthoritatively(player, result.ambitions())) {
+                modDataMutated = true;
+            }
+        }
+        if (modDataMutated) {
+            try {
+                player.transmitModData();
+            } catch (Throwable t) {
+                LOGGER.warn(
+                        "[SurvivorSkillObelisk] recoverSkills: transmitModData failed for {}: {}",
+                        player.getUsername(),
+                        t.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Mirror the client's {@code applyWatchedMedia}: only fully-watched entries restore, and each
+     * one adds every line GUID from the resolved {@link MediaData} to {@code knownMediaLines}. We
+     * don't snapshot per-line GUIDs at death time, so partial-watch state is intentionally lost.
+     */
+    private static void applyWatchedMediaAuthoritatively(
+            IsoPlayer player, List<SurvivorSkillObeliskRepository.WatchedMediaRow> watched) {
+        ZomboidRadio radio = ZomboidRadio.getInstance();
+        if (radio == null) {
+            return;
+        }
+        RecordedMedia recorded = radio.getRecordedMedia();
+        if (recorded == null) {
+            return;
+        }
+        for (SurvivorSkillObeliskRepository.WatchedMediaRow row : watched) {
+            if (row.mediaId() == null || !row.fullyWatched()) {
+                continue;
+            }
+            try {
+                MediaData media = recorded.getMediaData(row.mediaId());
+                if (media == null) {
+                    continue;
+                }
+                for (int i = 0; i < media.getLineCount(); i++) {
+                    MediaData.MediaLineData line = media.getLine(i);
+                    if (line != null && line.getTextGuid() != null) {
+                        player.addKnownMediaLine(line.getTextGuid());
+                    }
+                }
+            } catch (Throwable t) {
+                LOGGER.warn(
+                        "[SurvivorSkillObelisk] recoverSkills: watched media {} failed for {}: {}",
+                        row.mediaId(),
+                        player.getUsername(),
+                        t.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Mirror the client's {@code applyLearnedSongs}: for each row, upsert into {@code
+     * modData[instrument .. "LearnedTracks"]}. The list is a Kahlua array of {@code {name, sound}}
+     * tables; skip rows whose {@code name} is already present so re-recoveries don't duplicate.
+     * Returns whether anything was written — the caller uses that to decide whether to {@code
+     * transmitModData}.
+     */
+    private static boolean applyLearnedSongsAuthoritatively(
+            IsoPlayer player, List<SurvivorSkillObeliskRepository.LearnedSongRow> songs) {
+        KahluaTable modData = player.getModData();
+        if (modData == null) {
+            return false;
+        }
+        boolean mutated = false;
+        for (SurvivorSkillObeliskRepository.LearnedSongRow row : songs) {
+            if (row.instrument() == null || row.songName() == null) {
+                continue;
+            }
+            try {
+                String key = row.instrument() + "LearnedTracks";
+                KahluaTable list;
+                Object listObj = modData.rawget(key);
+                if (listObj instanceof KahluaTable existingList) {
+                    list = existingList;
+                } else {
+                    list = LuaManager.platform.newTable();
+                    modData.rawset(key, list);
+                    mutated = true;
+                }
+                boolean alreadyPresent = false;
+                int len = list.len();
+                for (int i = 1; i <= len; i++) {
+                    Object entry = list.rawget(i);
+                    if (entry instanceof KahluaTable existingRow
+                            && row.songName().equals(existingRow.rawget("name"))) {
+                        alreadyPresent = true;
+                        break;
+                    }
+                }
+                if (!alreadyPresent) {
+                    KahluaTable newEntry = LuaManager.platform.newTable();
+                    newEntry.rawset("name", row.songName());
+                    if (row.sound() != null) {
+                        newEntry.rawset("sound", row.sound());
+                    }
+                    list.rawset(list.len() + 1, newEntry);
+                    mutated = true;
+                }
+            } catch (Throwable t) {
+                LOGGER.warn(
+                        "[SurvivorSkillObelisk] recoverSkills: learned song {}/{} failed for {}:"
+                                + " {}",
+                        row.instrument(),
+                        row.songName(),
+                        player.getUsername(),
+                        t.getMessage());
+            }
+        }
+        return mutated;
+    }
+
+    /**
+     * Mirror the client's {@code applyAmbitions}: upsert each row into {@code
+     * modData.Ambitions[row.name]}, keyed by name. Numeric goal-progress values are scaled by the
+     * configured recovery percent (matching client behavior — see the note in
+     * SurvivorSkillObeliskClient.lua). Booleans and string flags pass through verbatim. {@code
+     * completed}/{@code isActive}/{@code isPassive} follow the client's OR-merge: true from the
+     * saved row wins, otherwise fall back to what was already there (default false).
+     */
+    private static boolean applyAmbitionsAuthoritatively(
+            IsoPlayer player, List<SurvivorSkillObeliskRepository.AmbitionRow> ambitions) {
+        KahluaTable modData = player.getModData();
+        if (modData == null) {
+            return false;
+        }
+        KahluaTable ambitionsTable;
+        Object ambitionsObj = modData.rawget("Ambitions");
+        if (ambitionsObj instanceof KahluaTable existing) {
+            ambitionsTable = existing;
+        } else {
+            ambitionsTable = LuaManager.platform.newTable();
+            modData.rawset("Ambitions", ambitionsTable);
+        }
+        boolean mutated = false;
+        float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
+        for (SurvivorSkillObeliskRepository.AmbitionRow row : ambitions) {
+            if (row.name() == null) {
+                continue;
+            }
+            try {
+                KahluaTable existingRow;
+                Object existingObj = ambitionsTable.rawget(row.name());
+                if (existingObj instanceof KahluaTable table) {
+                    existingRow = table;
+                } else {
+                    existingRow = LuaManager.platform.newTable();
+                }
+                existingRow.rawset("name", row.name());
+                if (row.category() != null) {
+                    existingRow.rawset("cat", row.category());
+                }
+                existingRow.rawset(
+                        "completed",
+                        row.completed() || truthyBool(existingRow.rawget("completed")));
+                existingRow.rawset(
+                        "isActive", row.isActive() || truthyBool(existingRow.rawget("isActive")));
+                existingRow.rawset(
+                        "isPassive",
+                        row.isPassive() || truthyBool(existingRow.rawget("isPassive")));
+                for (int g = 0; g < 6; g++) {
+                    String goalKey = "goal" + (g + 1);
+                    String progressKey = goalKey + "progress";
+                    if (row.goals()[g] != null) {
+                        existingRow.rawset(goalKey, decodeAmbitionValue(row.goals()[g]));
+                    }
+                    if (row.goalProgress()[g] != null) {
+                        Object value = decodeAmbitionValue(row.goalProgress()[g]);
+                        if (value instanceof Double d) {
+                            existingRow.rawset(progressKey, d * percent);
+                        } else {
+                            existingRow.rawset(progressKey, value);
+                        }
+                    }
+                }
+                ambitionsTable.rawset(row.name(), existingRow);
+                mutated = true;
+            } catch (Throwable t) {
+                LOGGER.warn(
+                        "[SurvivorSkillObelisk] recoverSkills: ambition {} failed for {}: {}",
+                        row.name(),
+                        player.getUsername(),
+                        t.getMessage());
+            }
+        }
+        return mutated;
+    }
+
+    private static boolean truthyBool(Object o) {
+        return o instanceof Boolean b && b;
+    }
+
+    /**
      * Pure math: the XP we drive the live character's perk to. Additive — the recovered earned XP
      * (scaled by {@code percent}) lands on top of {@code currentXp}, after subtracting {@code
      * previousGrantXp} (what an earlier recovery already contributed, so switching deaths swaps the
@@ -535,6 +815,11 @@ public final class RecoverSkillsHandler {
      * sandbox toggles (the worker leaves disabled slices as {@code null}). Skills are not in the
      * payload — they're applied server-side and synced down via the periodic {@code PlayerXp}
      * packet.
+     *
+     * <p>Same slices are also written server-side by {@link #applyRemainingAuthoritatively}; this
+     * reply is a client-only fast-path for immediate UI feedback ("Skills recovered" halo,
+     * magazines flip to "read" without waiting for the next full player sync). The server-side
+     * write is the authoritative one — it's what {@code ServerPlayerDB} snapshots on save.
      */
     private static KahluaTable buildReply(QueryResult result) {
         KahluaTable reply = LuaManager.platform.newTable();
