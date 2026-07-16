@@ -162,6 +162,15 @@ public class SurvivorSkillObeliskRepository {
     private static final String INSERT_RECOVERY_SKILL =
             "INSERT INTO recovery_skills (steam_id, username, perk, xp) VALUES (?, ?, ?, ?)";
 
+    private static final String FIND_CHARACTER_BASELINE =
+            "SELECT perk, xp FROM character_baselines WHERE steam_id = ? AND username = ?";
+
+    private static final String DELETE_CHARACTER_BASELINE =
+            "DELETE FROM character_baselines WHERE steam_id = ? AND username = ?";
+
+    private static final String INSERT_CHARACTER_BASELINE =
+            "INSERT INTO character_baselines (steam_id, username, perk, xp) VALUES (?, ?, ?, ?)";
+
     private static final String FIND_OBELISK_TYPE =
             "SELECT type FROM obelisk_types WHERE x = ? AND y = ? AND z = ?";
 
@@ -579,6 +588,50 @@ public class SurvivorSkillObeliskRepository {
             stmt.setLong(1, steamId);
             stmt.setString(2, username);
             stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Per-perk XP the account's current character spawned with (written at creation by {@link
+     * CharacterBaselineHandler}). Returns {@code null} when nothing is recorded — the character was
+     * created before baseline tracking shipped, so the caller must fall back to the trait-replay
+     * estimate.
+     */
+    public Map<String, Float> findCharacterBaseline(long steamId, String username)
+            throws SQLException {
+        Map<String, Float> baseline = new HashMap<>();
+        try (PreparedStatement stmt = connection.prepareStatement(FIND_CHARACTER_BASELINE)) {
+            stmt.setLong(1, steamId);
+            stmt.setString(2, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    baseline.put(rs.getString("perk"), rs.getFloat("xp"));
+                }
+            }
+        }
+        return baseline.isEmpty() ? null : baseline;
+    }
+
+    /**
+     * Replace the account's character baseline wholesale — each respawn is a new character, so the
+     * previous character's baseline must vanish, not merge. Caller is responsible for wrapping in a
+     * transaction so a crash mid-write can't leave a half-written baseline.
+     */
+    public void replaceCharacterBaseline(long steamId, String username, Map<String, Float> xpByPerk)
+            throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(DELETE_CHARACTER_BASELINE)) {
+            stmt.setLong(1, steamId);
+            stmt.setString(2, username);
+            stmt.executeUpdate();
+        }
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_CHARACTER_BASELINE)) {
+            for (Map.Entry<String, Float> entry : xpByPerk.entrySet()) {
+                stmt.setLong(1, steamId);
+                stmt.setString(2, username);
+                stmt.setString(3, entry.getKey());
+                stmt.setFloat(4, entry.getValue());
+                stmt.executeUpdate();
+            }
         }
     }
 

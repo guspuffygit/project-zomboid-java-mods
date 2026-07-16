@@ -201,4 +201,29 @@ class DeathEventHandlerTest {
                 DeathEventHandler.computeXpToSave(granted - 100f, 5, PerkFactory.Perks.Strength);
         assertEquals(0f, saved);
     }
+
+    @Test
+    void computeEarnedXpSubtractsBaseline() {
+        assertEquals(500f, DeathEventHandler.computeEarnedXp(1500f, 1000f));
+    }
+
+    @Test
+    void computeEarnedXpImmediateDeathSavesZero() {
+        // Dying right after spawn: raw XP still equals the creation baseline exactly.
+        assertEquals(0f, DeathEventHandler.computeEarnedXp(1000f, 1000f));
+    }
+
+    @Test
+    void computeEarnedXpPerkAbsentFromBaselineSavesEverything() {
+        // Perk added by a game update or mod after the character was created — nothing was
+        // granted, so all of it was earned.
+        assertEquals(1500f, DeathEventHandler.computeEarnedXp(1500f, null));
+    }
+
+    @Test
+    void computeEarnedXpDecayBelowBaselineClampsToZero() {
+        // Strength/Fitness XP can decay below the creation grant via XpUpdate.lua's get-lazy
+        // timers; save 0 rather than going negative.
+        assertEquals(0f, DeathEventHandler.computeEarnedXp(900f, 1000f));
+    }
 }

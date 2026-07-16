@@ -187,6 +187,16 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
                 PRIMARY KEY (steam_id, username, perk)
             )""";
 
+    private static final String CREATE_CHARACTER_BASELINES =
+            """
+            CREATE TABLE IF NOT EXISTS character_baselines (
+                steam_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                perk     TEXT NOT NULL,
+                xp       REAL NOT NULL,
+                PRIMARY KEY (steam_id, username, perk)
+            )""";
+
     private static final String CREATE_OBELISK_TYPES =
             """
             CREATE TABLE IF NOT EXISTS obelisk_types (
@@ -259,6 +269,7 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             stmt.execute(CREATE_DEATH_HIDDEN_SKILLS_INDEX);
             stmt.execute(CREATE_RECOVERIES);
             stmt.execute(CREATE_RECOVERY_SKILLS);
+            stmt.execute(CREATE_CHARACTER_BASELINES);
             stmt.execute(CREATE_OBELISK_TYPES);
         }
     }

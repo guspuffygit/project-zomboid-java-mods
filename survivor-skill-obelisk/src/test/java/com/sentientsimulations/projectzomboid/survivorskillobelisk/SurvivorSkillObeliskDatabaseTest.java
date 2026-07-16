@@ -70,6 +70,8 @@ class SurvivorSkillObeliskDatabaseTest {
                 tables.contains("death_hidden_skills"), "death_hidden_skills table should exist");
         assertTrue(tables.contains("recoveries"), "recoveries table should exist");
         assertTrue(tables.contains("recovery_skills"), "recovery_skills table should exist");
+        assertTrue(
+                tables.contains("character_baselines"), "character_baselines table should exist");
     }
 
     @Test
@@ -128,6 +130,51 @@ class SurvivorSkillObeliskDatabaseTest {
         // Every death deletes the ledger, including deaths of players who never recovered.
         repo.deleteRecovery(42L, "alice");
         assertTrue(repo.findRecoveryGrants(42L, "alice").isEmpty());
+    }
+
+    @Test
+    void findCharacterBaselineNullWhenNeverRecorded() throws Exception {
+        // Null (not empty map) is the "character predates baseline tracking" signal that makes
+        // DeathEventHandler fall back to the trait-replay estimate.
+        assertEquals(null, repo.findCharacterBaseline(42L, "alice"));
+    }
+
+    @Test
+    void replaceCharacterBaselineRoundTrips() throws Exception {
+        Map<String, Float> baseline = new HashMap<>();
+        baseline.put("Strength", 11250f);
+        baseline.put("Fitness", 18750f);
+        baseline.put("Running", 0f);
+        repo.replaceCharacterBaseline(42L, "alice", baseline);
+
+        Map<String, Float> readBack = repo.findCharacterBaseline(42L, "alice");
+        assertEquals(3, readBack.size());
+        assertEquals(11250f, readBack.get("Strength"));
+        assertEquals(18750f, readBack.get("Fitness"));
+        assertEquals(0f, readBack.get("Running"), "xp=0 rows must round-trip verbatim");
+    }
+
+    @Test
+    void replaceCharacterBaselineOverwritesPreviousCharacter() throws Exception {
+        // A respawn is a new character — the old baseline must vanish wholesale, including perks
+        // the new character has no grant in.
+        repo.replaceCharacterBaseline(42L, "alice", Map.of("Strength", 11250f, "Cooking", 500f));
+        repo.replaceCharacterBaseline(42L, "alice", Map.of("Fitness", 18750f));
+
+        Map<String, Float> readBack = repo.findCharacterBaseline(42L, "alice");
+        assertEquals(1, readBack.size());
+        assertEquals(18750f, readBack.get("Fitness"));
+    }
+
+    @Test
+    void characterBaselinesAreScopedPerPlayer() throws Exception {
+        repo.replaceCharacterBaseline(42L, "alice", Map.of("Strength", 11250f));
+        repo.replaceCharacterBaseline(43L, "bob", Map.of("Strength", 3000f));
+
+        repo.replaceCharacterBaseline(42L, "alice", Map.of("Strength", 0f));
+
+        assertEquals(0f, repo.findCharacterBaseline(42L, "alice").get("Strength"));
+        assertEquals(3000f, repo.findCharacterBaseline(43L, "bob").get("Strength"));
     }
 
     @Test

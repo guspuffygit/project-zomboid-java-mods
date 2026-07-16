@@ -65,7 +65,13 @@ public final class DeathEventHandler {
         LIFESTYLES_INSTRUMENT_KEYS = keys;
     }
 
-    private record SkillSnapshot(String perkId, int level, float xp) {}
+    /**
+     * {@code rawXp} is the perk's XP as read off the dying character; {@code fallbackEarnedXp} is
+     * the trait-replay estimate of earned XP, used only when no creation baseline exists for the
+     * character (created before {@link CharacterBaselineHandler} shipped). The baseline itself is
+     * read from SQLite at write time, not snapshot time — see {@link #writeDeath}.
+     */
+    private record SkillSnapshot(String perkId, int level, float rawXp, float fallbackEarnedXp) {}
 
     private record WatchedMediaSnapshot(
             String mediaId,
@@ -115,11 +121,18 @@ public final class DeathEventHandler {
             List<AmbitionSnapshot> ambitions,
             List<HiddenSkillSnapshot> hiddenSkills) {}
 
-    private static final BlockingQueue<DeathSnapshot> PENDING = new LinkedBlockingQueue<>();
+    /**
+     * Shared single-thread write queue for death snapshots and character baselines. FIFO order is
+     * load-bearing: a death is enqueued at {@code OnCharacterDeath} while the respawn's baseline
+     * replace is enqueued at {@code OnNewGame} (which the client can only reach after the
+     * character-creation screen), so {@link #writeDeath} is guaranteed to read the dying
+     * character's baseline before the respawn overwrites it.
+     */
+    private static final BlockingQueue<Runnable> DB_WORK = new LinkedBlockingQueue<>();
 
     static {
         Thread worker =
-                new Thread(DeathEventHandler::workerLoop, "SurvivorSkillObelisk-DeathEvent-Worker");
+                new Thread(DeathEventHandler::workerLoop, "SurvivorSkillObelisk-DbWrite-Worker");
         worker.setDaemon(true);
         worker.start();
     }
@@ -131,6 +144,11 @@ public final class DeathEventHandler {
         return dbFile.getAbsolutePath();
     }
 
+    /** Run a SQLite write on the shared FIFO worker — see the ordering note on {@code DB_WORK}. */
+    static void submitDbWrite(Runnable task) {
+        DB_WORK.offer(task);
+    }
+
     public static void onCharacterDeath(OnCharacterDeathEvent event) {
         if (!(event.character instanceof IsoPlayer player)) {
             return;
@@ -140,7 +158,20 @@ public final class DeathEventHandler {
             // its XP apply / ledger write must not land for the respawned character.
             RecoverSkillsHandler.notifyDeath(player.getSteamID(), player.getUsername());
             DeathSnapshot snapshot = snapshot(player);
-            PENDING.offer(snapshot);
+            submitDbWrite(
+                    () -> {
+                        try {
+                            writeDeath(snapshot);
+                            LOGGER.info(
+                                    "[SurvivorSkillObelisk] Recorded death of player: {}",
+                                    snapshot.username());
+                        } catch (Throwable t) {
+                            LOGGER.error(
+                                    "[SurvivorSkillObelisk] Failed to record death for player: {}",
+                                    snapshot.username(),
+                                    t);
+                        }
+                    });
         } catch (Exception e) {
             LOGGER.error(
                     "[SurvivorSkillObelisk] Failed to snapshot death for player: {}",
@@ -172,22 +203,17 @@ public final class DeathEventHandler {
 
     private static void workerLoop() {
         while (true) {
-            DeathSnapshot snapshot;
+            Runnable task;
             try {
-                snapshot = PENDING.take();
+                task = DB_WORK.take();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
             }
             try {
-                writeDeath(snapshot);
-                LOGGER.info(
-                        "[SurvivorSkillObelisk] Recorded death of player: {}", snapshot.username());
+                task.run();
             } catch (Throwable t) {
-                LOGGER.error(
-                        "[SurvivorSkillObelisk] Failed to record death for player: {}",
-                        snapshot.username(),
-                        t);
+                LOGGER.error("[SurvivorSkillObelisk] DB write task failed: {}", t.getMessage(), t);
             }
         }
     }
@@ -201,6 +227,19 @@ public final class DeathEventHandler {
             // included, so the old recovery ledger is spent — deleting it lets the respawned
             // character recover any death at full value with nothing to subtract.
             repo.deleteRecovery(s.steamId(), s.username());
+
+            // Creation-time XP recorded by CharacterBaselineHandler. Preferred over the snapshot's
+            // trait-replay fallback because PZ swaps Strength/Fitness tier traits as those perks
+            // level (server/XpSystem/XpUpdate.lua) — replaying the traits held at death would
+            // charge e.g. a Weak-start character for the Strong trait it trained its way into.
+            Map<String, Float> baseline = repo.findCharacterBaseline(s.steamId(), s.username());
+            if (baseline == null) {
+                LOGGER.info(
+                        "[SurvivorSkillObelisk] No creation baseline for {} ({}) — character"
+                                + " predates baseline tracking, using trait-replay estimate",
+                        s.username(),
+                        s.steamId());
+            }
 
             long deathId =
                     repo.insertDeath(
@@ -216,7 +255,11 @@ public final class DeathEventHandler {
                             s.z());
 
             for (SkillSnapshot skill : s.skills()) {
-                repo.insertSkill(deathId, skill.perkId(), skill.level(), skill.xp());
+                float xpToSave =
+                        baseline != null
+                                ? computeEarnedXp(skill.rawXp(), baseline.get(skill.perkId()))
+                                : skill.fallbackEarnedXp();
+                repo.insertSkill(deathId, skill.perkId(), skill.level(), xpToSave);
             }
             for (String recipe : s.recipes()) {
                 repo.insertRecipe(deathId, recipe);
@@ -267,12 +310,16 @@ public final class DeathEventHandler {
     }
 
     /**
-     * Insert every perk in {@link PerkFactory#PerkList}, including ones the dead character left at
-     * level 0 with no earned XP. Recovery is additive ({@link RecoverSkillsHandler}) but subtracts
-     * what the previous recovery granted — the {@code xp=0} rows are what carry that subtraction
-     * for perks the newly-recovered death never earned anything in. That's what blocks the
-     * cumulative merge: chaining D1's high Running into D2's high Strength walks the Running grant
-     * back out when D2 is recovered.
+     * Snapshot every perk in {@link PerkFactory#PerkList}, including ones the dead character left
+     * at level 0 with no earned XP. Recovery is additive ({@link RecoverSkillsHandler}) but
+     * subtracts what the previous recovery granted — the {@code xp=0} rows are what carry that
+     * subtraction for perks the newly-recovered death never earned anything in. That's what blocks
+     * the cumulative merge: chaining D1's high Running into D2's high Strength walks the Running
+     * grant back out when D2 is recovered.
+     *
+     * <p>Carries both the raw XP (for subtraction against the creation baseline in {@link
+     * #writeDeath}) and the trait-replay estimate as a fallback for characters created before
+     * baselines were recorded.
      */
     private static List<SkillSnapshot> snapshotSkills(IsoPlayer player) {
         Map<PerkFactory.Perk, Integer> grantedLevels = grantedLevelsAtCreation(player);
@@ -281,10 +328,21 @@ public final class DeathEventHandler {
             int level = player.getPerkLevel(perk);
             float rawXp = player.getXp().getXP(perk);
             int granted = grantedLevels.getOrDefault(perk, 0);
-            float xpToSave = computeXpToSave(rawXp, granted, perk);
-            result.add(new SkillSnapshot(perk.getId(), level, xpToSave));
+            float fallbackEarnedXp = computeXpToSave(rawXp, granted, perk);
+            result.add(new SkillSnapshot(perk.getId(), level, rawXp, fallbackEarnedXp));
         }
         return result;
+    }
+
+    /**
+     * Earned-only XP given the creation baseline: what the character gained through play on top of
+     * what the character-creation flow granted. {@code baselineXp} is nullable for perks added to
+     * the game (or by mods) after the character was created — nothing was granted, so everything
+     * counts as earned. Clamped at 0 because Strength/Fitness XP can decay below the baseline
+     * (vanilla's get-lazy timers in XpUpdate.lua drain passive-perk XP over time).
+     */
+    static float computeEarnedXp(float rawXp, Float baselineXp) {
+        return Math.max(0f, rawXp - (baselineXp == null ? 0f : baselineXp));
     }
 
     /**
@@ -300,10 +358,15 @@ public final class DeathEventHandler {
     }
 
     /**
-     * Replays {@code IsoGameCharacter#applyTraits}' summation against the live trait + profession
-     * scripts so we can recover the per-perk LEVEL boost the character received at creation.
-     * Vanilla writes {@code descriptor.xpBoostMap} capped at 3 and Lifestyles can mutate it
-     * mid-game, so don't read it back from there — sum from the factories instead.
+     * FALLBACK ONLY — used when the character has no recorded creation baseline (predates {@link
+     * CharacterBaselineHandler}). Replays {@code IsoGameCharacter#applyTraits}' summation against
+     * the live trait + profession scripts so we can estimate the per-perk LEVEL boost the character
+     * received at creation. Vanilla writes {@code descriptor.xpBoostMap} capped at 3 and Lifestyles
+     * can mutate it mid-game, so don't read it back from there — sum from the factories instead.
+     *
+     * <p>Known inaccuracy (the reason baselines replaced this): PZ swaps the Strength/Fitness tier
+     * traits (Weak/Feeble/Stout/Strong, Unfit/Out of Shape/Fit/Athletic) as those perks level, so
+     * the traits held at death are not the traits picked at creation.
      */
     static Map<PerkFactory.Perk, Integer> grantedLevelsAtCreation(IsoPlayer player) {
         List<Map<PerkFactory.Perk, Integer>> traitBoosts = new ArrayList<>();
