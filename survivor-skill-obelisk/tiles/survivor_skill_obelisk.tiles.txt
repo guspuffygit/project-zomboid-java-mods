@@ -16,6 +16,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_1
     tile
@@ -29,6 +30,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_2
     tile
@@ -42,6 +44,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_3
     tile
@@ -55,6 +58,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_4
     tile
@@ -68,6 +72,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_5
     tile
@@ -81,6 +86,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_6
     tile
@@ -94,6 +100,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_7
     tile
@@ -107,6 +114,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_8
     tile
@@ -120,6 +128,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_9
     tile
@@ -133,6 +142,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_10
     tile
@@ -146,6 +156,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_11
     tile
@@ -159,6 +170,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_12
     tile
@@ -172,6 +184,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_13
     tile
@@ -185,6 +198,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
 }
 tileset
@@ -216,6 +230,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_1
     tile
@@ -229,6 +244,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_2
     tile
@@ -242,6 +258,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_3
     tile
@@ -255,6 +272,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_4
     tile
@@ -268,6 +286,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_5
     tile
@@ -281,6 +300,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_6
     tile
@@ -294,6 +314,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_7
     tile
@@ -307,6 +328,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_8
     tile
@@ -320,6 +342,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_9
     tile
@@ -333,6 +356,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_10
     tile
@@ -346,6 +370,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_11
     tile
@@ -359,6 +384,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_12
     tile
@@ -372,6 +398,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_sm_01_13
     tile
@@ -385,6 +412,7 @@ tileset
         Facing = S
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
 }
 tileset
@@ -416,6 +444,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_6 — Silver (E), pairs with S at xy=1,0
     tile
@@ -429,6 +458,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_5 — Ruby (E), pairs with S at xy=2,0
     tile
@@ -442,6 +472,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_4 — Magenta (E), pairs with S at xy=3,0
     tile
@@ -455,6 +486,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_3 — Amethyst (E), pairs with S at xy=4,0
     tile
@@ -468,6 +500,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_2 — Sapphire (E), pairs with S at xy=5,0
     tile
@@ -481,6 +514,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_1 — Cobalt (E), pairs with S at xy=6,0
     tile
@@ -494,6 +528,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_0 — Turquoise (E), pairs with S at xy=7,0
     tile
@@ -507,6 +542,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_15 — Aqua (E), pairs with S at xy=0,1
     tile
@@ -520,6 +556,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_14 — Emerald (E), pairs with S at xy=1,1
     tile
@@ -533,6 +570,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_13 — Peridot (E), pairs with S at xy=2,1
     tile
@@ -546,6 +584,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_12 — Topaz (E), pairs with S at xy=3,1
     tile
@@ -559,6 +598,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_11 — Citrine (E), pairs with S at xy=4,1
     tile
@@ -572,6 +612,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
     // atf_obelisks_lg_01_mirror_10 — Amber (E), pairs with S at xy=5,1
     tile
@@ -585,6 +626,7 @@ tileset
         Facing = E
         GroupName = Survivor Skill Obelisks
         Surface = 34
+        solid =
     }
 }
 tileset
