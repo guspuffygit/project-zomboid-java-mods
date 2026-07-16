@@ -27,6 +27,7 @@ public final class SurvivorSkillObeliskSandboxApplier {
     public static final String OPT_RECOVER_WATCHED_MEDIA = "SkillObelisk.RecoverWatchedMedia";
     public static final String OPT_RECOVER_LEARNED_SONGS = "SkillObelisk.RecoverLearnedSongs";
     public static final String OPT_RECOVER_AMBITIONS = "SkillObelisk.RecoverAmbitions";
+    public static final String OPT_RECOVER_HIDDEN_SKILLS = "SkillObelisk.RecoverHiddenSkills";
     public static final String OPT_SKILL_RECOVERY_PERCENT = "SkillObelisk.SkillRecoveryPercent";
 
     private SurvivorSkillObeliskSandboxApplier() {}
@@ -60,6 +61,7 @@ public final class SurvivorSkillObeliskSandboxApplier {
         applyBool(OPT_RECOVER_WATCHED_MEDIA, SurvivorSkillObeliskConfig::setRecoverWatchedMedia);
         applyBool(OPT_RECOVER_LEARNED_SONGS, SurvivorSkillObeliskConfig::setRecoverLearnedSongs);
         applyBool(OPT_RECOVER_AMBITIONS, SurvivorSkillObeliskConfig::setRecoverAmbitions);
+        applyBool(OPT_RECOVER_HIDDEN_SKILLS, SurvivorSkillObeliskConfig::setRecoverHiddenSkills);
         applyInt(OPT_SKILL_RECOVERY_PERCENT, SurvivorSkillObeliskConfig::setSkillRecoveryPercent);
     }
 

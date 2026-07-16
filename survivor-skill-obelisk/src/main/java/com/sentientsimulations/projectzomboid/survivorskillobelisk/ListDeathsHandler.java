@@ -53,7 +53,8 @@ public final class ListDeathsHandler {
 
     private record DeathWithSkills(
             SurvivorSkillObeliskRepository.DeathSummary summary,
-            List<SurvivorSkillObeliskRepository.SkillRow> skills) {}
+            List<SurvivorSkillObeliskRepository.SkillRow> skills,
+            List<SurvivorSkillObeliskRepository.HiddenSkillRow> hiddenSkills) {}
 
     private record CompletedRequest(
             IsoPlayer player, List<DeathWithSkills> deaths, String obeliskType) {}
@@ -150,7 +151,9 @@ public final class ListDeathsHandler {
             for (SurvivorSkillObeliskRepository.DeathSummary r : rows) {
                 List<SurvivorSkillObeliskRepository.SkillRow> skills =
                         repo.listSkillsByDeath(r.id());
-                result.add(new DeathWithSkills(r, skills));
+                List<SurvivorSkillObeliskRepository.HiddenSkillRow> hiddenSkills =
+                        repo.listHiddenSkillsByDeath(r.id());
+                result.add(new DeathWithSkills(r, skills, hiddenSkills));
             }
             if (req.obeliskX() != null && req.obeliskY() != null && req.obeliskZ() != null) {
                 String stored =
@@ -198,6 +201,17 @@ public final class ListDeathsHandler {
                     skillsTable.rawset(s++, skillTable);
                 }
                 rowTable.rawset("skills", skillsTable);
+
+                KahluaTable hiddenTable = LuaManager.platform.newTable();
+                int h = 1;
+                for (SurvivorSkillObeliskRepository.HiddenSkillRow hidden : d.hiddenSkills()) {
+                    KahluaTable hiddenRow = LuaManager.platform.newTable();
+                    hiddenRow.rawset("skill", hidden.skill());
+                    hiddenRow.rawset("level", (double) hidden.level());
+                    hiddenRow.rawset("xp", hidden.xp());
+                    hiddenTable.rawset(h++, hiddenRow);
+                }
+                rowTable.rawset("hiddenSkills", hiddenTable);
 
                 rowsTable.rawset(i++, rowTable);
             }

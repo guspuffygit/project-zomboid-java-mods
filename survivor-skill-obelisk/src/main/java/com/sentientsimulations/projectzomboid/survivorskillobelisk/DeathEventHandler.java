@@ -31,7 +31,7 @@ import zombie.scripting.objects.CharacterTrait;
  *
  * <p>Captured per death: identity + perk levels/XP, known recipes, read literature (titles), read
  * print media, watched recorded media (VHS tapes / CDs), and — if the Lifestyles mod is installed —
- * learned instrument songs and ambition progress.
+ * learned instrument songs, ambition progress, and hidden-skill progress (Yoga, Inventing).
  *
  * <p>Same two-thread split as {@link ListDeathsHandler}: the main thread snapshots all per-player
  * state (IsoPlayer, ZomboidRadio, and Kahlua mod-data tables are not thread-safe) into plain Java
@@ -44,9 +44,10 @@ public final class DeathEventHandler {
 
     /**
      * Instrument display name → Lifestyles per-instrument ModData key. Each value on {@code
-     * player:getModData()} is a Lua array of song records.
+     * player:getModData()} is a Lua array of song records. Package-visible so {@link
+     * SyncLearnedSongsHandler} allowlists the same keys.
      */
-    private static final Map<String, String> LIFESTYLES_INSTRUMENT_KEYS;
+    static final Map<String, String> LIFESTYLES_INSTRUMENT_KEYS;
 
     static {
         Map<String, String> keys = new LinkedHashMap<>();
@@ -76,7 +77,15 @@ public final class DeathEventHandler {
             int lineCount,
             boolean fullyListened) {}
 
-    private record LearnedSongSnapshot(String instrument, String name, String sound) {}
+    private record LearnedSongSnapshot(
+            String instrument,
+            String name,
+            String sound,
+            Double level,
+            Double length,
+            Double isaddon) {}
+
+    private record HiddenSkillSnapshot(String skill, int level, double xp, double xpForNextLevel) {}
 
     private record AmbitionSnapshot(
             String name,
@@ -103,7 +112,8 @@ public final class DeathEventHandler {
             List<String> readPrintMedia,
             List<WatchedMediaSnapshot> watchedMedia,
             List<LearnedSongSnapshot> learnedSongs,
-            List<AmbitionSnapshot> ambitions) {}
+            List<AmbitionSnapshot> ambitions,
+            List<HiddenSkillSnapshot> hiddenSkills) {}
 
     private static final BlockingQueue<DeathSnapshot> PENDING = new LinkedBlockingQueue<>();
 
@@ -156,7 +166,8 @@ public final class DeathEventHandler {
                 snapshotReadPrintMedia(player),
                 snapshotWatchedMedia(player),
                 snapshotLearnedSongs(player),
-                snapshotAmbitions(player));
+                snapshotAmbitions(player),
+                snapshotHiddenSkills(player));
     }
 
     private static void workerLoop() {
@@ -229,7 +240,14 @@ public final class DeathEventHandler {
                         w.fullyListened());
             }
             for (LearnedSongSnapshot song : s.learnedSongs()) {
-                repo.insertLearnedSong(deathId, song.instrument(), song.name(), song.sound());
+                repo.insertLearnedSong(
+                        deathId,
+                        song.instrument(),
+                        song.name(),
+                        song.sound(),
+                        song.level(),
+                        song.length(),
+                        song.isaddon());
             }
             for (AmbitionSnapshot a : s.ambitions()) {
                 repo.insertAmbition(
@@ -241,6 +259,9 @@ public final class DeathEventHandler {
                         a.isPassive(),
                         a.goals(),
                         a.progress());
+            }
+            for (HiddenSkillSnapshot h : s.hiddenSkills()) {
+                repo.insertHiddenSkill(deathId, h.skill(), h.level(), h.xp(), h.xpForNextLevel());
             }
         }
     }
@@ -449,7 +470,12 @@ public final class DeathEventHandler {
                 }
                 result.add(
                         new LearnedSongSnapshot(
-                                entry.getKey(), name, asString(song.rawget("sound"))));
+                                entry.getKey(),
+                                name,
+                                asString(song.rawget("sound")),
+                                asDouble(song.rawget("level")),
+                                asDouble(song.rawget("length")),
+                                asDouble(song.rawget("isaddon"))));
             }
         }
         return result;
@@ -502,6 +528,44 @@ public final class DeathEventHandler {
     }
 
     /**
+     * Lifestyles-mod hidden skills (Yoga, Inventing). Stored on {@code
+     * player:getModData().LSHiddenSkills} as a map keyed by skill name → Lua array of {@code
+     * {level, xp, xpForNextLevel}} (see Lifestyles' HSMng.lua). Iterates whatever keys are present
+     * rather than allowlisting the two known names so hidden skills Lifestyles adds later are
+     * captured without a code change. No-op if Lifestyles isn't installed (key absent).
+     */
+    private static List<HiddenSkillSnapshot> snapshotHiddenSkills(IsoPlayer player) {
+        List<HiddenSkillSnapshot> result = new ArrayList<>();
+        KahluaTable modData = player.getModData();
+        if (modData == null) {
+            return result;
+        }
+        if (!(modData.rawget("LSHiddenSkills") instanceof KahluaTable skills)) {
+            return result;
+        }
+        KahluaTableIterator it = skills.iterator();
+        while (it.advance()) {
+            if (!(it.getKey() instanceof String skill)
+                    || !(it.getValue() instanceof KahluaTable values)) {
+                continue;
+            }
+            Double level = asDouble(values.rawget(1));
+            if (level == null) {
+                continue;
+            }
+            Double xp = asDouble(values.rawget(2));
+            Double xpForNextLevel = asDouble(values.rawget(3));
+            result.add(
+                    new HiddenSkillSnapshot(
+                            skill,
+                            level.intValue(),
+                            xp == null ? 0.0 : xp,
+                            xpForNextLevel == null ? 0.0 : xpForNextLevel));
+        }
+        return result;
+    }
+
+    /**
      * Render an arbitrary Lua value as a stable string for SQLite storage. Integers come back as
      * {@code Double} from Kahlua; format whole numbers without trailing {@code .0} so consumers see
      * e.g. {@code "5000"} instead of {@code "5000.0"}.
@@ -523,6 +587,10 @@ public final class DeathEventHandler {
             return b.toString();
         }
         return o.toString();
+    }
+
+    private static Double asDouble(Object o) {
+        return o instanceof Double d ? d : null;
     }
 
     private static boolean asBoolean(Object o) {

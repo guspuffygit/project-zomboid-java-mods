@@ -310,18 +310,52 @@ function RecoverSkillsWindow.onRowClicked(self, x, y)
     parent.recoverBtn:setEnable(true)
 end
 
+-- Lifestyles' hidden-skill display names live behind its UI_LSHS_<skill> translation
+-- keys; getText echoes the key back when Lifestyles isn't installed, so fall back to
+-- the raw skill name.
+local function hiddenSkillDisplayName(skill)
+    local key = "UI_LSHS_" .. skill
+    local translated = getText(key)
+    if translated == key then
+        return skill
+    end
+    return translated
+end
+
 local function buildSkillTooltip(row)
     local skills = row.skills
-    if skills == nil or skills[1] == nil then
+    local hidden = row.hiddenSkills
+    local hasRows = (skills ~= nil and skills[1] ~= nil) or (hidden ~= nil and hidden[1] ~= nil)
+    if not hasRows then
         return nil
     end
     local lines = {}
     local i = 1
-    while skills[i] ~= nil do
+    while skills ~= nil and skills[i] ~= nil do
         local s = skills[i]
         local xp = s.xp or 0
         if xp > 0 then
             table.insert(lines, string.format("%s: %d xp", s.perk or "?", math.floor(xp + 0.5)))
+        end
+        i = i + 1
+    end
+    -- Hidden skills show their level too: unlike perk rows, the xp is within-level
+    -- (Lifestyles' LSHiddenSkills shape), so xp alone would undersell a level-9 Yogi.
+    i = 1
+    while hidden ~= nil and hidden[i] ~= nil do
+        local s = hidden[i]
+        local level = s.level or 0
+        local xp = s.xp or 0
+        if s.skill ~= nil and (level > 0 or xp > 0) then
+            table.insert(
+                lines,
+                string.format(
+                    "%s: lvl %d, %d xp",
+                    hiddenSkillDisplayName(s.skill),
+                    level,
+                    math.floor(xp + 0.5)
+                )
+            )
         end
         i = i + 1
     end
@@ -758,7 +792,17 @@ local function applyLearnedSongs(player, songs)
                 return
             end
         end
-        table.insert(list, { name = entry.name, sound = entry.sound })
+        -- Lifestyles track records carry {name, sound, level, length, isaddon}; its
+        -- musicParams compares song.level against the player's level for every learned
+        -- entry, so level must never be nil (1 = playable at any level, for rows saved
+        -- before the extra columns existed).
+        table.insert(list, {
+            name = entry.name,
+            sound = entry.sound,
+            level = entry.level or 1,
+            length = entry.length,
+            isaddon = entry.isaddon,
+        })
     end)
 end
 
@@ -822,6 +866,42 @@ local function applyAmbitions(player, ambitions)
     end)
 end
 
+-- Lifestyles hidden skills (Yoga, Inventing) live at modData.LSHiddenSkills[skill] =
+-- {level, xp, xpForNextLevel} (see Lifestyles' HSMng.lua). Payload xp is already scaled
+-- by Skill Recovery (%) server-side. Max-wins merge, mirroring the server's
+-- applyHiddenSkillsAuthoritatively: a higher saved level replaces the entry, an equal
+-- level only raises the within-level XP — live progress is never downgraded, so
+-- re-recovering the same death can't stack.
+local function applyHiddenSkills(player, hiddenSkills)
+    local modData = player:getModData()
+    if modData == nil then
+        return
+    end
+    iterateLuaArray(hiddenSkills, function(entry)
+        if entry.skill == nil or entry.level == nil then
+            return
+        end
+        if entry.xpForNextLevel == nil or entry.xpForNextLevel <= 0 then
+            return
+        end
+        if modData.LSHiddenSkills == nil then
+            modData.LSHiddenSkills = {}
+        end
+        local current = modData.LSHiddenSkills[entry.skill]
+        if current == nil then
+            current = { 0, 0, 100 }
+            modData.LSHiddenSkills[entry.skill] = current
+        end
+        if entry.level > (current[1] or 0) then
+            current[1] = entry.level
+            current[2] = entry.xp or 0
+            current[3] = entry.xpForNextLevel
+        elseif entry.level == (current[1] or 0) and (entry.xp or 0) > (current[2] or 0) then
+            current[2] = entry.xp
+        end
+    end)
+end
+
 local function onRecoveredData(args)
     local player = getSpecificPlayer(0)
     if player == nil or args == nil then
@@ -834,6 +914,7 @@ local function onRecoveredData(args)
     applyWatchedMedia(player, args.watchedMedia)
     applyLearnedSongs(player, args.learnedSongs)
     applyAmbitions(player, args.ambitions)
+    applyHiddenSkills(player, args.hiddenSkills)
     sendSyncPlayerFields(player, SYNC_RECIPES_AND_BOOKS)
     HaloTextHelper.addGoodText(player, "Skills recovered")
 end

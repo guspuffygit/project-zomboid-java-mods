@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.survivorskillobelisk;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -111,6 +112,9 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
                 instrument TEXT NOT NULL,
                 song_name  TEXT NOT NULL,
                 sound      TEXT,
+                level      REAL,
+                length     REAL,
+                isaddon    REAL,
                 FOREIGN KEY (death_id) REFERENCES deaths(id)
             )""";
 
@@ -146,6 +150,22 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
     private static final String CREATE_DEATH_AMBITIONS_INDEX =
             "CREATE INDEX IF NOT EXISTS idx_death_ambitions_death "
                     + "ON death_ambitions(death_id)";
+
+    private static final String CREATE_DEATH_HIDDEN_SKILLS =
+            """
+            CREATE TABLE IF NOT EXISTS death_hidden_skills (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                death_id          INTEGER NOT NULL,
+                skill             TEXT NOT NULL,
+                level             INTEGER NOT NULL,
+                xp                REAL NOT NULL,
+                xp_for_next_level REAL NOT NULL,
+                FOREIGN KEY (death_id) REFERENCES deaths(id)
+            )""";
+
+    private static final String CREATE_DEATH_HIDDEN_SKILLS_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_death_hidden_skills_death "
+                    + "ON death_hidden_skills(death_id)";
 
     private static final String CREATE_RECOVERIES =
             """
@@ -190,6 +210,32 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             stmt.execute("PRAGMA foreign_keys=ON");
         }
         createTables();
+        migrate();
+    }
+
+    /**
+     * In-place upgrades for DBs created by earlier releases. {@code CREATE TABLE IF NOT EXISTS}
+     * never touches an existing table, so columns added to the schema constants above must also be
+     * ALTERed in here for saves that already have the old shape.
+     */
+    private void migrate() throws SQLException {
+        addColumnIfMissing("death_learned_songs", "level", "REAL");
+        addColumnIfMissing("death_learned_songs", "length", "REAL");
+        addColumnIfMissing("death_learned_songs", "isaddon", "REAL");
+    }
+
+    private void addColumnIfMissing(String table, String column, String type) throws SQLException {
+        try (Statement stmt = connection.createStatement();
+                ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + table + ")")) {
+            while (rs.next()) {
+                if (column.equalsIgnoreCase(rs.getString("name"))) {
+                    return;
+                }
+            }
+        }
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + type);
+        }
     }
 
     private void createTables() throws SQLException {
@@ -209,6 +255,8 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
             stmt.execute(CREATE_DEATH_LEARNED_SONGS_INDEX);
             stmt.execute(CREATE_DEATH_AMBITIONS);
             stmt.execute(CREATE_DEATH_AMBITIONS_INDEX);
+            stmt.execute(CREATE_DEATH_HIDDEN_SKILLS);
+            stmt.execute(CREATE_DEATH_HIDDEN_SKILLS_INDEX);
             stmt.execute(CREATE_RECOVERIES);
             stmt.execute(CREATE_RECOVERY_SKILLS);
             stmt.execute(CREATE_OBELISK_TYPES);

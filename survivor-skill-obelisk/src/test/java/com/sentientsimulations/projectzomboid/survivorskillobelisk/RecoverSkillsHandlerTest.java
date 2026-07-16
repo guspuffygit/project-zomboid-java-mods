@@ -2,6 +2,7 @@ package com.sentientsimulations.projectzomboid.survivorskillobelisk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -143,6 +144,44 @@ class RecoverSkillsHandlerTest {
                 RecoverSkillsHandler.computeAdditiveTargetXp(
                         PerkFactory.Perks.Cooking, 100f, 0f, 500f, 1.0F);
         assertEquals(0f, target);
+    }
+
+    @Test
+    void hiddenSkillHigherSavedLevelRestoresLevelAndScaledXp() {
+        RecoverSkillsHandler.HiddenSkillRestore restore =
+                RecoverSkillsHandler.computeHiddenSkillRestore(1, 200.0, 4, 321.0, 0.5F);
+        assertEquals(4, restore.level());
+        // Within-level XP scales by percent (floored); the level restores in full because
+        // Lifestyles' per-level thresholds only exist in its Lua.
+        assertEquals(160.0, restore.xp());
+    }
+
+    @Test
+    void hiddenSkillSameLevelOnlyRaisesXp() {
+        RecoverSkillsHandler.HiddenSkillRestore restore =
+                RecoverSkillsHandler.computeHiddenSkillRestore(4, 100.0, 4, 500.0, 1.0F);
+        assertEquals(4, restore.level());
+        assertEquals(500.0, restore.xp());
+    }
+
+    @Test
+    void hiddenSkillSameLevelLowerScaledXpIsNoOp() {
+        // Live character re-earned more within-level XP than the scaled saved amount — the
+        // restore must not walk it back.
+        assertNull(RecoverSkillsHandler.computeHiddenSkillRestore(4, 400.0, 4, 500.0, 0.5F));
+    }
+
+    @Test
+    void hiddenSkillLowerSavedLevelIsNoOp() {
+        // Live character out-leveled the death snapshot; recovery never downgrades.
+        assertNull(RecoverSkillsHandler.computeHiddenSkillRestore(6, 0.0, 4, 900.0, 1.0F));
+    }
+
+    @Test
+    void hiddenSkillReRecoveringSameStateIsIdempotent() {
+        // After a full restore the live state equals the saved state — a second recovery of the
+        // same death finds nothing to raise.
+        assertNull(RecoverSkillsHandler.computeHiddenSkillRestore(4, 500.0, 4, 500.0, 1.0F));
     }
 
     @Test

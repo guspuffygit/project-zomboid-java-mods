@@ -9,8 +9,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>Each boolean toggles recovery of one of the tracked progression slices written by {@link
  * DeathEventHandler} — skills, recipes, read literature, read print media, watched recorded media,
- * Lifestyles instrument songs, and Lifestyles ambitions. {@code skillRecoveryPercent} scales the
- * perk-level / XP restore when {@code recoverSkills} is on; it has no effect when recovery is off.
+ * Lifestyles instrument songs, Lifestyles ambitions, and Lifestyles hidden skills (Yoga,
+ * Inventing). {@code skillRecoveryPercent} scales the perk-level / XP restore when {@code
+ * recoverSkills} is on; it has no effect when recovery is off.
  *
  * <p>Values default to the constants below if the sandbox option is missing or fails to parse, so
  * unwired calls still return sane data in tests and on first launch before {@code OnServerStarted}
@@ -25,6 +26,7 @@ public final class SurvivorSkillObeliskConfig {
     public static final boolean DEFAULT_RECOVER_WATCHED_MEDIA = true;
     public static final boolean DEFAULT_RECOVER_LEARNED_SONGS = true;
     public static final boolean DEFAULT_RECOVER_AMBITIONS = true;
+    public static final boolean DEFAULT_RECOVER_HIDDEN_SKILLS = true;
     public static final int DEFAULT_SKILL_RECOVERY_PERCENT = 100;
 
     private static final AtomicBoolean RECOVER_SKILLS = new AtomicBoolean(DEFAULT_RECOVER_SKILLS);
@@ -39,6 +41,8 @@ public final class SurvivorSkillObeliskConfig {
             new AtomicBoolean(DEFAULT_RECOVER_LEARNED_SONGS);
     private static final AtomicBoolean RECOVER_AMBITIONS =
             new AtomicBoolean(DEFAULT_RECOVER_AMBITIONS);
+    private static final AtomicBoolean RECOVER_HIDDEN_SKILLS =
+            new AtomicBoolean(DEFAULT_RECOVER_HIDDEN_SKILLS);
     private static final AtomicInteger SKILL_RECOVERY_PERCENT =
             new AtomicInteger(DEFAULT_SKILL_RECOVERY_PERCENT);
 
@@ -100,6 +104,14 @@ public final class SurvivorSkillObeliskConfig {
         RECOVER_AMBITIONS.set(value);
     }
 
+    public static boolean isRecoverHiddenSkills() {
+        return RECOVER_HIDDEN_SKILLS.get();
+    }
+
+    public static void setRecoverHiddenSkills(boolean value) {
+        RECOVER_HIDDEN_SKILLS.set(value);
+    }
+
     public static int getSkillRecoveryPercent() {
         return SKILL_RECOVERY_PERCENT.get();
     }
@@ -120,6 +132,7 @@ public final class SurvivorSkillObeliskConfig {
         RECOVER_WATCHED_MEDIA.set(DEFAULT_RECOVER_WATCHED_MEDIA);
         RECOVER_LEARNED_SONGS.set(DEFAULT_RECOVER_LEARNED_SONGS);
         RECOVER_AMBITIONS.set(DEFAULT_RECOVER_AMBITIONS);
+        RECOVER_HIDDEN_SKILLS.set(DEFAULT_RECOVER_HIDDEN_SKILLS);
         SKILL_RECOVERY_PERCENT.set(DEFAULT_SKILL_RECOVERY_PERCENT);
     }
 }

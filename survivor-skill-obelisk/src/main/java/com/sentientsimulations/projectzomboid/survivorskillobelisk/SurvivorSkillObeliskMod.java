@@ -24,6 +24,9 @@ public class SurvivorSkillObeliskMod implements ZomboidMod {
         StormEventDispatcher.registerEventHandler(GetObeliskTypeHandler.class);
         StormEventDispatcher.registerEventHandler(ObeliskLifecycleHandler.class);
         StormEventDispatcher.registerEventHandler(ListAllObelisksHandler.class);
+        StormEventDispatcher.registerEventHandler(SyncLearnedSongsHandler.class);
+        StormEventDispatcher.registerEventHandler(SyncHiddenSkillsHandler.class);
+        StormEventDispatcher.registerEventHandler(SyncAmbitionsHandler.class);
     }
 
     @SubscribeEvent

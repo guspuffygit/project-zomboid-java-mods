@@ -66,6 +66,8 @@ class SurvivorSkillObeliskDatabaseTest {
         assertTrue(
                 tables.contains("death_learned_songs"), "death_learned_songs table should exist");
         assertTrue(tables.contains("death_ambitions"), "death_ambitions table should exist");
+        assertTrue(
+                tables.contains("death_hidden_skills"), "death_hidden_skills table should exist");
         assertTrue(tables.contains("recoveries"), "recoveries table should exist");
         assertTrue(tables.contains("recovery_skills"), "recovery_skills table should exist");
     }
@@ -230,8 +232,10 @@ class SurvivorSkillObeliskDatabaseTest {
         long deathId =
                 repo.insertDeath(3_000L, "carol", 9L, "Carol", "Lee", 8.0, 4, 0.0f, 0.0f, 0.0f);
 
-        repo.insertLearnedSong(deathId, "Piano", "ContextMenu_00_01_B", "Piano00LastPost");
-        repo.insertLearnedSong(deathId, "Banjo", "ContextMenu_02_03_B", "Banjo02HappyBirthday");
+        repo.insertLearnedSong(
+                deathId, "Piano", "ContextMenu_00_01_B", "Piano00LastPost", 3.0, 95.0, 1.0);
+        repo.insertLearnedSong(
+                deathId, "Banjo", "ContextMenu_02_03_B", "Banjo02HappyBirthday", null, null, null);
 
         repo.insertAmbition(
                 deathId,
@@ -255,20 +259,19 @@ class SurvivorSkillObeliskDatabaseTest {
         assertEquals(2, countChildren("death_learned_songs", deathId));
         assertEquals(2, countChildren("death_ambitions", deathId));
 
-        try (Statement stmt = db.getConnection().createStatement();
-                ResultSet rs =
-                        stmt.executeQuery(
-                                "SELECT instrument, song_name, sound FROM death_learned_songs"
-                                        + " WHERE death_id = "
-                                        + deathId
-                                        + " ORDER BY id")) {
-            assertTrue(rs.next());
-            assertEquals("Piano", rs.getString("instrument"));
-            assertEquals("ContextMenu_00_01_B", rs.getString("song_name"));
-            assertEquals("Piano00LastPost", rs.getString("sound"));
-            assertTrue(rs.next());
-            assertEquals("Banjo", rs.getString("instrument"));
-        }
+        List<SurvivorSkillObeliskRepository.LearnedSongRow> songs =
+                repo.listLearnedSongsByDeath(deathId);
+        assertEquals(2, songs.size());
+        assertEquals("Piano", songs.get(0).instrument());
+        assertEquals("ContextMenu_00_01_B", songs.get(0).songName());
+        assertEquals("Piano00LastPost", songs.get(0).sound());
+        assertEquals(3.0, songs.get(0).level());
+        assertEquals(95.0, songs.get(0).length());
+        assertEquals(1.0, songs.get(0).isaddon());
+        assertEquals("Banjo", songs.get(1).instrument());
+        assertEquals(null, songs.get(1).level());
+        assertEquals(null, songs.get(1).length());
+        assertEquals(null, songs.get(1).isaddon());
 
         try (Statement stmt = db.getConnection().createStatement();
                 ResultSet rs =
@@ -289,6 +292,72 @@ class SurvivorSkillObeliskDatabaseTest {
             assertTrue(rs.next());
             assertEquals("LSBladeMaster", rs.getString("name"));
             assertEquals(1, rs.getInt("completed"));
+        }
+    }
+
+    @Test
+    void insertHiddenSkillsRoundTripThroughRepo() throws Exception {
+        long deathId =
+                repo.insertDeath(5_000L, "erin", 13L, "Erin", "Cho", 20.0, 15, 0.0f, 0.0f, 0.0f);
+
+        repo.insertHiddenSkill(deathId, "Yoga", 4, 320.0, 1000.0);
+        repo.insertHiddenSkill(deathId, "Inventing", 0, 0.0, 100.0);
+
+        assertEquals(2, countChildren("death_hidden_skills", deathId));
+
+        Map<String, SurvivorSkillObeliskRepository.HiddenSkillRow> bySkill = new HashMap<>();
+        for (SurvivorSkillObeliskRepository.HiddenSkillRow row :
+                repo.listHiddenSkillsByDeath(deathId)) {
+            bySkill.put(row.skill(), row);
+        }
+        assertEquals(2, bySkill.size());
+        assertEquals(4, bySkill.get("Yoga").level());
+        assertEquals(320.0, bySkill.get("Yoga").xp());
+        assertEquals(1000.0, bySkill.get("Yoga").xpForNextLevel());
+        assertEquals(0, bySkill.get("Inventing").level());
+        assertEquals(0.0, bySkill.get("Inventing").xp());
+        assertEquals(100.0, bySkill.get("Inventing").xpForNextLevel());
+    }
+
+    @Test
+    void migrationAddsSongColumnsToLegacyTable() throws Exception {
+        // Simulate a DB created by a release where death_learned_songs had no numeric columns:
+        // recreate the table in the old shape with a row, then re-open through the schema
+        // bootstrap and check the ALTERs land and the legacy row reads back with null fields.
+        String path = new File(tempDir, "legacy.db").getAbsolutePath();
+        try (java.sql.Connection conn =
+                        java.sql.DriverManager.getConnection("jdbc:sqlite:" + path);
+                Statement stmt = conn.createStatement()) {
+            stmt.execute(
+                    """
+                    CREATE TABLE death_learned_songs (
+                        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                        death_id   INTEGER NOT NULL,
+                        instrument TEXT NOT NULL,
+                        song_name  TEXT NOT NULL,
+                        sound      TEXT
+                    )""");
+            stmt.execute(
+                    "INSERT INTO death_learned_songs (death_id, instrument, song_name, sound)"
+                            + " VALUES (1, 'Piano', 'ContextMenu_00_01_B', 'Piano00LastPost')");
+        }
+
+        try (SurvivorSkillObeliskDatabase legacyDb = new SurvivorSkillObeliskDatabase(path)) {
+            SurvivorSkillObeliskRepository legacyRepo =
+                    new SurvivorSkillObeliskRepository(legacyDb.getConnection());
+            List<SurvivorSkillObeliskRepository.LearnedSongRow> songs =
+                    legacyRepo.listLearnedSongsByDeath(1L);
+            assertEquals(1, songs.size());
+            assertEquals("Piano", songs.get(0).instrument());
+            assertEquals(null, songs.get(0).level());
+            assertEquals(null, songs.get(0).length());
+            assertEquals(null, songs.get(0).isaddon());
+
+            legacyRepo.insertLearnedSong(
+                    1L, "Banjo", "ContextMenu_02_03_B", "Banjo02HappyBirthday", 2.0, 60.0, 2.0);
+            songs = legacyRepo.listLearnedSongsByDeath(1L);
+            assertEquals(2, songs.size());
+            assertEquals(2.0, songs.get(1).level());
         }
     }
 

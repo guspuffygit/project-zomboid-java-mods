@@ -36,7 +36,23 @@ public class SurvivorSkillObeliskRepository {
             int lineCount,
             boolean fullyWatched) {}
 
-    public record LearnedSongRow(String instrument, String songName, String sound) {}
+    /**
+     * {@code level}/{@code length}/{@code isaddon} mirror the numeric fields of Lifestyles' track
+     * records; nullable because rows written before those columns existed only carry name + sound.
+     */
+    public record LearnedSongRow(
+            String instrument,
+            String songName,
+            String sound,
+            Double level,
+            Double length,
+            Double isaddon) {}
+
+    /**
+     * A Lifestyles hidden-skill row ({@code Yoga}, {@code Inventing}) — mirrors one entry of the
+     * player's {@code LSHiddenSkills} mod-data table: {@code {level, xp, xpForNextLevel}}.
+     */
+    public record HiddenSkillRow(String skill, int level, double xp, double xpForNextLevel) {}
 
     public record ObeliskTypeRow(int x, int y, int z, String type) {}
 
@@ -78,7 +94,14 @@ public class SurvivorSkillObeliskRepository {
             FROM death_watched_media WHERE death_id = ?""";
 
     private static final String LIST_LEARNED_SONGS_BY_DEATH =
-            "SELECT instrument, song_name, sound FROM death_learned_songs WHERE death_id = ?";
+            """
+            SELECT instrument, song_name, sound, level, length, isaddon
+            FROM death_learned_songs WHERE death_id = ?""";
+
+    private static final String LIST_HIDDEN_SKILLS_BY_DEATH =
+            """
+            SELECT skill, level, xp, xp_for_next_level
+            FROM death_hidden_skills WHERE death_id = ?""";
 
     private static final String LIST_AMBITIONS_BY_DEATH =
             """
@@ -115,8 +138,14 @@ public class SurvivorSkillObeliskRepository {
 
     private static final String INSERT_LEARNED_SONG =
             """
-            INSERT INTO death_learned_songs (death_id, instrument, song_name, sound)
-            VALUES (?, ?, ?, ?)""";
+            INSERT INTO death_learned_songs
+                (death_id, instrument, song_name, sound, level, length, isaddon)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""";
+
+    private static final String INSERT_HIDDEN_SKILL =
+            """
+            INSERT INTO death_hidden_skills (death_id, skill, level, xp, xp_for_next_level)
+            VALUES (?, ?, ?, ?, ?)""";
 
     private static final String FIND_RECOVERY_GRANTS =
             "SELECT perk, xp FROM recovery_skills WHERE steam_id = ? AND username = ?";
@@ -270,13 +299,36 @@ public class SurvivorSkillObeliskRepository {
         }
     }
 
-    public void insertLearnedSong(long deathId, String instrument, String songName, String sound)
+    public void insertLearnedSong(
+            long deathId,
+            String instrument,
+            String songName,
+            String sound,
+            Double level,
+            Double length,
+            Double isaddon)
             throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(INSERT_LEARNED_SONG)) {
             stmt.setLong(1, deathId);
             stmt.setString(2, instrument);
             stmt.setString(3, songName);
             stmt.setString(4, sound);
+            stmt.setObject(5, level);
+            stmt.setObject(6, length);
+            stmt.setObject(7, isaddon);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void insertHiddenSkill(
+            long deathId, String skill, int level, double xp, double xpForNextLevel)
+            throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(INSERT_HIDDEN_SKILL)) {
+            stmt.setLong(1, deathId);
+            stmt.setString(2, skill);
+            stmt.setInt(3, level);
+            stmt.setDouble(4, xp);
+            stmt.setDouble(5, xpForNextLevel);
             stmt.executeUpdate();
         }
     }
@@ -413,7 +465,28 @@ public class SurvivorSkillObeliskRepository {
                             new LearnedSongRow(
                                     rs.getString("instrument"),
                                     rs.getString("song_name"),
-                                    rs.getString("sound")));
+                                    rs.getString("sound"),
+                                    getNullableDouble(rs, "level"),
+                                    getNullableDouble(rs, "length"),
+                                    getNullableDouble(rs, "isaddon")));
+                }
+            }
+        }
+        return rows;
+    }
+
+    public List<HiddenSkillRow> listHiddenSkillsByDeath(long deathId) throws SQLException {
+        List<HiddenSkillRow> rows = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(LIST_HIDDEN_SKILLS_BY_DEATH)) {
+            stmt.setLong(1, deathId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(
+                            new HiddenSkillRow(
+                                    rs.getString("skill"),
+                                    rs.getInt("level"),
+                                    rs.getDouble("xp"),
+                                    rs.getDouble("xp_for_next_level")));
                 }
             }
         }
@@ -578,6 +651,11 @@ public class SurvivorSkillObeliskRepository {
             stmt.setInt(3, z);
             stmt.executeUpdate();
         }
+    }
+
+    private static Double getNullableDouble(ResultSet rs, String column) throws SQLException {
+        double value = rs.getDouble(column);
+        return rs.wasNull() ? null : value;
     }
 
     private List<String> listStringColumn(String sql, String column, long deathId)

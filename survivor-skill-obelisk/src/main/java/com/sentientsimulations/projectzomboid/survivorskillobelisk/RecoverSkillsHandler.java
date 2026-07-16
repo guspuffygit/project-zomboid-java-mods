@@ -71,7 +71,14 @@ public final class RecoverSkillsHandler {
             List<String> printMedia,
             List<SurvivorSkillObeliskRepository.WatchedMediaRow> watchedMedia,
             List<SurvivorSkillObeliskRepository.LearnedSongRow> learnedSongs,
-            List<SurvivorSkillObeliskRepository.AmbitionRow> ambitions) {}
+            List<SurvivorSkillObeliskRepository.AmbitionRow> ambitions,
+            List<SurvivorSkillObeliskRepository.HiddenSkillRow> hiddenSkills) {}
+
+    /**
+     * The new {@code {level, xp}} a hidden skill should be driven to; see {@link
+     * #computeHiddenSkillRestore}.
+     */
+    record HiddenSkillRestore(int level, double xp) {}
 
     private record CompletedRequest(
             IsoPlayer player,
@@ -276,6 +283,10 @@ public final class RecoverSkillsHandler {
                     SurvivorSkillObeliskConfig.isRecoverAmbitions()
                             ? repo.listAmbitionsByDeath(req.deathId())
                             : null;
+            List<SurvivorSkillObeliskRepository.HiddenSkillRow> hiddenSkills =
+                    SurvivorSkillObeliskConfig.isRecoverHiddenSkills()
+                            ? repo.listHiddenSkillsByDeath(req.deathId())
+                            : null;
             conn.commit();
             return new QueryResult(
                     obeliskType,
@@ -286,7 +297,8 @@ public final class RecoverSkillsHandler {
                     printMedia,
                     watchedMedia,
                     learnedSongs,
-                    ambitions);
+                    ambitions,
+                    hiddenSkills);
         } catch (Exception e) {
             LOGGER.error(
                     "[SurvivorSkillObelisk] recoverSkills failed for {} ({}) death id={}",
@@ -509,7 +521,8 @@ public final class RecoverSkillsHandler {
      * through {@link #applySkillsAuthoritatively} (and rely on the ~1s {@code PlayerXp} packet to
      * mirror to the client); this method covers the rest — recipes, read literature, read print
      * media, watched media, learned songs, and ambitions — writing to the fields that {@code
-     * IsoPlayer.save()} persists so a server restart doesn't wipe them.
+     * IsoPlayer.save()} persists so a server restart doesn't wipe them — plus Lifestyles hidden
+     * skills.
      *
      * <p>The client still applies the same payload in {@code SurvivorSkillObeliskClient.lua
      * onRecoveredData} for immediate UI feedback — magazines flip to "read" instantly, no wait for
@@ -587,6 +600,11 @@ public final class RecoverSkillsHandler {
                 modDataMutated = true;
             }
         }
+        if (result.hiddenSkills() != null && !result.hiddenSkills().isEmpty()) {
+            if (applyHiddenSkillsAuthoritatively(player, result.hiddenSkills())) {
+                modDataMutated = true;
+            }
+        }
         if (modDataMutated) {
             try {
                 player.transmitModData();
@@ -641,10 +659,10 @@ public final class RecoverSkillsHandler {
 
     /**
      * Mirror the client's {@code applyLearnedSongs}: for each row, upsert into {@code
-     * modData[instrument .. "LearnedTracks"]}. The list is a Kahlua array of {@code {name, sound}}
-     * tables; skip rows whose {@code name} is already present so re-recoveries don't duplicate.
-     * Returns whether anything was written — the caller uses that to decide whether to {@code
-     * transmitModData}.
+     * modData[instrument .. "LearnedTracks"]}. The list is a Kahlua array of {@code {name, sound,
+     * level, length, isaddon}} tables; skip rows whose {@code name} is already present so
+     * re-recoveries don't duplicate. Returns whether anything was written — the caller uses that to
+     * decide whether to {@code transmitModData}.
      */
     private static boolean applyLearnedSongsAuthoritatively(
             IsoPlayer player, List<SurvivorSkillObeliskRepository.LearnedSongRow> songs) {
@@ -680,10 +698,7 @@ public final class RecoverSkillsHandler {
                 }
                 if (!alreadyPresent) {
                     KahluaTable newEntry = LuaManager.platform.newTable();
-                    newEntry.rawset("name", row.songName());
-                    if (row.sound() != null) {
-                        newEntry.rawset("sound", row.sound());
-                    }
+                    setSongFields(newEntry, row);
                     list.rawset(list.len() + 1, newEntry);
                     mutated = true;
                 }
@@ -776,8 +791,136 @@ public final class RecoverSkillsHandler {
         return mutated;
     }
 
+    /**
+     * Mirror the client's {@code applyHiddenSkills}: upsert each row into {@code
+     * modData.LSHiddenSkills[skill]}, a Lua array of {@code {level, xp, xpForNextLevel}} (see
+     * Lifestyles' HSMng.lua). Merge is max-wins via {@link #computeHiddenSkillRestore} so a
+     * re-recovery can't stack and live progress is never downgraded. No ledger like perk XP:
+     * hidden-skill state is absolute (a level, not an additive XP pool), so restoring the same
+     * death twice is naturally a no-op.
+     */
+    private static boolean applyHiddenSkillsAuthoritatively(
+            IsoPlayer player, List<SurvivorSkillObeliskRepository.HiddenSkillRow> hiddenSkills) {
+        KahluaTable modData = player.getModData();
+        if (modData == null) {
+            return false;
+        }
+        KahluaTable skillsTable;
+        Object skillsObj = modData.rawget("LSHiddenSkills");
+        if (skillsObj instanceof KahluaTable existing) {
+            skillsTable = existing;
+        } else {
+            skillsTable = LuaManager.platform.newTable();
+            modData.rawset("LSHiddenSkills", skillsTable);
+        }
+        boolean mutated = false;
+        float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
+        for (SurvivorSkillObeliskRepository.HiddenSkillRow row : hiddenSkills) {
+            if (row.skill() == null || row.xpForNextLevel() <= 0) {
+                // A non-positive threshold is a malformed row; writing it would make Lifestyles'
+                // addXP level up on the next XP tick (or crash on a nil compare).
+                continue;
+            }
+            try {
+                KahluaTable entry;
+                int currentLevel = 0;
+                double currentXp = 0.0;
+                Object entryObj = skillsTable.rawget(row.skill());
+                if (entryObj instanceof KahluaTable existingEntry) {
+                    entry = existingEntry;
+                    if (entry.rawget(1) instanceof Double level) {
+                        currentLevel = level.intValue();
+                    }
+                    if (entry.rawget(2) instanceof Double xp) {
+                        currentXp = xp;
+                    }
+                } else {
+                    entry = null;
+                }
+                HiddenSkillRestore restore =
+                        computeHiddenSkillRestore(
+                                currentLevel, currentXp, row.level(), row.xp(), percent);
+                if (restore == null) {
+                    continue;
+                }
+                if (entry == null) {
+                    entry = LuaManager.platform.newTable();
+                    skillsTable.rawset(row.skill(), entry);
+                }
+                entry.rawset(1, Double.valueOf(restore.level()));
+                entry.rawset(2, Double.valueOf(restore.xp()));
+                // Same level → same threshold, so only a level change (or a missing slot)
+                // needs the saved threshold written back.
+                if (restore.level() != currentLevel || !(entry.rawget(3) instanceof Double)) {
+                    entry.rawset(3, Double.valueOf(row.xpForNextLevel()));
+                }
+                mutated = true;
+                LOGGER.info(
+                        "[SurvivorSkillObelisk] recoverSkills: hidden skill {} {} -> level"
+                                + " {}->{} (xp {} -> {}, percent={}%)",
+                        row.skill(),
+                        player.getUsername(),
+                        currentLevel,
+                        restore.level(),
+                        currentXp,
+                        restore.xp(),
+                        Math.round(percent * 100));
+            } catch (Throwable t) {
+                LOGGER.warn(
+                        "[SurvivorSkillObelisk] recoverSkills: hidden skill {} failed for {}: {}",
+                        row.skill(),
+                        player.getUsername(),
+                        t.getMessage());
+            }
+        }
+        return mutated;
+    }
+
+    /**
+     * Pure math: what a hidden skill should be driven to, or {@code null} to leave it alone.
+     * Max-wins — a higher saved level replaces the entry, an equal level only ever raises the
+     * within-level XP, a lower one is a no-op — so recovery never downgrades live progress and
+     * re-recovering the same death is idempotent. Only the within-level XP is scaled by {@code
+     * percent}; the level restores in full because the per-level XP thresholds live only in
+     * Lifestyles' Lua (HSMng.getNewValues) and can't be replayed here to convert scaled total XP
+     * back into a level.
+     */
+    static HiddenSkillRestore computeHiddenSkillRestore(
+            int currentLevel, double currentXp, int savedLevel, double savedXp, float percent) {
+        double scaledXp = Math.floor(Math.max(0.0, savedXp) * percent);
+        if (savedLevel > currentLevel) {
+            return new HiddenSkillRestore(savedLevel, scaledXp);
+        }
+        if (savedLevel == currentLevel && scaledXp > currentXp) {
+            return new HiddenSkillRestore(currentLevel, scaledXp);
+        }
+        return null;
+    }
+
     private static boolean truthyBool(Object o) {
         return o instanceof Boolean b && b;
+    }
+
+    /**
+     * Write one restored song's fields onto a Kahlua table in the shape Lifestyles' track records
+     * use. {@code level} always lands (defaulting to 1 for rows saved before the column existed):
+     * Lifestyles' {@code PlayInstrumentTraining:musicParams} compares {@code v.level <=
+     * self.playerLevel} on every learned entry, and a nil there aborts the action's track list —
+     * which then crashes {@code playSong} on the empty list.
+     */
+    private static void setSongFields(
+            KahluaTable entry, SurvivorSkillObeliskRepository.LearnedSongRow row) {
+        entry.rawset("name", row.songName());
+        if (row.sound() != null) {
+            entry.rawset("sound", row.sound());
+        }
+        entry.rawset("level", row.level() != null ? row.level() : 1.0d);
+        if (row.length() != null) {
+            entry.rawset("length", row.length());
+        }
+        if (row.isaddon() != null) {
+            entry.rawset("isaddon", row.isaddon());
+        }
     }
 
     /**
@@ -857,10 +1000,7 @@ public final class RecoverSkillsHandler {
             for (SurvivorSkillObeliskRepository.LearnedSongRow row : result.learnedSongs()) {
                 KahluaTable t = LuaManager.platform.newTable();
                 t.rawset("instrument", row.instrument());
-                t.rawset("name", row.songName());
-                if (row.sound() != null) {
-                    t.rawset("sound", row.sound());
-                }
+                setSongFields(t, row);
                 songs.rawset(i++, t);
             }
             reply.rawset("learnedSongs", songs);
@@ -891,6 +1031,26 @@ public final class RecoverSkillsHandler {
                 ambitions.rawset(i++, t);
             }
             reply.rawset("ambitions", ambitions);
+        }
+
+        if (result.hiddenSkills() != null) {
+            KahluaTable hidden = LuaManager.platform.newTable();
+            int i = 1;
+            float percent = SurvivorSkillObeliskConfig.getSkillRecoveryPercent() / 100.0F;
+            for (SurvivorSkillObeliskRepository.HiddenSkillRow row : result.hiddenSkills()) {
+                if (row.skill() == null || row.xpForNextLevel() <= 0) {
+                    continue;
+                }
+                KahluaTable t = LuaManager.platform.newTable();
+                t.rawset("skill", row.skill());
+                t.rawset("level", (double) row.level());
+                // Scaled here (unlike ambitions, which scale client-side) so the client merge is
+                // a verbatim max-wins against what the server applied.
+                t.rawset("xp", Math.floor(Math.max(0.0, row.xp()) * percent));
+                t.rawset("xpForNextLevel", row.xpForNextLevel());
+                hidden.rawset(i++, t);
+            }
+            reply.rawset("hiddenSkills", hidden);
         }
 
         return reply;

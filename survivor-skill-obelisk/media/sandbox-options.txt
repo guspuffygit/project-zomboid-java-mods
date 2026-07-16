@@ -56,6 +56,14 @@ option SkillObelisk.RecoverAmbitions
     translation = SkillObelisk_RecoverAmbitions,
 }
 
+option SkillObelisk.RecoverHiddenSkills
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_RecoverHiddenSkills,
+}
+
 option SkillObelisk.SkillRecoveryPercent
 {
     type = integer,
