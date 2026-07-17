@@ -6,6 +6,7 @@
 
 require("ISUI/ISCollapsableWindowJoypad")
 require("TimedActions/RecoverSkillsAction")
+require("SurvivorSkillObeliskSongRepair")
 
 local MODULE = "SurvivorSkillObelisk"
 local LIST_COMMAND = "listDeaths"
@@ -777,6 +778,9 @@ local function applyLearnedSongs(player, songs)
     if modData == nil then
         return
     end
+    -- Entries an older recovery wrote without numeric fields would otherwise
+    -- survive the dedupe below forever; heal them before applying.
+    SurvivorSkillObeliskSongRepair.repairPlayer(player)
     iterateLuaArray(songs, function(entry)
         if entry.instrument == nil or entry.name == nil then
             return
@@ -792,16 +796,19 @@ local function applyLearnedSongs(player, songs)
                 return
             end
         end
-        -- Lifestyles track records carry {name, sound, level, length, isaddon}; its
-        -- musicParams compares song.level against the player's level for every learned
-        -- entry, so level must never be nil (1 = playable at any level, for rows saved
-        -- before the extra columns existed).
+        -- Lifestyles' menus do arithmetic on every learned entry (length * 48,
+        -- level <= playerlevel), so the numeric fields must never be nil. Rows
+        -- saved before the level/length/isaddon columns existed carry only
+        -- name + sound; the canonical Lifestyles track record fills the rest.
+        local canonical = SurvivorSkillObeliskSongRepair.resolveTrack(key, entry.name, entry.sound)
         table.insert(list, {
             name = entry.name,
-            sound = entry.sound,
-            level = entry.level or 1,
-            length = entry.length,
-            isaddon = entry.isaddon,
+            sound = canonical and canonical.sound or entry.sound,
+            level = canonical and canonical.level or entry.level or 1,
+            length = canonical and canonical.length
+                or entry.length
+                or SurvivorSkillObeliskSongRepair.FALLBACK_LENGTH,
+            isaddon = canonical and canonical.isaddon or entry.isaddon or 0,
         })
     end)
 end

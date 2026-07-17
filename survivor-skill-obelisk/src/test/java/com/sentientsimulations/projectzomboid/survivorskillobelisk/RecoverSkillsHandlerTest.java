@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import se.krka.kahlua.j2se.KahluaTableImpl;
+import se.krka.kahlua.vm.KahluaTable;
 import zombie.characters.skills.PerkFactory;
 
 /**
@@ -203,5 +206,40 @@ class RecoverSkillsHandlerTest {
     @Test
     void obeliskTypeNullNeverMatches() {
         assertFalse(RecoverSkillsHandler.isObeliskTypeMatch(null, "Running"));
+    }
+
+    @Test
+    void songFieldsFromFullRowCopyVerbatim() {
+        KahluaTable entry = new KahluaTableImpl(new HashMap<>());
+        RecoverSkillsHandler.setSongFields(
+                entry,
+                new SurvivorSkillObeliskRepository.LearnedSongRow(
+                        "Piano", "ContextMenu_02_01_P", "Piano02AmazingGrace", 2.0, 135.0, 1.0));
+
+        assertEquals("ContextMenu_02_01_P", entry.rawget("name"));
+        assertEquals("Piano02AmazingGrace", entry.rawget("sound"));
+        assertEquals(2.0, entry.rawget("level"));
+        assertEquals(135.0, entry.rawget("length"));
+        assertEquals(1.0, entry.rawget("isaddon"));
+    }
+
+    /**
+     * Rows saved before the level/length/isaddon columns existed read back null. Lifestyles does
+     * {@code v.length * 48} on every learned entry, so a nil numeric field crashes its context
+     * menus — every numeric field must be present even when the row has no value.
+     */
+    @Test
+    void songFieldsFromLegacyRowNeverOmitNumerics() {
+        KahluaTable entry = new KahluaTableImpl(new HashMap<>());
+        RecoverSkillsHandler.setSongFields(
+                entry,
+                new SurvivorSkillObeliskRepository.LearnedSongRow(
+                        "Piano", "ContextMenu_02_01_P", null, null, null, null));
+
+        assertEquals("ContextMenu_02_01_P", entry.rawget("name"));
+        assertNull(entry.rawget("sound"));
+        assertEquals(1.0, entry.rawget("level"));
+        assertEquals(60.0, entry.rawget("length"));
+        assertEquals(0.0, entry.rawget("isaddon"));
     }
 }

@@ -908,19 +908,23 @@ public final class RecoverSkillsHandler {
      * self.playerLevel} on every learned entry, and a nil there aborts the action's track list —
      * which then crashes {@code playSong} on the empty list.
      */
-    private static void setSongFields(
+    /**
+     * Lifestyles' context menus do arithmetic on every learned entry ({@code v.length * 48}, {@code
+     * v.level <= playerlevel}); a single nil numeric field aborts the whole menu build with "__mul
+     * not defined". Rows saved before the level/length/isaddon columns existed read back null, so
+     * every numeric field gets a usable placeholder instead of being omitted — the client's
+     * SurvivorSkillObeliskSongRepair.lua re-canonicalizes placeholders against Lifestyles' own
+     * track tables at next game start.
+     */
+    static void setSongFields(
             KahluaTable entry, SurvivorSkillObeliskRepository.LearnedSongRow row) {
         entry.rawset("name", row.songName());
         if (row.sound() != null) {
             entry.rawset("sound", row.sound());
         }
         entry.rawset("level", row.level() != null ? row.level() : 1.0d);
-        if (row.length() != null) {
-            entry.rawset("length", row.length());
-        }
-        if (row.isaddon() != null) {
-            entry.rawset("isaddon", row.isaddon());
-        }
+        entry.rawset("length", row.length() != null ? row.length() : 60.0d);
+        entry.rawset("isaddon", row.isaddon() != null ? row.isaddon() : 0.0d);
     }
 
     /**
