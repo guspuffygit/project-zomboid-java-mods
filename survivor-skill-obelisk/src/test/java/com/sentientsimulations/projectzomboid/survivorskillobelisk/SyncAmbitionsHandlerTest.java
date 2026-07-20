@@ -33,6 +33,8 @@ class SyncAmbitionsHandlerTest {
         KahluaTable terminator = table();
         terminator.rawset("name", "LSTerminator");
         terminator.rawset("cat", "Combat");
+        terminator.rawset("texture", "LSTerminator");
+        terminator.rawset("disable", Boolean.FALSE);
         terminator.rawset("completed", Boolean.FALSE);
         terminator.rawset("isActive", Boolean.TRUE);
         terminator.rawset("isPassive", Boolean.FALSE);
@@ -49,6 +51,11 @@ class SyncAmbitionsHandlerTest {
         KahluaTable entry = (KahluaTable) ambitions(modData).rawget("LSTerminator");
         assertEquals("LSTerminator", entry.rawget("name"));
         assertEquals("Combat", entry.rawget("cat"));
+        // Definition fields mirror through so the server-side entry survives Lifestyles'
+        // once-per-session consistency check, which treats a nil texture/disable as a
+        // changed definition and deep-copy resets the entry.
+        assertEquals("LSTerminator", entry.rawget("texture"));
+        assertEquals(Boolean.FALSE, entry.rawget("disable"));
         assertEquals(Boolean.TRUE, entry.rawget("isActive"));
         assertEquals(5000.0, entry.rawget("goal1"));
         assertEquals(137.0, entry.rawget("goal1progress"));

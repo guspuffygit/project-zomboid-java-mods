@@ -59,6 +59,7 @@ public class SurvivorSkillObeliskRepository {
     public record AmbitionRow(
             String name,
             String category,
+            String texture,
             boolean completed,
             boolean isActive,
             boolean isPassive,
@@ -105,7 +106,7 @@ public class SurvivorSkillObeliskRepository {
 
     private static final String LIST_AMBITIONS_BY_DEATH =
             """
-            SELECT name, category, completed, is_active, is_passive,
+            SELECT name, category, texture, completed, is_active, is_passive,
                    goal1, goal2, goal3, goal4, goal5, goal6,
                    goal1_progress, goal2_progress, goal3_progress,
                    goal4_progress, goal5_progress, goal6_progress
@@ -202,11 +203,11 @@ public class SurvivorSkillObeliskRepository {
     private static final String INSERT_AMBITION =
             """
             INSERT INTO death_ambitions
-                (death_id, name, category, completed, is_active, is_passive,
+                (death_id, name, category, texture, completed, is_active, is_passive,
                  goal1, goal2, goal3, goal4, goal5, goal6,
                  goal1_progress, goal2_progress, goal3_progress,
                  goal4_progress, goal5_progress, goal6_progress)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private final Connection connection;
 
@@ -351,6 +352,7 @@ public class SurvivorSkillObeliskRepository {
             long deathId,
             String name,
             String category,
+            String texture,
             boolean completed,
             boolean isActive,
             boolean isPassive,
@@ -364,14 +366,15 @@ public class SurvivorSkillObeliskRepository {
             stmt.setLong(1, deathId);
             stmt.setString(2, name);
             stmt.setString(3, category);
-            stmt.setInt(4, completed ? 1 : 0);
-            stmt.setInt(5, isActive ? 1 : 0);
-            stmt.setInt(6, isPassive ? 1 : 0);
+            stmt.setString(4, texture);
+            stmt.setInt(5, completed ? 1 : 0);
+            stmt.setInt(6, isActive ? 1 : 0);
+            stmt.setInt(7, isPassive ? 1 : 0);
             for (int i = 0; i < 6; i++) {
-                stmt.setString(7 + i, goals[i]);
+                stmt.setString(8 + i, goals[i]);
             }
             for (int i = 0; i < 6; i++) {
-                stmt.setString(13 + i, goalProgress[i]);
+                stmt.setString(14 + i, goalProgress[i]);
             }
             stmt.executeUpdate();
         }
@@ -518,6 +521,7 @@ public class SurvivorSkillObeliskRepository {
                             new AmbitionRow(
                                     rs.getString("name"),
                                     rs.getString("category"),
+                                    rs.getString("texture"),
                                     rs.getInt("completed") != 0,
                                     rs.getInt("is_active") != 0,
                                     rs.getInt("is_passive") != 0,

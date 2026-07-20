@@ -129,6 +129,7 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
                 death_id       INTEGER NOT NULL,
                 name           TEXT NOT NULL,
                 category       TEXT,
+                texture        TEXT,
                 completed      INTEGER NOT NULL,
                 is_active      INTEGER NOT NULL,
                 is_passive     INTEGER NOT NULL,
@@ -232,6 +233,7 @@ public class SurvivorSkillObeliskDatabase implements AutoCloseable {
         addColumnIfMissing("death_learned_songs", "level", "REAL");
         addColumnIfMissing("death_learned_songs", "length", "REAL");
         addColumnIfMissing("death_learned_songs", "isaddon", "REAL");
+        addColumnIfMissing("death_ambitions", "texture", "TEXT");
     }
 
     private void addColumnIfMissing(String table, String column, String type) throws SQLException {

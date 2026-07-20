@@ -88,4 +88,15 @@ if not AmbitionSync.registered then
     Events.OnGameStart.Add(function()
         AmbitionSync.lastSignature = nil
     end)
+    -- Lifestyles builds the default Ambitions entries only once per Lua session
+    -- (AmbtMng gates customAmbtLoop on LSCheckCustomAmbts), so a character
+    -- respawned without relogging keeps the empty table its OnCreatePlayer
+    -- handler assigns: the painting/kill hooks find no entry, no progress ever
+    -- accrues, and the death snapshot has no ambitions to record. Re-arm the
+    -- check so the next EveryOneMinute tick rebuilds the entries.
+    Events.OnCreatePlayer.Add(function()
+        if LSAmbtMng ~= nil then
+            LSAmbtMng.LSCheckCustomAmbts = false
+        end
+    end)
 end

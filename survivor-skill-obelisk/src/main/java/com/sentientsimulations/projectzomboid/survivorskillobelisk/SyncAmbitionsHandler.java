@@ -46,8 +46,13 @@ public final class SyncAmbitionsHandler {
     private static final int MAX_AMBITIONS = 200;
 
     /**
-     * Exactly the fields {@link DeathEventHandler#snapshotAmbitions} reads. Sidecar fields (ogKills
-     * and friends) are deliberately absent — see the class javadoc.
+     * The fields {@link DeathEventHandler#snapshotAmbitions} reads, plus {@code texture} and {@code
+     * disable}. Those two never change during play, but Lifestyles' once-per-session consistency
+     * check (AmbtMng's customAmbtLoop) deep-copy resets any non-completed entry whose {@code
+     * name/cat/texture/goal1..6/isPassive/disable} differ from the shipped definition — and {@code
+     * nil} counts as different. Mirroring them keeps the server-side entry definition-complete so
+     * it survives that check after a rejoin. Sidecar fields (ogKills and friends) are deliberately
+     * absent — see the class javadoc.
      */
     private static final List<String> ALLOWED_FIELDS = buildAllowedFields();
 
@@ -55,6 +60,8 @@ public final class SyncAmbitionsHandler {
         List<String> fields = new ArrayList<>();
         fields.add("name");
         fields.add("cat");
+        fields.add("texture");
+        fields.add("disable");
         fields.add("completed");
         fields.add("isActive");
         fields.add("isPassive");

@@ -96,6 +96,7 @@ public final class DeathEventHandler {
     private record AmbitionSnapshot(
             String name,
             String category,
+            String texture,
             boolean completed,
             boolean isActive,
             boolean isPassive,
@@ -297,6 +298,7 @@ public final class DeathEventHandler {
                         deathId,
                         a.name(),
                         a.category(),
+                        a.texture(),
                         a.completed(),
                         a.isActive(),
                         a.isPassive(),
@@ -581,6 +583,7 @@ public final class DeathEventHandler {
                     new AmbitionSnapshot(
                             name,
                             asString(ambition.rawget("cat")),
+                            asString(ambition.rawget("texture")),
                             asBoolean(ambition.rawget("completed")),
                             asBoolean(ambition.rawget("isActive")),
                             asBoolean(ambition.rawget("isPassive")),

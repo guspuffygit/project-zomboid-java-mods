@@ -755,6 +755,17 @@ public final class RecoverSkillsHandler {
                 if (row.category() != null) {
                     existingRow.rawset("cat", row.category());
                 }
+                // Lifestyles' once-per-session consistency check (AmbtMng customAmbtLoop)
+                // deep-copy resets any non-completed entry whose definition fields
+                // (name/cat/texture/goal1..6/isPassive/disable) differ from the shipped list,
+                // and nil counts as different — restoring without texture/disable silently
+                // wiped recovered progress on the player's next login.
+                if (row.texture() != null) {
+                    existingRow.rawset("texture", row.texture());
+                }
+                if (!(existingRow.rawget("disable") instanceof Boolean)) {
+                    existingRow.rawset("disable", Boolean.FALSE);
+                }
                 existingRow.rawset(
                         "completed",
                         row.completed() || truthyBool(existingRow.rawget("completed")));
@@ -1018,6 +1029,9 @@ public final class RecoverSkillsHandler {
                 t.rawset("name", row.name());
                 if (row.category() != null) {
                     t.rawset("cat", row.category());
+                }
+                if (row.texture() != null) {
+                    t.rawset("texture", row.texture());
                 }
                 t.rawset("completed", row.completed());
                 t.rawset("isActive", row.isActive());

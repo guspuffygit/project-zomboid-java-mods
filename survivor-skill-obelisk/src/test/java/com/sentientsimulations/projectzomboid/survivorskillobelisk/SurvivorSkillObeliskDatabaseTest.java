@@ -288,6 +288,7 @@ class SurvivorSkillObeliskDatabaseTest {
                 deathId,
                 "LSTerminator",
                 "Combat",
+                "LSTerminator",
                 false,
                 true,
                 false,
@@ -297,6 +298,7 @@ class SurvivorSkillObeliskDatabaseTest {
                 deathId,
                 "LSBladeMaster",
                 "Combat",
+                null,
                 true,
                 false,
                 false,
@@ -323,14 +325,15 @@ class SurvivorSkillObeliskDatabaseTest {
         try (Statement stmt = db.getConnection().createStatement();
                 ResultSet rs =
                         stmt.executeQuery(
-                                "SELECT name, category, completed, is_active, goal1, goal2,"
-                                        + " goal1_progress FROM death_ambitions"
+                                "SELECT name, category, texture, completed, is_active, goal1,"
+                                        + " goal2, goal1_progress FROM death_ambitions"
                                         + " WHERE death_id = "
                                         + deathId
                                         + " ORDER BY id")) {
             assertTrue(rs.next());
             assertEquals("LSTerminator", rs.getString("name"));
             assertEquals("Combat", rs.getString("category"));
+            assertEquals("LSTerminator", rs.getString("texture"));
             assertEquals(0, rs.getInt("completed"));
             assertEquals(1, rs.getInt("is_active"));
             assertEquals("5000", rs.getString("goal1"));
@@ -338,6 +341,7 @@ class SurvivorSkillObeliskDatabaseTest {
             assertEquals("137", rs.getString("goal1_progress"));
             assertTrue(rs.next());
             assertEquals("LSBladeMaster", rs.getString("name"));
+            assertEquals(null, rs.getString("texture"));
             assertEquals(1, rs.getInt("completed"));
         }
     }

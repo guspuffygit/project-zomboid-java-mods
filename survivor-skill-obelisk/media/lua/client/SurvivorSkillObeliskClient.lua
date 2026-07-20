@@ -831,6 +831,30 @@ local function getRecoveryPercent()
     return percent / 100.0
 end
 
+-- Lifestyles' shipped ambition definitions keyed by name, with server-admin
+-- custom overrides (global ModData LSDATA.AMBT) taking precedence — the same
+-- source AmbtMng's customAmbtLoop compares player entries against.
+local ambitionDefaultsByName
+local function getAmbitionDefault(name)
+    if ambitionDefaultsByName == nil then
+        ambitionDefaultsByName = {}
+        local ok, list = pcall(require, "Properties/Player/LSAmbitions")
+        if ok and type(list) == "table" then
+            for _, def in ipairs(list) do
+                if def.name ~= nil then
+                    ambitionDefaultsByName[def.name] = def
+                end
+            end
+        end
+    end
+    local lsData = ModData.getOrCreate("LSDATA")
+    local custom = lsData and lsData.AMBT and lsData.AMBT[name]
+    if custom and custom.custom then
+        return custom
+    end
+    return ambitionDefaultsByName[name]
+end
+
 local function applyAmbitions(player, ambitions)
     local modData = player:getModData()
     if modData == nil then
@@ -848,6 +872,9 @@ local function applyAmbitions(player, ambitions)
         existing.name = entry.name
         if entry.cat ~= nil then
             existing.cat = entry.cat
+        end
+        if entry.texture ~= nil then
+            existing.texture = entry.texture
         end
         existing.completed = entry.completed or existing.completed or false
         existing.isActive = entry.isActive or existing.isActive or false
@@ -867,6 +894,21 @@ local function applyAmbitions(player, ambitions)
                 else
                     existing[progressKey] = value
                 end
+            end
+        end
+        -- Lifestyles' once-per-session consistency check (AmbtMng customAmbtLoop)
+        -- deep-copy resets any non-completed entry whose definition fields
+        -- (name/cat/texture/goal1..6/isPassive/disable) differ from the shipped
+        -- list — and nil counts as different. Deaths recorded before the texture
+        -- column existed restore without it, so backfill from Lifestyles' own
+        -- definitions or the recovered progress is wiped on the next login.
+        if existing.texture == nil or existing.disable == nil then
+            local default = getAmbitionDefault(entry.name)
+            if existing.texture == nil and default ~= nil then
+                existing.texture = default.texture
+            end
+            if existing.disable == nil then
+                existing.disable = (default ~= nil and default.disable) or false
             end
         end
         modData.Ambitions[entry.name] = existing
