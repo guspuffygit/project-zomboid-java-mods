@@ -2,17 +2,26 @@ if isClient() and not isServer() then
     return
 end
 
+local FINE_PARKING_STEAMID = "76561197984809068"
 local FINE_PARKING_CURRENCY = "Scraps"
 local FINE_PARKING_REASON = "parking_violation"
+local FINE_PARKING_COMMISSION_REASON = "parking_fine_commission"
+local FINE_PARKING_COMMISSION_PCT = 0.10
 local FINE_PARKING_MAX = 1000000
 
--- Server-side auth is admin-only. Comparing SteamIDs in server-Lua is unsafe
--- (Kahlua's 52-bit double mantissa corrupts 64-bit SteamIDs the moment
--- getSteamID() crosses into Lua — see economy/docs/architecture.md). Gus
--- Puffy sees the option on his client via the SteamID bypass, but must be
--- admin server-side for the fine to actually apply.
+-- SteamID compare goes through AvcsSteamIdApi (Java) because Kahlua's 52-bit
+-- mantissa corrupts 64-bit SteamIDs the moment getSteamID() crosses into Lua.
 local function AVCS_serverCanFineParking(playerObj)
-    return playerObj and playerObj:getAccessLevel() == "admin" or false
+    if not playerObj then
+        return false
+    end
+    if playerObj:getAccessLevel() == "admin" then
+        return true
+    end
+    if AvcsSteamIdApi and AvcsSteamIdApi.getSteamIDString(playerObj) == FINE_PARKING_STEAMID then
+        return true
+    end
+    return false
 end
 
 local function AVCS_notify(playerObj, text, r, g, b)
@@ -82,13 +91,39 @@ local function AVCS_handleFineOwnerForParking(playerObj, arg)
     )
 
     if result and result.ok then
-        AVCS_notify(
-            playerObj,
-            "Fined " .. ownerName .. " " .. tostring(amount) .. " " .. FINE_PARKING_CURRENCY,
-            120,
-            250,
-            120
-        )
+        local collected = (result.eventIds and #result.eventIds or 0) * amount
+        local commission = math.floor(collected * FINE_PARKING_COMMISSION_PCT)
+        local commissionOk = false
+        if commission > 0 and ATF_Economy.grant then
+            local grantResult = ATF_Economy.grant(
+                playerObj,
+                FINE_PARKING_CURRENCY,
+                commission,
+                FINE_PARKING_COMMISSION_REASON
+            )
+            commissionOk = grantResult and grantResult.ok or false
+            writeLog(
+                "AVCS",
+                "["
+                    .. getTimestamp()
+                    .. "] Commission paid to ["
+                    .. playerObj:getUsername()
+                    .. "] amount="
+                    .. tostring(commission)
+                    .. " "
+                    .. FINE_PARKING_CURRENCY
+                    .. " ok="
+                    .. tostring(commissionOk)
+                    .. " reason="
+                    .. tostring(grantResult and grantResult.reason)
+            )
+        end
+
+        local msg = "Fined " .. ownerName .. " " .. tostring(amount) .. " " .. FINE_PARKING_CURRENCY
+        if commissionOk then
+            msg = msg .. " (+" .. tostring(commission) .. " commission)"
+        end
+        AVCS_notify(playerObj, msg, 120, 250, 120)
     else
         AVCS_notify(
             playerObj,

@@ -15,6 +15,7 @@ public class AnotherVehicleClaimSystemMapView implements ZomboidMod {
     public void registerEventHandlers() {
         LOGGER.debug("Registering event handler for {}", getClass().getName());
         StormEventDispatcher.registerEventHandler(this);
+        StormEventDispatcher.registerEventHandler(AvcsSteamIdApiLuaExposerHandler.class);
     }
 
     @Override
