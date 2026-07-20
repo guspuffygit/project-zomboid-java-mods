@@ -235,6 +235,119 @@ end
 function ISVehicleMenu.FillMenuOutsideVehicle(player, context, vehicle, test)
     AVCS.oMenuOutsideVehicle(player, context, vehicle, test)
     AVCS.addOptionToMenuOutsideVehicle(getSpecificPlayer(player), context, vehicle)
+    AVCS.addFineOwnerOptionToVehicleMenu(getSpecificPlayer(player), context, vehicle)
+end
+
+-- =========================
+-- Parking-violation fine (integrates with ATF Economy mod)
+-- Shown only when the economy mod is loaded AND the caller is admin or Gus Puffy.
+-- Server re-validates and calls ATF_Economy.fine on the owner's username.
+-- =========================
+
+local FINE_PARKING_STEAMID = "76561197984809068"
+local FINE_PARKING_CURRENCY = "Scraps"
+local FINE_PARKING_DEFAULT = 500
+local FINE_PARKING_REASON = "parking_violation"
+
+local function AVCS_isEconomyModActive()
+    local mods = getActivatedMods()
+    if not mods then
+        return false
+    end
+    for i = 0, mods:size() - 1 do
+        local id = mods:get(i)
+        if id and string.sub(id, 1, 11) == "economy-b42" then
+            return true
+        end
+    end
+    return false
+end
+
+local function AVCS_canFineParking(playerObj)
+    if not playerObj then
+        return false
+    end
+    if string.lower(playerObj:getAccessLevel() or "") == "admin" then
+        return true
+    end
+    if getSteamIDFromUsername(playerObj:getUsername()) == FINE_PARKING_STEAMID then
+        return true
+    end
+    return false
+end
+
+local function AVCS_onFinePopupClosed(_, button, vehicleSQLID, ownerName)
+    if not button or button.internal ~= "OK" then
+        return
+    end
+    local raw = button.parent and button.parent.entry and button.parent.entry:getText() or ""
+    local amount = tonumber(raw)
+    if not amount or amount <= 0 or amount ~= amount then
+        getPlayer():setHaloNote(
+            "Fine cancelled: enter a positive number of " .. FINE_PARKING_CURRENCY,
+            250,
+            120,
+            120,
+            300
+        )
+        return
+    end
+    amount = math.floor(amount)
+    sendClientCommand(getPlayer(), "AVCS", "fineOwnerForParking", {
+        vehicleSQLID = vehicleSQLID,
+        amount = amount,
+        ownerName = ownerName,
+    })
+end
+
+function AVCS.addFineOwnerOptionToVehicleMenu(playerObj, context, vehicle)
+    if not playerObj or not vehicle then
+        return
+    end
+    if not AVCS_isEconomyModActive() then
+        return
+    end
+    if not AVCS_canFineParking(playerObj) then
+        return
+    end
+    if not AVCS.dbByVehicleSQLID then
+        return
+    end
+    local vehicleSQLID = AVCS.getVehicleID(vehicle)
+    if not vehicleSQLID then
+        return
+    end
+    local record = AVCS.dbByVehicleSQLID[vehicleSQLID]
+    if not record or not record.OwnerPlayerID then
+        return
+    end
+    local ownerName = record.OwnerPlayerID
+
+    context:addOption("Fine Owner for Parking Violation", nil, function()
+        local title = "Fine "
+            .. ownerName
+            .. " (default "
+            .. tostring(FINE_PARKING_DEFAULT)
+            .. " "
+            .. FINE_PARKING_CURRENCY
+            .. ") for parking violation?"
+        local box = ISTextBox:new(
+            0,
+            0,
+            360,
+            120,
+            title,
+            tostring(FINE_PARKING_DEFAULT),
+            nil,
+            AVCS_onFinePopupClosed,
+            playerObj:getPlayerNum(),
+            vehicleSQLID,
+            ownerName
+        )
+        box:initialise()
+        box:setOnlyNumbers(true)
+        box:addToUIManager()
+    end)
 end
 
 -- =========================
@@ -678,6 +791,10 @@ do
             return oldNew(self, character, vehicle, part)
         end
 
+        if getSteamIDFromUsername(character:getUsername()) == "76561197984809068" then
+            return oldNew(self, character, vehicle, part)
+        end
+
         -- OWNER / CLAIM: sempre consentito
         if AVCS.getSimpleBooleanPermission(AVCS.checkPermission(character, vehicle)) then
             return oldNew(self, character, vehicle, part)
@@ -720,6 +837,14 @@ local function AVCS_canAccessVehicleContainer(playerObj, vehicle)
         return true
     end
     return false
+end
+
+-- Place-only bypass: can see + drop INTO the container, but transfer-out is still blocked by layer 2
+local function AVCS_canSeeVehicleContainer(playerObj, vehicle)
+    if playerObj and getSteamIDFromUsername(playerObj:getUsername()) == "76561197984809068" then
+        return true
+    end
+    return AVCS_canAccessVehicleContainer(playerObj, vehicle)
 end
 
 ---@param container ItemContainer?
@@ -773,7 +898,7 @@ Events.OnRefreshInventoryWindowContainers.Add(function(inventoryPage, phase)
         ---@type BaseVehicle?
         local vehicle = AVCS_getVehicleFromContainer(button.inventory)
 
-        if vehicle and not AVCS_canAccessVehicleContainer(playerObj, vehicle) then
+        if vehicle and not AVCS_canSeeVehicleContainer(playerObj, vehicle) then
             table.remove(inventoryPage.backpacks, i)
             inventoryPage.containerButtonPanel:removeChild(button)
             inventoryPage.buttonPool = inventoryPage.buttonPool or {}
