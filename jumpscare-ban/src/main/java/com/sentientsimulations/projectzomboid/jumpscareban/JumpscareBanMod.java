@@ -28,6 +28,6 @@ public class JumpscareBanMod implements ZomboidMod {
         if (!StormEnv.isStormServer()) {
             return Collections.emptyList();
         }
-        return List.of(new BanSystemPatch());
+        return List.of(new BanSystemPatch(), new ServerMainLoopPatch());
     }
 }
