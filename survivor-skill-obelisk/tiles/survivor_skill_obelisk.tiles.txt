@@ -9,7 +9,6 @@ tileset
     {
         xy = 0,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_0
         CustomName = Onyx Large Skill Obelisk
@@ -23,7 +22,6 @@ tileset
     {
         xy = 1,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_1
         CustomName = Silver Large Skill Obelisk
@@ -37,7 +35,6 @@ tileset
     {
         xy = 2,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_2
         CustomName = Ruby Large Skill Obelisk
@@ -51,7 +48,6 @@ tileset
     {
         xy = 3,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_3
         CustomName = Magenta Large Skill Obelisk
@@ -65,7 +61,6 @@ tileset
     {
         xy = 4,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_4
         CustomName = Amethyst Large Skill Obelisk
@@ -79,7 +74,6 @@ tileset
     {
         xy = 5,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_5
         CustomName = Sapphire Large Skill Obelisk
@@ -93,7 +87,6 @@ tileset
     {
         xy = 6,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_6
         CustomName = Cobalt Large Skill Obelisk
@@ -107,7 +100,6 @@ tileset
     {
         xy = 7,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_7
         CustomName = Turquoise Large Skill Obelisk
@@ -121,7 +113,6 @@ tileset
     {
         xy = 0,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_8
         CustomName = Aqua Large Skill Obelisk
@@ -135,7 +126,6 @@ tileset
     {
         xy = 1,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_9
         CustomName = Emerald Large Skill Obelisk
@@ -149,7 +139,6 @@ tileset
     {
         xy = 2,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_10
         CustomName = Peridot Large Skill Obelisk
@@ -163,7 +152,6 @@ tileset
     {
         xy = 3,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_11
         CustomName = Topaz Large Skill Obelisk
@@ -177,7 +165,6 @@ tileset
     {
         xy = 4,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_12
         CustomName = Citrine Large Skill Obelisk
@@ -191,7 +178,6 @@ tileset
     {
         xy = 5,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_13
         CustomName = Amber Large Skill Obelisk
@@ -223,7 +209,6 @@ tileset
     {
         xy = 0,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_0
         CustomName = Onyx Small Skill Obelisk
@@ -237,7 +222,6 @@ tileset
     {
         xy = 1,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_1
         CustomName = Silver Small Skill Obelisk
@@ -251,7 +235,6 @@ tileset
     {
         xy = 2,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_2
         CustomName = Ruby Small Skill Obelisk
@@ -265,7 +248,6 @@ tileset
     {
         xy = 3,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_3
         CustomName = Magenta Small Skill Obelisk
@@ -279,7 +261,6 @@ tileset
     {
         xy = 4,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_4
         CustomName = Amethyst Small Skill Obelisk
@@ -293,7 +274,6 @@ tileset
     {
         xy = 5,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_5
         CustomName = Sapphire Small Skill Obelisk
@@ -307,7 +287,6 @@ tileset
     {
         xy = 6,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_6
         CustomName = Cobalt Small Skill Obelisk
@@ -321,7 +300,6 @@ tileset
     {
         xy = 7,0
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_7
         CustomName = Turquoise Small Skill Obelisk
@@ -335,7 +313,6 @@ tileset
     {
         xy = 0,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_8
         CustomName = Aqua Small Skill Obelisk
@@ -349,7 +326,6 @@ tileset
     {
         xy = 1,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_9
         CustomName = Emerald Small Skill Obelisk
@@ -363,7 +339,6 @@ tileset
     {
         xy = 2,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_10
         CustomName = Peridot Small Skill Obelisk
@@ -377,7 +352,6 @@ tileset
     {
         xy = 3,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_11
         CustomName = Topaz Small Skill Obelisk
@@ -391,7 +365,6 @@ tileset
     {
         xy = 4,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_12
         CustomName = Citrine Small Skill Obelisk
@@ -405,7 +378,6 @@ tileset
     {
         xy = 5,1
         BlocksPlacement = 
-        CanScrap = 
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_sm_13
         CustomName = Amber Small Skill Obelisk
@@ -437,7 +409,6 @@ tileset
     {
         xy = 7,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_0
         CustomName = Onyx Large Skill Obelisk
@@ -451,7 +422,6 @@ tileset
     {
         xy = 6,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_1
         CustomName = Silver Large Skill Obelisk
@@ -465,7 +435,6 @@ tileset
     {
         xy = 5,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_2
         CustomName = Ruby Large Skill Obelisk
@@ -479,7 +448,6 @@ tileset
     {
         xy = 4,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_3
         CustomName = Magenta Large Skill Obelisk
@@ -493,7 +461,6 @@ tileset
     {
         xy = 3,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_4
         CustomName = Amethyst Large Skill Obelisk
@@ -507,7 +474,6 @@ tileset
     {
         xy = 2,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_5
         CustomName = Sapphire Large Skill Obelisk
@@ -521,7 +487,6 @@ tileset
     {
         xy = 1,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_6
         CustomName = Cobalt Large Skill Obelisk
@@ -535,7 +500,6 @@ tileset
     {
         xy = 0,0
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_7
         CustomName = Turquoise Large Skill Obelisk
@@ -549,7 +513,6 @@ tileset
     {
         xy = 7,1
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_8
         CustomName = Aqua Large Skill Obelisk
@@ -563,7 +526,6 @@ tileset
     {
         xy = 6,1
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_9
         CustomName = Emerald Large Skill Obelisk
@@ -577,7 +539,6 @@ tileset
     {
         xy = 5,1
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_10
         CustomName = Peridot Large Skill Obelisk
@@ -591,7 +552,6 @@ tileset
     {
         xy = 4,1
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_11
         CustomName = Topaz Large Skill Obelisk
@@ -605,7 +565,6 @@ tileset
     {
         xy = 3,1
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_12
         CustomName = Citrine Large Skill Obelisk
@@ -619,7 +578,6 @@ tileset
     {
         xy = 2,1
         BlocksPlacement =
-        CanScrap =
         ContainerPosition = Low
         CustomItem = Base.survivor_skill_obelisk_lg_13
         CustomName = Amber Large Skill Obelisk

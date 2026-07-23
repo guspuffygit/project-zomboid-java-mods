@@ -74,6 +74,14 @@ option SkillObelisk.SkillRecoveryPercent
     translation = SkillObelisk_SkillRecoveryPercent,
 }
 
+option SkillObelisk.CurseOnSledgehammer
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_CurseOnSledgehammer,
+}
+
 option SkillObelisk.MapObeliskVisibility
 {
     type = enum,

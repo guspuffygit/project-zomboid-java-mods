@@ -2,13 +2,29 @@ package com.sentientsimulations.projectzomboid.survivorskillobelisk;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
+import com.sentientsimulations.projectzomboid.survivorskillobelisk.patch.IsoThumpableGetThumpableForPatch;
+import com.sentientsimulations.projectzomboid.survivorskillobelisk.patch.RemoveItemFromSquarePacketPatch;
+import com.sentientsimulations.projectzomboid.survivorskillobelisk.patch.SledgehammerDestroyPacketPatch;
+import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
 import io.pzstorm.storm.util.StormEnv;
+import java.util.List;
 
 public class SurvivorSkillObeliskMod implements ZomboidMod {
+
+    @Override
+    public List<StormClassTransformer> getClassTransformers() {
+        if (!StormEnv.isStormServer()) {
+            return List.of();
+        }
+        return List.of(
+                new SledgehammerDestroyPacketPatch(),
+                new RemoveItemFromSquarePacketPatch(),
+                new IsoThumpableGetThumpableForPatch());
+    }
 
     @Override
     public void registerEventHandlers() {
@@ -23,6 +39,8 @@ public class SurvivorSkillObeliskMod implements ZomboidMod {
         StormEventDispatcher.registerEventHandler(SetObeliskTypeHandler.class);
         StormEventDispatcher.registerEventHandler(GetObeliskTypeHandler.class);
         StormEventDispatcher.registerEventHandler(ObeliskLifecycleHandler.class);
+        StormEventDispatcher.registerEventHandler(ObeliskCurseHandler.class);
+        StormEventDispatcher.registerEventHandler(SurvivorSkillObeliskApiLuaExposerHandler.class);
         StormEventDispatcher.registerEventHandler(ListAllObelisksHandler.class);
         StormEventDispatcher.registerEventHandler(SyncLearnedSongsHandler.class);
         StormEventDispatcher.registerEventHandler(SyncHiddenSkillsHandler.class);

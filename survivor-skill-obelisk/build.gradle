@@ -95,6 +95,7 @@ Admins can right-click a placed obelisk and pick [b]Configure Obelisk[/b] to bin
 [*][b]Recover Learned Songs (Lifestyles)[/b]: toggle Lifestyles instrument song recovery. Default on. No effect if Lifestyles is not installed.
 [*][b]Recover Ambitions (Lifestyles)[/b]: toggle Lifestyles ambition recovery. Default on. Numeric goal progress is scaled by Skill Recovery (%). No effect if Lifestyles is not installed.
 [*][b]Skill Recovery (%)[/b]: 0 to 100, default 100. Scales perk XP and ambition goal progress.
+[*][b]Obelisk Curse[/b]: default on. Obelisks cannot be destroyed by players or zombies; a player who tries to sledgehammer one is struck dead by its curse. Turn off to simply block the attempt instead. Admins can always remove obelisks with the brush tool.
 [/list]
 
 [hr][/hr]

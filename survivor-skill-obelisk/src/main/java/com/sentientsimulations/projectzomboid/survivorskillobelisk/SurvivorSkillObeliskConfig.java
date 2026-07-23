@@ -28,6 +28,7 @@ public final class SurvivorSkillObeliskConfig {
     public static final boolean DEFAULT_RECOVER_AMBITIONS = true;
     public static final boolean DEFAULT_RECOVER_HIDDEN_SKILLS = true;
     public static final int DEFAULT_SKILL_RECOVERY_PERCENT = 100;
+    public static final boolean DEFAULT_CURSE_ON_SLEDGEHAMMER = true;
 
     private static final AtomicBoolean RECOVER_SKILLS = new AtomicBoolean(DEFAULT_RECOVER_SKILLS);
     private static final AtomicBoolean RECOVER_RECIPES = new AtomicBoolean(DEFAULT_RECOVER_RECIPES);
@@ -45,6 +46,8 @@ public final class SurvivorSkillObeliskConfig {
             new AtomicBoolean(DEFAULT_RECOVER_HIDDEN_SKILLS);
     private static final AtomicInteger SKILL_RECOVERY_PERCENT =
             new AtomicInteger(DEFAULT_SKILL_RECOVERY_PERCENT);
+    private static final AtomicBoolean CURSE_ON_SLEDGEHAMMER =
+            new AtomicBoolean(DEFAULT_CURSE_ON_SLEDGEHAMMER);
 
     private SurvivorSkillObeliskConfig() {}
 
@@ -123,6 +126,14 @@ public final class SurvivorSkillObeliskConfig {
         return clamped;
     }
 
+    public static boolean isCurseOnSledgehammer() {
+        return CURSE_ON_SLEDGEHAMMER.get();
+    }
+
+    public static void setCurseOnSledgehammer(boolean value) {
+        CURSE_ON_SLEDGEHAMMER.set(value);
+    }
+
     /** Resets every option back to its compiled-in default. Test-only. */
     static void resetToDefaults() {
         RECOVER_SKILLS.set(DEFAULT_RECOVER_SKILLS);
@@ -134,5 +145,6 @@ public final class SurvivorSkillObeliskConfig {
         RECOVER_AMBITIONS.set(DEFAULT_RECOVER_AMBITIONS);
         RECOVER_HIDDEN_SKILLS.set(DEFAULT_RECOVER_HIDDEN_SKILLS);
         SKILL_RECOVERY_PERCENT.set(DEFAULT_SKILL_RECOVERY_PERCENT);
+        CURSE_ON_SLEDGEHAMMER.set(DEFAULT_CURSE_ON_SLEDGEHAMMER);
     }
 }

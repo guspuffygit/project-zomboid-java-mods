@@ -34,8 +34,65 @@ src/main/java/com/sentientsimulations/projectzomboid/survivorskillobelisk/
 ├── SurvivorSkillObeliskMod.java         # Storm entry point; subscribes to death event (server only)
 ├── DeathEventHandler.java               # Extracts player data, resolves DB path, persists snapshot
 ├── SurvivorSkillObeliskDatabase.java    # SQLite connection + schema bootstrap (per-call connection)
-└── SurvivorSkillObeliskRepository.java  # SQL inserts (no business logic)
+├── SurvivorSkillObeliskRepository.java  # SQL inserts (no business logic)
+└── patch/                               # Server-only Storm bytecode patches (obelisk protection)
 ```
+
+## Obelisk indestructibility
+
+Placed obelisk sprites are `solid`, so `ISMoveableSpriteProps:placeMoveableInternal` (which the
+brush tool uses) creates them as `IsoThumpable` — in vanilla that makes them destroyable by zombie
+thumping, player melee, and the sledgehammer/pickup/disassemble actions (the server performs
+removals with no per-object validation). The only allowed removal is an admin whose role has
+`Capability.UseBrushToolManager` using the brush tool's "Destroy tile" option.
+
+**The primary destruction path in B42 is not a packet.** Sledgehammer destroy and furniture
+pickup/disassemble are synced timed actions: the client streams the action to the server
+(`NetTimedAction`) and the *server* runs the action's `complete()`, which removes the object with
+direct Java calls (`transmitRemoveItemFromSquare`, `pickUpMoveableViaCursor`,
+`scrapObjectViaCursor`) — no removal packet is ever processed. That path is gated by
+`media/lua/server/SurvivorSkillObeliskDestroyGuard.lua`, which overrides
+`ISDestroyStuffAction:complete` and `ISMoveablesAction:complete` (pickup/scrap) server-side and
+consults `SurvivorSkillObeliskApi` (exposed to server Lua by
+`SurvivorSkillObeliskApiLuaExposerHandler`) for the role policy, resync, and curse.
+
+Three server-only Storm patches back this up against forged packets and the legacy client path:
+
+- **`SledgehammerDestroyPacketPatch`** — skips `processServer` for obelisk targets unless the
+  sender has the brush-tool capability. Brush-tool "Destroy tile" sends this same packet, so the
+  sender's *role* is what separates admin deletes from player sledgehammers. Blocking at this
+  layer also suppresses the packet's rebroadcast loop (which runs even when the inner remove is
+  skipped and would ghost the obelisk on every nearby client).
+- **`RemoveItemFromSquarePacketPatch`** — same gate on the generic removal packet.
+- **`IsoThumpableGetThumpableForPatch`** — returns null from `getThumpableFor` for obelisks, so
+  zombies path around them instead of thumping and player `WeaponHit` no-ops server-side.
+
+Blocked attempts are logged and the sender is resynced with an `AddItemToMap` packet so the
+obelisk doesn't linger as a client-side ghost. `ObeliskProtection` holds the packet-side policy;
+`SurvivorSkillObeliskApi` holds the action-side policy (both check the same capability). The
+tiledefs deliberately carry no `CanScrap` property so disassemble is never offered. Known
+residual: fire is not blocked.
+
+### The curse
+
+The sledgehammer destroy option is deliberately left visible. When a non-admin completes the
+destroy action, the server blocks the removal as above and — if the `SkillObelisk.CurseOnSledgehammer`
+sandbox option is on (default) — `ObeliskCurseHandler` kills the character **server-side** on the
+next main-loop tick (`IsoPlayer.Kill` + `die()`), announces
+`<username> has been smited by the mighty Obelisk` in server chat (`sendMessageToServerChat`,
+main-thread only — the ChatBase/UdpConnection locks invert off it), and sends a targeted
+`obeliskCurse` command so `SurvivorSkillObeliskProtection.lua` can play the obelisk sound on the
+attacker's machine.
+
+The kill runs on the server, not the client. B42 player health is server-authoritative and the
+persisted `networkPlayers.isDead` flag is written from the server's `IsoPlayer`, so the earlier
+client-side `player:Kill(player)` only played the death screen: the server character stayed alive,
+"create new character" hung on a black screen, and rejoining restored the old character. The
+server-side kill runs `DoDeath` (vanilla death log, "is dead" announcement, `OnCharacterDeath` —
+which is what drives this mod's own death snapshot), builds the corpse, persists the dead flag via
+`removeSaveFile`, and broadcasts `PlayerDeath` so the owning client plays out the death normally.
+Cheat clients can neither destroy the obelisk nor decline the death. With the option off, the
+attempt is silently blocked and resynced like every other removal path.
 
 Each death opens a fresh `SurvivorSkillObeliskDatabase` connection, matching the per-call pattern
 used by survivor-leaderboard so the game thread never contends on a shared connection.

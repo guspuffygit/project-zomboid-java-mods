@@ -29,6 +29,7 @@ public final class SurvivorSkillObeliskSandboxApplier {
     public static final String OPT_RECOVER_AMBITIONS = "SkillObelisk.RecoverAmbitions";
     public static final String OPT_RECOVER_HIDDEN_SKILLS = "SkillObelisk.RecoverHiddenSkills";
     public static final String OPT_SKILL_RECOVERY_PERCENT = "SkillObelisk.SkillRecoveryPercent";
+    public static final String OPT_CURSE_ON_SLEDGEHAMMER = "SkillObelisk.CurseOnSledgehammer";
 
     private SurvivorSkillObeliskSandboxApplier() {}
 
@@ -63,6 +64,7 @@ public final class SurvivorSkillObeliskSandboxApplier {
         applyBool(OPT_RECOVER_AMBITIONS, SurvivorSkillObeliskConfig::setRecoverAmbitions);
         applyBool(OPT_RECOVER_HIDDEN_SKILLS, SurvivorSkillObeliskConfig::setRecoverHiddenSkills);
         applyInt(OPT_SKILL_RECOVERY_PERCENT, SurvivorSkillObeliskConfig::setSkillRecoveryPercent);
+        applyBool(OPT_CURSE_ON_SLEDGEHAMMER, SurvivorSkillObeliskConfig::setCurseOnSledgehammer);
     }
 
     private static void applyBool(String name, Consumer<Boolean> setter) {

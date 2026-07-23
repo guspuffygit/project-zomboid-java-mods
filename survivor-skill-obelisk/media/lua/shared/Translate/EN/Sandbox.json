@@ -18,6 +18,8 @@
   "Sandbox_SkillObelisk_RecoverHiddenSkills_tooltip": "Lifestyles mod only — restore the hidden skills (Yoga, Inventing) the character had at death. Levels restore in full; XP within the current level is scaled by Skill Recovery (%). No effect if Lifestyles is not installed.",
   "Sandbox_SkillObelisk_SkillRecoveryPercent": "Skill Recovery (%)",
   "Sandbox_SkillObelisk_SkillRecoveryPercent_tooltip": "Percentage (0-100) of perk XP, Lifestyles ambition progress, and Lifestyles hidden-skill XP to restore. 100 = full restore, 0 = nothing restored. Ignored for any slice whose Recover toggle is off.",
+  "Sandbox_SkillObelisk_CurseOnSledgehammer": "Obelisk Curse",
+  "Sandbox_SkillObelisk_CurseOnSledgehammer_tooltip": "A player who tries to sledgehammer an obelisk is struck dead by its curse. The obelisk survives either way; admins deleting via the brush tool are never cursed. When off, the attempt is simply blocked.",
   "Sandbox_SkillObelisk_MapObeliskVisibility": "Show Obelisks On Map",
   "Sandbox_SkillObelisk_MapObeliskVisibility_tooltip": "Which placed obelisks appear as dots on the world map. Show All = every obelisk visible (default). Show General Only = only unconfigured (\"None\" type) obelisks visible; skill-specific obelisks hidden. Hide All = no obelisks visible.",
   "Sandbox_SkillObelisk_MapObeliskVisibility_Values_option1": "Show All Obelisks",

@@ -33,6 +33,8 @@ class SurvivorSkillObeliskConfigTest {
         assertTrue(SurvivorSkillObeliskConfig.isRecoverHiddenSkills());
         assertEquals(100, SurvivorSkillObeliskConfig.DEFAULT_SKILL_RECOVERY_PERCENT);
         assertEquals(100, SurvivorSkillObeliskConfig.getSkillRecoveryPercent());
+        assertTrue(SurvivorSkillObeliskConfig.DEFAULT_CURSE_ON_SLEDGEHAMMER);
+        assertTrue(SurvivorSkillObeliskConfig.isCurseOnSledgehammer());
     }
 
     @Test
@@ -45,6 +47,7 @@ class SurvivorSkillObeliskConfigTest {
         SurvivorSkillObeliskConfig.setRecoverLearnedSongs(false);
         SurvivorSkillObeliskConfig.setRecoverAmbitions(false);
         SurvivorSkillObeliskConfig.setRecoverHiddenSkills(false);
+        SurvivorSkillObeliskConfig.setCurseOnSledgehammer(false);
 
         assertFalse(SurvivorSkillObeliskConfig.isRecoverSkills());
         assertFalse(SurvivorSkillObeliskConfig.isRecoverRecipes());
@@ -54,6 +57,7 @@ class SurvivorSkillObeliskConfigTest {
         assertFalse(SurvivorSkillObeliskConfig.isRecoverLearnedSongs());
         assertFalse(SurvivorSkillObeliskConfig.isRecoverAmbitions());
         assertFalse(SurvivorSkillObeliskConfig.isRecoverHiddenSkills());
+        assertFalse(SurvivorSkillObeliskConfig.isCurseOnSledgehammer());
 
         SurvivorSkillObeliskConfig.setRecoverSkills(true);
         assertTrue(SurvivorSkillObeliskConfig.isRecoverSkills());
