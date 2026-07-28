@@ -18,7 +18,7 @@ local TYPE_REPLY = "obeliskType"
 -- SyncPlayerFieldsPacket bit flags: 1 = recipes, 4 = already-read books.
 local SYNC_RECIPES_AND_BOOKS = 1 + 4
 local SPRITE_PREFIX = "atf_obelisks_"
-local DEFAULT_LIMIT = 20
+local DEFAULT_LIMIT = 50
 local NONE_TYPE = "None"
 
 local SurvivorSkillObelisk = {}
