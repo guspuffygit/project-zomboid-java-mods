@@ -2,43 +2,104 @@ package com.sentientsimulations.projectzomboid.extralogging;
 
 import io.pzstorm.storm.event.packet.*;
 import io.pzstorm.storm.lua.StormKahluaTable;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.stream.Collectors;
 import se.krka.kahlua.vm.KahluaTableIterator;
 import zombie.inventory.InventoryItem;
+import zombie.inventory.ItemContainer;
 import zombie.inventory.types.Food;
+import zombie.network.fields.ContainerID;
 import zombie.scripting.entity.components.crafting.CraftRecipe;
 
 public class ItemEventHandler {
 
     private static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("items");
 
-    public static void onAddInventoryItemToContainer(AddInventoryItemToContainerPacketEvent event) {
+    /**
+     * Since PZ 42.20.0 all client-initiated item movement (container-to-container and drops to the
+     * floor) reaches the server as an {@code ItemTransactionPacket}; the packets this mod used to
+     * log ({@code AddInventoryItemToContainer}, {@code AddItemToMap}) are server-to-client only and
+     * never processed by the server anymore.
+     *
+     * <p>Fires after {@code processServer}, so {@code state} is the server's verdict: {@code
+     * Accept} for a validated request, {@code Reject} for a failed one ({@code consistent} carries
+     * the validation failure code, 0 = valid) or a client-side cancel.
+     */
+    public static void onItemTransaction(ItemTransactionPacketEvent event) {
         try {
+            byte consistent = event.getPacket().consistent;
+            Object state = event.getField("state");
+            Object extra = event.getField("extra");
+            List<?> entries = (List<?>) event.getField("entries");
+            String entryLog =
+                    entries == null
+                            ? ""
+                            : entries.stream()
+                                    .map(ItemEventHandler::describeEntry)
+                                    .collect(Collectors.joining("; "));
+
             logger.info(
-                    "{}: steamId={}, user={}, pos=({},{},{}), container={}, items={}",
+                    "{}: steamId={}, user={}, state={}, consistent={}, extra={}, entries=[{}]",
                     event.getName(),
                     event.steamId,
                     event.username,
-                    event.getX(),
-                    event.getY(),
-                    0,
-                    event.getContainerId(),
-                    event.getItems() != null ? event.getItems().size() : 0);
+                    state,
+                    consistent,
+                    extra,
+                    entryLog);
         } catch (Exception e) {
-            logger.error("Failed to log onAddInventoryItemToContainer", e);
+            logger.error("Failed to log onItemTransaction", e);
         }
     }
 
-    public static void onAddItemToMap(AddItemToMapPacketEvent event) {
+    /** Transaction.TransactionEntry is a protected class, so its fields are read reflectively. */
+    private static String describeEntry(Object entry) {
         try {
-            logger.info(
-                    "{}: steamId={}, user={}, object={}",
-                    event.getName(),
-                    event.steamId,
-                    event.username,
-                    event.getIsoObject());
+            Integer itemId = (Integer) readEntryField(entry, "itemId");
+            ContainerID source = (ContainerID) readEntryField(entry, "sourceId");
+            ContainerID destination = (ContainerID) readEntryField(entry, "destinationId");
+            String itemType = resolveItemType(itemId, source, destination);
+            return "%s %s -> %s"
+                    .formatted(
+                            itemType != null ? itemType : "item#" + itemId,
+                            describeContainer(source),
+                            describeContainer(destination));
         } catch (Exception e) {
-            logger.error("Failed to log onAddItemToMap", e);
+            return "unreadable entry: " + e;
         }
+    }
+
+    private static Object readEntryField(Object entry, String name)
+            throws ReflectiveOperationException {
+        Field field = entry.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(entry);
+    }
+
+    private static String resolveItemType(
+            Integer itemId, ContainerID source, ContainerID destination) {
+        if (itemId == null) {
+            return null;
+        }
+        InventoryItem item = findItem(source, itemId);
+        if (item == null) {
+            item = findItem(destination, itemId);
+        }
+        return item != null ? item.getFullType() : null;
+    }
+
+    private static InventoryItem findItem(ContainerID containerId, int itemId) {
+        ItemContainer container = containerId != null ? containerId.getContainer() : null;
+        return container != null ? container.getItemWithID(itemId) : null;
+    }
+
+    private static String describeContainer(ContainerID containerId) {
+        if (containerId == null) {
+            return "null";
+        }
+        return "%s(%d,%d,%d)"
+                .formatted(containerId.containerType, containerId.x, containerId.y, containerId.z);
     }
 
     public static void onNetTimedAction(NetTimedActionPacketEvent event) {

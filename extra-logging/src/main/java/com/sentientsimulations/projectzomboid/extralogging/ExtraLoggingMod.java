@@ -35,9 +35,6 @@ public class ExtraLoggingMod implements ZomboidMod {
         }
 
         List<StormClassTransformer> transformers = new ArrayList<>();
-        //        transformers.add(new AddItemToMapPatch());
-        //        transformers.add(new ItemTransactionPatch());
-        //        transformers.add(new PlayerDropHeldItemsPatch());
         transformers.add(new ServerWorldDatabasePatch());
         transformers.add(new GameServerPatch());
         transformers.add(new ItemPickerJavaPatch());
@@ -55,13 +52,8 @@ public class ExtraLoggingMod implements ZomboidMod {
     // Item events
 
     @SubscribeEvent
-    public void onAddInventoryItemToContainer(AddInventoryItemToContainerPacketEvent event) {
-        ItemEventHandler.onAddInventoryItemToContainer(event);
-    }
-
-    @SubscribeEvent
-    public void onAddItemToMap(AddItemToMapPacketEvent event) {
-        ItemEventHandler.onAddItemToMap(event);
+    public void onItemTransaction(ItemTransactionPacketEvent event) {
+        ItemEventHandler.onItemTransaction(event);
     }
 
     @SubscribeEvent
