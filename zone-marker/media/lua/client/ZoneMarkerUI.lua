@@ -335,6 +335,10 @@ function ZoneMarkerUI:onAddCategory(button)
     local r = tonumber(self.catR:getText())
     local g = tonumber(self.catG:getText())
     local b = tonumber(self.catB:getText())
+    local a = tonumber(self.catA:getText())
+    if not r or not g or not b then
+        return
+    end
     sendClientCommand(getPlayer(), MODULE, "addCategory", {
         name = name,
         r = r,
@@ -342,10 +346,6 @@ function ZoneMarkerUI:onAddCategory(button)
         b = b,
         a = a or 1.0,
     })
-    local a = tonumber(self.catA:getText())
-    if not r or not g or not b then
-        return
-    end
 
     self.catNameEntry:setText("")
 end
@@ -383,8 +383,8 @@ function ZoneMarkerUI:onAddZone(button)
         return
     end
     sendClientCommand(getPlayer(), MODULE, "addZone", {
-        category = self.selectedCategory,
-        name = name,
+        categoryName = self.selectedCategory,
+        region = name,
         xStart = x1,
         yStart = y1,
         xEnd = x2,
@@ -410,8 +410,8 @@ function ZoneMarkerUI:onDeleteZone(button)
         return
     end
     sendClientCommand(getPlayer(), MODULE, "removeZone", {
-        category = self.selectedCategory,
-        name = item.item.region,
+        categoryName = self.selectedCategory,
+        region = item.item.region,
     })
 end
 

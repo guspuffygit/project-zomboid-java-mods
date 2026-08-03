@@ -100,8 +100,8 @@ Admins can right-click a placed obelisk and pick [b]Configure Obelisk[/b] to bin
 
 [hr][/hr]
 
-Tested and compatible with 42.19.0'''
+Tested and compatible with 42.20.0'''
 	modVersion = '1.0.0'
 	pack = 'survivor_skill_obelisk'
-	tiledef = 'survivor_skill_obelisk 8801'
+	tiledef = 'survivor_skill_obelisk 8101'
 }

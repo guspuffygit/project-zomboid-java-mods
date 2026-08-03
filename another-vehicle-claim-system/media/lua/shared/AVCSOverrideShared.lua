@@ -97,20 +97,20 @@ if not AVCS.oISSwitchVehicleSeat then
     AVCS.oISSwitchVehicleSeat = ISSwitchVehicleSeat.new
 end
 
-function ISSwitchVehicleSeat:new(character, seatTo)
+function ISSwitchVehicleSeat:new(character, seatTo, seatFrom)
     if not character:getVehicle() then
-        return AVCS.oISSwitchVehicleSeat(self, character, seatTo)
+        return AVCS.oISSwitchVehicleSeat(self, character, seatTo, seatFrom)
     end
 
     if seatTo ~= 0 then
         if AVCS.getPublicPermission(character:getVehicle(), "AllowPassenger") then
-            return AVCS.oISSwitchVehicleSeat(self, character, seatTo)
+            return AVCS.oISSwitchVehicleSeat(self, character, seatTo, seatFrom)
         end
     end
 
     if seatTo == 0 then
         if AVCS.getPublicPermission(character:getVehicle(), "AllowDrive") then
-            return AVCS.oISSwitchVehicleSeat(self, character, seatTo)
+            return AVCS.oISSwitchVehicleSeat(self, character, seatTo, seatFrom)
         end
     end
 
@@ -118,7 +118,7 @@ function ISSwitchVehicleSeat:new(character, seatTo)
     checkResult = AVCS.getSimpleBooleanPermission(checkResult)
 
     if checkResult then
-        return AVCS.oISSwitchVehicleSeat(self, character, seatTo)
+        return AVCS.oISSwitchVehicleSeat(self, character, seatTo, seatFrom)
     end
 
     character:setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)

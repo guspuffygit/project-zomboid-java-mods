@@ -23,5 +23,5 @@ Zone data is stored server-side in a SQLite database and synced to clients autom
 
 Requires Storm mod loader.
 
-Tested and compatible with 42.19.0'''
+Tested and compatible with 42.20.0'''
 }

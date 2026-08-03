@@ -73,7 +73,7 @@ Claimed vehicles show up as colored markers with name labels on the world map (a
 
 Available in English, Italian, and Portuguese (Brazil).
 
-Tested and compatible with 42.19.0
+Tested and compatible with 42.20.0
 
 3/12/2026 - Fixed a bug that would prevent mechanic XP gain when removing a vehicle part
 3/16/2026 - Fixed a bug that would allow trailers without trunks to be looted. Allow opening trunk now controls access to allow another player to loot the inside or outside of a car. Someone can be a passenger without being able to loot the car.

@@ -28,7 +28,7 @@ function ISMultiplayerZoneEditor.OnRolesReceived()
 
     if ISMultiplayerZoneEditor_instance then
         -- Add our mode for any player with debug console access
-        if getPlayer():getRole():hasCapability(Capability.CanUseDebugConsole) then
+        if getPlayer():getRole():hasCapability(Capability.DebugConsole) then
             ISMultiplayerZoneEditor_instance.modeCombo:addOptionWithData(MODE_LABEL, MODE_NAME)
         end
     end
