@@ -81,6 +81,9 @@ interface ModInfo {
 
 	Property<String> getPack()
 	Property<String> getTiledef()
+
+	// Base ids of other workshop mods this mod requires; the env suffix is appended at generation time.
+	ListProperty<String> getRequires()
 }
 
 def getLocalProperty(String property, String defaultValue = null) {
@@ -177,12 +180,15 @@ subprojects { subproj ->
 		inputs.property("description", info.description.orElse(""))
 		inputs.property("pack", info.pack.orElse(""))
 		inputs.property("tiledef", info.tiledef.orElse(""))
+		inputs.property("requires", info.requires.orElse([]))
 
 		outputs.file(outputFile)
 
 		doLast {
 			def formattedDescription = info.description.getOrElse("").trim().split('\n').join('\ndescription=')
 			def f = outputFile.get().asFile
+			def requireIds = ["\\storm-core-b42${getEnvSuffix()}"]
+			info.requires.getOrElse([]).each { requireIds << "${it}${getEnvSuffix()}" }
 			def lines = [
                 "name=${info.name.getOrElse("Unnamed Mod")}",
 				"author=SentientSimulations",
@@ -191,7 +197,7 @@ subprojects { subproj ->
 				"description=${formattedDescription}",
 				"id=${info.id.getOrElse("${subproj.name}-b42${getEnvSuffix()}")}",
 				"modversion=${info.modVersion.getOrElse("1.0")}",
-				"require=\\storm-core-b42${getEnvSuffix()}",
+				"require=${requireIds.join(',')}",
             ]
 			if (info.pack.isPresent()) {
 				lines.add("pack=${info.pack.get()}")

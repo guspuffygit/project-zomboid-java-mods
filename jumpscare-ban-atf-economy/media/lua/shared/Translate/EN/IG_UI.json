@@ -1,0 +1,20 @@
+{
+  "IGUI_JumpscareBanEconomy_BuyGags": "Buy Jumpscare Gags",
+  "IGUI_JumpscareBanEconomy_BuyGagsTooltip": "Spend Scraps to play a Fart, Cry or Kachow sound.",
+  "IGUI_JumpscareBanEconomy_WindowTitle": "Buy Jumpscare Gags",
+  "IGUI_JumpscareBanEconomy_Balance": "Your balance: %1",
+  "IGUI_JumpscareBanEconomy_BalanceUnknown": "Your balance: ...",
+  "IGUI_JumpscareBanEconomy_Buy": "Buy",
+  "IGUI_JumpscareBanEconomy_GagFart": "Fart",
+  "IGUI_JumpscareBanEconomy_GagFartDesc": "A flatulent tone resounds for all to hear.",
+  "IGUI_JumpscareBanEconomy_GagCry": "Cry",
+  "IGUI_JumpscareBanEconomy_GagCryDesc": "A cry of sorrow is carried unto every soul.",
+  "IGUI_JumpscareBanEconomy_GagKachow": "Kachow",
+  "IGUI_JumpscareBanEconomy_GagKachowDesc": "\"Ka-chow!\" Thunder always comes after LIGHTNING.",
+  "IGUI_JumpscareBanEconomy_Purchasing": "Purchasing...",
+  "IGUI_JumpscareBanEconomy_Success": "%1 purchased! Playing for all players.",
+  "IGUI_JumpscareBanEconomy_InsufficientBalance": "Not enough Scraps -- %1 costs %2.",
+  "IGUI_JumpscareBanEconomy_EconomyUnavailable": "The economy service is unavailable on this server.",
+  "IGUI_JumpscareBanEconomy_Disabled": "The gag shop is disabled on this server.",
+  "IGUI_JumpscareBanEconomy_Failed": "Purchase failed: %1"
+}

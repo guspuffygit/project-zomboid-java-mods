@@ -1,0 +1,39 @@
+VERSION = 1,
+
+option JumpscareBanEconomy.Enabled
+{
+    type = boolean,
+    default = false,
+    page = JumpscareBanEconomy,
+    translation = JumpscareBanEconomy_Enabled,
+}
+
+option JumpscareBanEconomy.FartPrice
+{
+    type = integer,
+    min = 0,
+    max = 100000000000000,
+    default = 100000000000000,
+    page = JumpscareBanEconomy,
+    translation = JumpscareBanEconomy_FartPrice,
+}
+
+option JumpscareBanEconomy.CryPrice
+{
+    type = integer,
+    min = 0,
+    max = 100000000000000,
+    default = 100000000000000,
+    page = JumpscareBanEconomy,
+    translation = JumpscareBanEconomy_CryPrice,
+}
+
+option JumpscareBanEconomy.KachowPrice
+{
+    type = integer,
+    min = 0,
+    max = 100000000000000,
+    default = 100000000000000,
+    page = JumpscareBanEconomy,
+    translation = JumpscareBanEconomy_KachowPrice,
+}

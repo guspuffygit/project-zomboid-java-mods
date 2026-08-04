@@ -1,0 +1,11 @@
+{
+  "Sandbox_JumpscareBanEconomy": "Jumpscare Ban: ATF Economy",
+  "Sandbox_JumpscareBanEconomy_Enabled": "Enable Gag Shop",
+  "Sandbox_JumpscareBanEconomy_Enabled_tooltip": "Master switch for the whole mod, off by default. While off, the \"Buy Jumpscare Gags\" button is hidden from the economy balance window and the server refuses every gag purchase.",
+  "Sandbox_JumpscareBanEconomy_FartPrice": "Fart Price (Scraps)",
+  "Sandbox_JumpscareBanEconomy_FartPrice_tooltip": "How many Scraps a player pays to play a global Fart for everyone on the server.",
+  "Sandbox_JumpscareBanEconomy_CryPrice": "Cry Price (Scraps)",
+  "Sandbox_JumpscareBanEconomy_CryPrice_tooltip": "How many Scraps a player pays to play a global Cry for everyone on the server.",
+  "Sandbox_JumpscareBanEconomy_KachowPrice": "Kachow Price (Scraps)",
+  "Sandbox_JumpscareBanEconomy_KachowPrice_tooltip": "How many Scraps a player pays to play a global Kachow for everyone on the server."
+}

@@ -22,6 +22,8 @@ Also adds three extra admin debug commands:
 If you don't specify a username, everyone on the server will hear the sound effect.
 Specify a username to play a 3D positional sound at that player's location and float a random text bubble over their head.
 
+Players who'd rather not hear those can turn them off under Options > Mods > Jumpscare Ban. The ban jumpscare and its send-off always play.
+
 Inspired by Nipeng's "1/10000 Chance for Withered Foxy Jumpscare Every Second" mod.
 
 Requires Storm mod loader.

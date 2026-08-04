@@ -2,8 +2,6 @@ package com.sentientsimulations.projectzomboid.jumpscareban;
 
 import io.pzstorm.storm.halo.StormHalo;
 import java.util.concurrent.ThreadLocalRandom;
-import se.krka.kahlua.vm.KahluaTable;
-import zombie.Lua.LuaManager;
 import zombie.characters.Capability;
 import zombie.characters.IsoPlayer;
 import zombie.characters.Role;
@@ -55,7 +53,8 @@ public class KachowCommand extends CommandBase {
     protected String Command() {
         if (this.getCommandArgsCount() == 0) {
             ChatServer.getInstance().sendServerAlertMessageToServerChat("Kachow");
-            GameServer.sendServerCommand("JumpscareBan", "playKachow", null);
+            GameServer.sendServerCommand(
+                    "JumpscareBan", "playKachow", AdminSoundArgs.forEveryone());
             return "Kachow played for all players";
         }
 
@@ -67,9 +66,8 @@ public class KachowCommand extends CommandBase {
 
         String phrase = HALO_PHRASES[ThreadLocalRandom.current().nextInt(HALO_PHRASES.length)];
 
-        KahluaTable args = LuaManager.platform.newTable();
-        args.rawset("onlineID", (double) player.getOnlineID());
-        GameServer.sendServerCommand("JumpscareBan", "playKachow3D", args);
+        GameServer.sendServerCommand(
+                "JumpscareBan", "playKachow3D", AdminSoundArgs.forPlayer(player));
 
         StormHalo.setHalo(player, phrase, 230, 60, 50);
 

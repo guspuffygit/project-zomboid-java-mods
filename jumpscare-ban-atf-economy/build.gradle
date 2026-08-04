@@ -1,0 +1,19 @@
+modInfo {
+	name = 'Jumpscare Ban: ATF Economy Add-on'
+	workshopId = '3777517645'
+	workshopIdStage = ''
+	workshopIdProd = '3777517900'
+	description = '''Add-on that bridges Jumpscare Ban and the After The Fall: Economy mod.
+
+Adds a "Buy Jumpscare Gags" button to the Economy balance window. Players spend Scraps to play a global Fart, Cry or Kachow — the sound and chat announcement fire for every player on the server, exactly like the /fart, /cry and /kachow admin commands.
+
+Prices are configurable via sandbox options (Jumpscare Ban: ATF Economy page).
+
+Requires:
+- Storm mod loader
+- Jumpscare Ban by Gus Puffy (workshop id 3715980159)
+- After The Fall: Economy (workshop id 3717669793)
+
+Tested and compatible with 42.20.0'''
+	modVersion = '0.1.0'
+}

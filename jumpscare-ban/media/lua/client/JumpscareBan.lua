@@ -86,22 +86,41 @@ local function playSound3DOnPlayer(onlineID, soundName)
     emitter:playSoundImpl(soundName, false, nil)
 end
 
+-- The ban send-off (jumpscare, its kachow, the thunderclap) sends no args and always plays;
+-- only /kachow, /fart and /cry stamp fromCommand, and only those obey the mod option.
+local function isMuted(args)
+    return args ~= nil
+        and args.fromCommand == true
+        and not JumpscareBanOptions.isAdminSoundsEnabled()
+end
+
 local function onServerCommand(module, command, args)
-    if module == "JumpscareBan" and command == "trigger" then
+    if module ~= "JumpscareBan" then
+        return
+    end
+
+    if command == "trigger" then
         doFoxyJumpscare()
-    elseif module == "JumpscareBan" and command == "playKachow" then
+        return
+    end
+
+    if isMuted(args) then
+        return
+    end
+
+    if command == "playKachow" then
         getSoundManager():playUISound("JumpscareBanKachow")
-    elseif module == "JumpscareBan" and command == "playKachow3D" then
+    elseif command == "playKachow3D" then
         playSound3DOnPlayer(args.onlineID, "JumpscareBanKachow3D")
-    elseif module == "JumpscareBan" and command == "playThunder" then
+    elseif command == "playThunder" then
         getSoundManager():playUISound("JumpscareBanThunder")
-    elseif module == "JumpscareBan" and command == "playFart" then
+    elseif command == "playFart" then
         getSoundManager():playUISound("JumpscareBanFart")
-    elseif module == "JumpscareBan" and command == "playFart3D" then
+    elseif command == "playFart3D" then
         playSound3DOnPlayer(args.onlineID, "JumpscareBanFart3D")
-    elseif module == "JumpscareBan" and command == "playCry" then
+    elseif command == "playCry" then
         getSoundManager():playUISound("JumpscareBanCry")
-    elseif module == "JumpscareBan" and command == "playCry3D" then
+    elseif command == "playCry3D" then
         playSound3DOnPlayer(args.onlineID, "JumpscareBanCry3D")
     end
 end

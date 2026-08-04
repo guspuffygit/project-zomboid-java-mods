@@ -1,0 +1,5 @@
+{
+  "UI_optionscreen_binding_JumpscareBan": "Jumpscare Ban",
+  "UI_optionscreen_binding_JumpscareBan_adminSounds": "Hear admin sound commands",
+  "UI_optionscreen_binding_JumpscareBan_adminSounds_tooltip": "Play the sounds an admin triggers with /kachow, /fart and /cry. Turning this off does not mute the ban jumpscare or the send-off that follows an actual ban."
+}
