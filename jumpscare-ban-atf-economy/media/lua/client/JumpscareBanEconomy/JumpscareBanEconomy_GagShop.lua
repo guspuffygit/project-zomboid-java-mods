@@ -105,6 +105,7 @@ local MARGIN = 12
 local BALANCE_H = 26
 local ROW_HEIGHT = 66
 local STATUS_H = 30
+local NOTE_H = 16
 local BUTTON_W = 72
 local BUTTON_H = 28
 
@@ -117,7 +118,7 @@ function ISJumpscareGagShopUI.open(playerNum)
         ISJumpscareGagShopUI.instance:close()
     end
 
-    local height = 24 + MARGIN + BALANCE_H + #GAGS * ROW_HEIGHT + STATUS_H + MARGIN
+    local height = 24 + MARGIN + BALANCE_H + #GAGS * ROW_HEIGHT + STATUS_H + NOTE_H + MARGIN
     local x = (getCore():getScreenWidth() - WINDOW_WIDTH) / 2
     local y = (getCore():getScreenHeight() - height) / 2
     local ui = ISJumpscareGagShopUI:new(x, y, WINDOW_WIDTH, height, playerNum)
@@ -239,6 +240,17 @@ function ISJumpscareGagShopUI:render()
             UIFont.Small
         )
     end
+
+    self:drawText(
+        getText("IGUI_JumpscareBanEconomy_CommissionNote"),
+        MARGIN,
+        self:rowTop(#GAGS) + ROW_HEIGHT + STATUS_H,
+        0.55,
+        0.55,
+        0.55,
+        1,
+        UIFont.Small
+    )
 end
 
 function ISJumpscareGagShopUI:close()

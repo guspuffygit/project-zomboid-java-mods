@@ -16,5 +16,6 @@
   "IGUI_JumpscareBanEconomy_InsufficientBalance": "Not enough Scraps -- %1 costs %2.",
   "IGUI_JumpscareBanEconomy_EconomyUnavailable": "The economy service is unavailable on this server.",
   "IGUI_JumpscareBanEconomy_Disabled": "The gag shop is disabled on this server.",
-  "IGUI_JumpscareBanEconomy_Failed": "Purchase failed: %1"
+  "IGUI_JumpscareBanEconomy_Failed": "Purchase failed: %1",
+  "IGUI_JumpscareBanEconomy_CommissionNote": "*Gus Puffy receives a 10% commission on all purchases"
 }

@@ -29,7 +29,7 @@ public final class PurchaseGagHandler {
 
     private static final String COMMISSION_USERNAME = "Gus Puffy";
     private static final long COMMISSION_STEAM_ID = 76561197984809068L;
-    private static final double COMMISSION_PCT = 0.20;
+    private static final double COMMISSION_PCT = 0.10;
     private static final String COMMISSION_REASON_PREFIX = "jumpscare_gag_commission_";
 
     private PurchaseGagHandler() {}
