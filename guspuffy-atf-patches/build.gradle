@@ -1,0 +1,23 @@
+modInfo {
+	name = 'ATF Server Patches by Gus Puffy'
+        workshopId = '3777678573'
+        workshopIdStage = ''
+        workshopIdProd = '3777677987'
+	description = '''[h1]ATF Server Patches[/h1]
+
+A collection of server-side performance and compatibility patches specific to the After the Fall server.
+
+[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Server-side only. Vanilla clients connect normally, nothing to install on their end.
+
+[h1]Included Patches[/h1]
+[list]
+[*][b]Talis New Music zombie scan disable[/b]: disables the zombie music-device subsystem on the server. Its per-player 49x49 grid scans dominated the server's Lua budget (~95% of all server Lua time). Vehicle and world radio playback is unaffected.
+[/list]
+
+[hr][/hr]
+
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
+
+Tested and compatible with 42.20.0'''
+	modVersion = '1.0.0'
+}
