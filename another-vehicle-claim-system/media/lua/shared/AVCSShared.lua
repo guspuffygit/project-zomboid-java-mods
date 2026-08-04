@@ -10,28 +10,17 @@ AVCS = AVCS or {}
 AVCS.UI = AVCS.UI or {}
 
 --[[
-Global variables that is accessed frequently
-Both client-side and server-side have this same name variables
-Important to initialise these variables accordingly in both side
-dbByVehicleSQLID store the ModData AVRByVehicleID
-dbAVCSByPlayerID store the ModData AVRByPlayerID
+Claim databases, same variable names on both sides but different backing:
+on the server these are the Global ModData tables AVCSByVehicleSQLID /
+AVCSByPlayerID (persisted with the world save); on the client they are
+plain tables populated purely via sendServerCommand (full sync on connect,
+updateClient* deltas afterwards)
 ]]
 AVCS.dbByVehicleSQLID = nil
 AVCS.dbByPlayerID = nil
 
--- Ordered list of parts that cannot be removed by typical means
--- We will store server-side SQL ID in one of those
---[[
-AVCS.muleParts = AVCS.muleParts or {
-	"GloveBox",
-	"TruckBed",
-	"TruckBedOpen",
-	"TrailerTrunk",
-	"M101A3Trunk", -- K15 Vehicles
-	"Engine"
-}
---]]
--- Ingame debugger is unreliable but this does work
+-- Mule parts: parts that cannot be removed by typical means, configured via
+-- SandboxVars.AVCS.MuleParts; the server-side SQL ID is stored in one of those
 function AVCS.getMulePart(vehicleObj)
     local tempPart = false
     -- Split by ";"
@@ -294,9 +283,6 @@ function AVCS.updateVehicleCoordinate(vehicleObj)
                 sendServerCommand("AVCS", "updateClientVehicleCoordinate", tempArr)
             end
         end
-    -- Client call
-    -- No plan to do client call as server seems sufficient for now
-    else
     end
 end
 

@@ -40,6 +40,15 @@ function ISAVCSVehicleClaimAction:perform()
         self.character:getEmitter():stopSound(self.sound)
     end
 
+    -- Conditions can change between confirm and arriving at the vehicle;
+    -- the server re-validates authoritatively either way
+    local ok, reason = AVCS.canClaimNow(self.character, self.vehicle)
+    if not ok then
+        self.character:setHaloNote(reason, 250, 250, 250, 300)
+        ISBaseTimedAction.perform(self)
+        return
+    end
+
     sendClientCommand(self.character, "AVCS", "claimVehicle", { vehicle = self.vehicle:getId() })
 
     self.character:playSound("CarLock")

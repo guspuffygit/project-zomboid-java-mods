@@ -57,8 +57,33 @@ end
 -- Claim / Unclaim dialogs
 -- =========================
 
+-- Menu-open checks go stale while a confirm dialog sits open (other claims
+-- completing, ticket dropped), so claiming re-validates here and in
+-- ISAVCSVehicleClaimAction:perform; the server re-validates authoritatively
+function AVCS.canClaimNow(player, vehicle)
+    if AVCS.checkPermission(player, vehicle) ~= true then
+        return false, getText("IGUI_AVCS_Vehicle_No_Permission")
+    end
+    if
+        SandboxVars.AVCS.RequireTicket
+        and player:getInventory():getItemCount("Base.AVCSClaimOrb") < 1
+    then
+        return false,
+            getText("Tooltip_AVCS_Needs") .. " " .. getItemNameFromFullType("Base.AVCSClaimOrb")
+    end
+    if not AVCS.checkMaxClaim(player) then
+        return false, getText("Tooltip_AVCS_ExceedLimit")
+    end
+    return true
+end
+
 local function claimVehicle(player, button, vehicle)
     if button.internal == "NO" then
+        return
+    end
+    local ok, reason = AVCS.canClaimNow(player, vehicle)
+    if not ok then
+        player:setHaloNote(reason, 250, 250, 250, 300)
         return
     end
     if luautils.walkAdj(player, vehicle:getSquare()) then

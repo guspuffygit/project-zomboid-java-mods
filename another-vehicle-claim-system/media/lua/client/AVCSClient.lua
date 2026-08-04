@@ -92,10 +92,6 @@ function AVCS.updateClientLastLogon(arg)
     AVCS.dbByPlayerID[arg.PlayerID].LastKnownLogonTime = arg.LastKnownLogonTime
 end
 
-function AVCS.forcesyncClientGlobalModData()
-    requestFullSync()
-end
-
 function AVCS.updateClientSpecifyVehicleUserPermission(arg)
     if not AVCS.dbByVehicleSQLID then
         requestFullSync()
@@ -141,8 +137,8 @@ AVCS.OnServerCommand = function(moduleName, command, arg)
         AVCS.updateClientVehicleCoordinate(arg)
     elseif command == "updateClientLastLogon" then
         AVCS.updateClientLastLogon(arg)
-    elseif command == "forcesyncClientGlobalModData" then
-        AVCS.forcesyncClientGlobalModData()
+    elseif command == "requestFullResync" then
+        requestFullSync()
     elseif command == "updateClientSpecifyVehicleUserPermission" then
         AVCS.updateClientSpecifyVehicleUserPermission(arg)
     elseif command == "registerClientVehicleSQLID" then

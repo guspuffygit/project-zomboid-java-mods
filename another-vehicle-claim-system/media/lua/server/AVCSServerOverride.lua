@@ -104,7 +104,7 @@ Events.OnGameStart.Add(function()
                             .. tostring(args.id)
                             .. "]"
                     )
-                    sendServerCommand(player, "AVCS", "forcesyncClientGlobalModData", {})
+                    sendServerCommand(player, "AVCS", "requestFullResync", {})
                     return
                 end
             end

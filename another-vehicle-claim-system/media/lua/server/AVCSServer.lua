@@ -23,14 +23,16 @@ function AVCS.sortCacheNow()
 end
 
 --[[
-The global modData is basically the database for this vehicle claiming mod
-This global moddata is actively shared with the clients
-The clients will do most of the checking which help keep the server light
+Global ModData is the server-side database for this vehicle claiming mod.
+It is persistence only (serialized with the world save); it is never sent
+over the network. Clients receive a full copy via sendServerCommand on
+connect (fullSyncVehicleDB / fullSyncPlayerDB) and incremental deltas
+(updateClient*) afterwards, and the server re-validates every mutation.
 
-There are two ModData which is storing it by Vehicle SQL ID or Player ID
+There are two ModData tables, keyed by Vehicle SQL ID or Player ID.
 I have both because I want to minimize looping to perform differnt things
 
-ModData AVRByVehicleID is stored like this
+ModData AVCSByVehicleSQLID is stored like this
 <Vehicle SQL ID>
 - <OwnerPlayerID>
 - <ClaimDateTime>
@@ -39,7 +41,7 @@ ModData AVRByVehicleID is stored like this
 - <LastLocationY>
 - <LastLocationUpdateDateTime>
 
-ModData AVRByPlayerID is stored like this
+ModData AVCSByPlayerID is stored like this
 <OwnerPlayerID>
 - <LastKnownLogonTime>
 - <Vehicle SQL ID 1>
@@ -84,9 +86,53 @@ function AVCS.claimVehicle(playerObj, vehicleID)
                     .. math.floor(vehicleObj:getY())
                     .. "]"
             )
-            sendServerCommand(playerObj, "AVCS", "forcesyncClientGlobalModData", {})
+            sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
         end
     else
+        -- Client UI validates at menu-open time only, which is stale by confirm
+        -- time (stacked confirm dialogs, ticket dropped before confirm), so the
+        -- server must re-validate before committing the claim
+        if
+            SandboxVars.AVCS.RequireTicket
+            and not playerObj:getInventory():getFirstTypeRecurse("AVCSClaimOrb")
+        then
+            writeLog(
+                "AVCS",
+                "["
+                    .. getTimestamp()
+                    .. "] Warning: Attempting to claim without required ticket ["
+                    .. playerObj:getUsername()
+                    .. "] ["
+                    .. vehicleObj:getScript():getFullName()
+                    .. "] ["
+                    .. math.floor(vehicleObj:getX())
+                    .. ","
+                    .. math.floor(vehicleObj:getY())
+                    .. "]"
+            )
+            sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
+            return
+        end
+
+        if not AVCS.checkMaxClaim(playerObj) then
+            writeLog(
+                "AVCS",
+                "["
+                    .. getTimestamp()
+                    .. "] Warning: Attempting to claim above vehicle limit ["
+                    .. playerObj:getUsername()
+                    .. "] ["
+                    .. vehicleObj:getScript():getFullName()
+                    .. "] ["
+                    .. math.floor(vehicleObj:getX())
+                    .. ","
+                    .. math.floor(vehicleObj:getY())
+                    .. "]"
+            )
+            sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
+            return
+        end
+
         AVCS.dbByVehicleSQLID[vehicleID] = {
             OwnerPlayerID = playerObj:getUsername(),
             ClaimDateTime = getTimestamp(),
@@ -138,13 +184,6 @@ function AVCS.claimVehicle(playerObj, vehicleID)
             sendRemoveItemFromContainer(playerObj:getInventory(), item)
         end
 
-        --[[ Send the updated ModData to all clients
-		ModData.transmit("AVCSByVehicleSQLID")
-		ModData.transmit("AVCSByPlayerID")
-		You could transmit the entire Global ModData but that can become bandwidth expensive
-		So, we will send the bare minimum instead. We hope this won't be desynced
-		Clients will always obtain be latest global ModData onConnected
-		--]]
         sendServerCommand("AVCS", "updateClientClaimVehicle", tempArr)
     end
 end
@@ -186,18 +225,10 @@ function AVCS.unclaimVehicle(playerObj, vehicleID)
             OwnerPlayerID = ownerPlayerID,
         }
 
-        --[[ Send the updated ModData to all clients
-		ModData.transmit("AVCSByVehicleSQLID")
-		ModData.transmit("AVCSByPlayerID")
-		You could transmit the entire Global ModData but that can become bandwidth expensive
-		So, we will send the bare minimum instead. We hope this won't be desynced
-		Clients will always obtain be latest global ModData onConnected
-		--]]
-
         sendServerCommand("AVCS", "updateClientUnclaimVehicle", tempArr)
     else
         if playerObj ~= nil then
-            sendServerCommand(playerObj, "AVCS", "forcesyncClientGlobalModData", {})
+            sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
         end
     end
 end
@@ -269,34 +300,10 @@ AVCS.onClientCommand = function(moduleName, command, playerObj, arg)
     elseif moduleName == "AVCS" and command == "unclaimVehicle" then
         -- Game send everything as table...
         -- So we do arg[1] to get SQL ID
-        if SandboxVars.AVCS.ServerSideChecking then
-            local checkResult = AVCS.checkPermission(playerObj, arg[1])
+        local checkResult = AVCS.checkPermission(playerObj, arg[1])
 
-            if type(checkResult) == "boolean" then
-                if checkResult == false then
-                    -- Using vanilla logging function, write to a log with suffix AVCS
-                    -- Datetime, Unix Time, Warning message, offender username, vehicle full name, coordinate
-                    -- [26-03-23 22:23:36.671] [1679840616] Warning: Attempting to unclaim without permission [Username] [Base.ExtremeCar] [13026,1215]
-                    writeLog(
-                        "AVCS",
-                        "["
-                            .. getTimestamp()
-                            .. "] Warning: Attempting to unclaim without permission ["
-                            .. playerObj:getUsername()
-                            .. "] ["
-                            .. AVCS.dbByVehicleSQLID[arg[1]].CarModel
-                            .. "] ["
-                            .. AVCS.dbByVehicleSQLID[arg[1]].LastLocationX
-                            .. ","
-                            .. AVCS.dbByVehicleSQLID[arg[1]].LastLocationY
-                            .. "]"
-                    )
-
-                    -- Possible desync has occurred, force sync the user
-                    sendServerCommand(playerObj, "AVCS", "forcesyncClientGlobalModData", {})
-                    return
-                end
-            elseif checkResult.permissions == false then
+        if type(checkResult) == "boolean" then
+            if checkResult == false then
                 -- Using vanilla logging function, write to a log with suffix AVCS
                 -- Datetime, Unix Time, Warning message, offender username, vehicle full name, coordinate
                 -- [26-03-23 22:23:36.671] [1679840616] Warning: Attempting to unclaim without permission [Username] [Base.ExtremeCar] [13026,1215]
@@ -316,9 +323,31 @@ AVCS.onClientCommand = function(moduleName, command, playerObj, arg)
                 )
 
                 -- Possible desync has occurred, force sync the user
-                sendServerCommand(playerObj, "AVCS", "forcesyncClientGlobalModData", {})
+                sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
                 return
             end
+        elseif checkResult.permissions == false then
+            -- Using vanilla logging function, write to a log with suffix AVCS
+            -- Datetime, Unix Time, Warning message, offender username, vehicle full name, coordinate
+            -- [26-03-23 22:23:36.671] [1679840616] Warning: Attempting to unclaim without permission [Username] [Base.ExtremeCar] [13026,1215]
+            writeLog(
+                "AVCS",
+                "["
+                    .. getTimestamp()
+                    .. "] Warning: Attempting to unclaim without permission ["
+                    .. playerObj:getUsername()
+                    .. "] ["
+                    .. AVCS.dbByVehicleSQLID[arg[1]].CarModel
+                    .. "] ["
+                    .. AVCS.dbByVehicleSQLID[arg[1]].LastLocationX
+                    .. ","
+                    .. AVCS.dbByVehicleSQLID[arg[1]].LastLocationY
+                    .. "]"
+            )
+
+            -- Possible desync has occurred, force sync the user
+            sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
+            return
         end
         AVCS.unclaimVehicle(playerObj, arg[1])
     elseif moduleName == "AVCS" and command == "updateLastKnownLogonTime" then
@@ -327,30 +356,10 @@ AVCS.onClientCommand = function(moduleName, command, playerObj, arg)
         -- arg should be table of a lot of things
         -- VehicleID
         -- Permission types like AllowDrive, AllowPassenger
-        if SandboxVars.AVCS.ServerSideChecking then
-            local checkResult = AVCS.checkPermission(playerObj, arg.VehicleID)
+        local checkResult = AVCS.checkPermission(playerObj, arg.VehicleID)
 
-            if type(checkResult) == "boolean" then
-                if checkResult == false then
-                    -- Using vanilla logging function, write to a log with suffix AVCS
-                    -- Datetime, Unix Time, Warning message, offender username, vehicle full name, coordinate
-                    -- [26-03-23 22:23:36.671] [1679840616] Warning: Attempting to unclaim without permission [Username] [Base.ExtremeCar] [13026,1215]
-                    writeLog(
-                        "AVCS",
-                        "["
-                            .. getTimestamp()
-                            .. "] Warning: Attempting to modify specific vehicle permissions without permission ["
-                            .. playerObj:getUsername()
-                            .. "] ["
-                            .. AVCS.dbByVehicleSQLID[arg.VehicleID].CarModel
-                            .. "]"
-                    )
-
-                    -- Possible desync has occurred, force sync the user
-                    sendServerCommand(playerObj, "AVCS", "forcesyncClientGlobalModData", {})
-                    return
-                end
-            elseif checkResult.permissions == false then
+        if type(checkResult) == "boolean" then
+            if checkResult == false then
                 -- Using vanilla logging function, write to a log with suffix AVCS
                 -- Datetime, Unix Time, Warning message, offender username, vehicle full name, coordinate
                 -- [26-03-23 22:23:36.671] [1679840616] Warning: Attempting to unclaim without permission [Username] [Base.ExtremeCar] [13026,1215]
@@ -366,9 +375,27 @@ AVCS.onClientCommand = function(moduleName, command, playerObj, arg)
                 )
 
                 -- Possible desync has occurred, force sync the user
-                sendServerCommand(playerObj, "AVCS", "forcesyncClientGlobalModData", {})
+                sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
                 return
             end
+        elseif checkResult.permissions == false then
+            -- Using vanilla logging function, write to a log with suffix AVCS
+            -- Datetime, Unix Time, Warning message, offender username, vehicle full name, coordinate
+            -- [26-03-23 22:23:36.671] [1679840616] Warning: Attempting to unclaim without permission [Username] [Base.ExtremeCar] [13026,1215]
+            writeLog(
+                "AVCS",
+                "["
+                    .. getTimestamp()
+                    .. "] Warning: Attempting to modify specific vehicle permissions without permission ["
+                    .. playerObj:getUsername()
+                    .. "] ["
+                    .. AVCS.dbByVehicleSQLID[arg.VehicleID].CarModel
+                    .. "]"
+            )
+
+            -- Possible desync has occurred, force sync the user
+            sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
+            return
         end
         AVCS.updateSpecifyVehicleUserPermission(arg)
     elseif moduleName == "AVCS" and command == "rebuildDB" then
