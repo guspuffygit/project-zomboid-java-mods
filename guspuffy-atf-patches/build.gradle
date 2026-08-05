@@ -1,8 +1,8 @@
 modInfo {
 	name = 'ATF Server Patches by Gus Puffy'
-        workshopId = '3777678573'
-        workshopIdStage = ''
-        workshopIdProd = '3777677987'
+	workshopId = '3777678573'
+	workshopIdStage = ''
+	workshopIdProd = '3777677987'
 	description = '''[h1]ATF Server Patches[/h1]
 
 A collection of server-side performance and compatibility patches specific to the After the Fall server.

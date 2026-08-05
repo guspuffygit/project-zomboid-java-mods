@@ -7,12 +7,13 @@ plugins {
 	id 'io.freefair.lombok' version '9.2.0' apply false
 }
 
-String stormVersion = '42.20.0_2.4.0-SNAPSHOT'
+String stormVersion = '42.20.1_2.5.0-SNAPSHOT'
 
 def os = OperatingSystem.current()
 def styluaVersion = '2.4.1'
 def styluaBinaryName = os.isWindows() ? 'stylua.exe' : 'stylua'
-def styluaCacheDir = layout.buildDirectory.dir("stylua/${styluaVersion}").get().asFile
+// Cached outside build/ so clean can't delete the binary mid-build (spotlessLua workers snapshot it as an input)
+def styluaCacheDir = file(".gradle/stylua/${styluaVersion}")
 def styluaBinary = new File(styluaCacheDir, styluaBinaryName)
 
 tasks.register('installStylua') {
@@ -111,6 +112,13 @@ tasks.register('uploadAll') {
 abstract class SteamcmdService implements BuildService<BuildServiceParameters.None> {}
 
 def steamcmdService = gradle.sharedServices.registerIfAbsent('steamcmd', SteamcmdService) {
+	maxParallelUsages = 1
+}
+
+abstract class GreclipseService implements BuildService<BuildServiceParameters.None> {}
+
+// greclipse's Eclipse/Solstice runtime is not init-safe across parallel workers
+def greclipseService = gradle.sharedServices.registerIfAbsent('greclipse', GreclipseService) {
 	maxParallelUsages = 1
 }
 
@@ -383,8 +391,12 @@ subprojects { subproj ->
 	}
 
 	afterEvaluate {
-		tasks.matching { it.name in ['spotlessLuaCheck', 'spotlessLuaApply'] }
+		tasks.matching { it.name in ['spotlessLua', 'spotlessLuaCheck', 'spotlessLuaApply'] }
 				.configureEach { dependsOn rootProject.tasks.named('installStylua') }
+	}
+
+	tasks.matching { it.name == 'spotlessGroovyGradle' }.configureEach {
+		usesService(greclipseService)
 	}
 
 	java {

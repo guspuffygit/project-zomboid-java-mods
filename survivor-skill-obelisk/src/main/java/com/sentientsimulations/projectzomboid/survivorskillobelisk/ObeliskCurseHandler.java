@@ -109,8 +109,24 @@ public final class ObeliskCurseHandler {
             args.rawset("y", (double) curse.y());
             args.rawset("z", (double) curse.z());
             GameServer.sendServerCommand(MODULE, CURSE_COMMAND, args, connection);
-            player.Kill(null);
-            player.die();
+            // Kill/die link against game internals that shift across PZ updates (42.20.0 changed
+            // die()'s return type, and the resulting NoSuchMethodError silently ate the chat
+            // announcement). Contain the kill path so a partial death still announces.
+            try {
+                player.Kill(null);
+                player.die();
+            } catch (Throwable t) {
+                LOGGER.error(
+                        "[SurvivorSkillObelisk] Curse kill path failed for \"{}\" at ({}, {}, {})",
+                        connection.getUserName(),
+                        curse.x(),
+                        curse.y(),
+                        curse.z(),
+                        t);
+            }
+            if (!player.isDead()) {
+                return;
+            }
             announceSmite(connection.getUserName());
             LOGGER.info(
                     "[SurvivorSkillObelisk] Cursed \"{}\" for sledgehammering the obelisk"
