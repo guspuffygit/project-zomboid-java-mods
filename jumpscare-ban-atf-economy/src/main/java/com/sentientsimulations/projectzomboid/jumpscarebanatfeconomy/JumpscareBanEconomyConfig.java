@@ -7,7 +7,7 @@ import zombie.config.IntegerConfigOption;
 
 public final class JumpscareBanEconomyConfig {
 
-    public static final int DEFAULT_PRICE = 100;
+    public static final int DEFAULT_PRICE = 1_000_000;
     public static final boolean DEFAULT_ENABLED = false;
 
     private static final String PREFIX = "JumpscareBanEconomy.";

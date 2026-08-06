@@ -26,7 +26,7 @@ import zombie.network.chat.ChatServer;
  * A client-only {@code IsoPlayer:Kill} showed the death screen but left the server character alive,
  * so "create new character" hung on a black screen and rejoining restored the old character. {@link
  * IsoGameCharacter#Kill} runs {@code DoDeath} (vanilla death log, "is dead" announcement, {@code
- * OnCharacterDeath} — including this mod's own death snapshot) and {@code die()} builds the corpse,
+ * OnPlayerDeath} — including this mod's own death snapshot) and {@code die()} builds the corpse,
  * persists the dead flag via {@code removeSaveFile}, and broadcasts {@code PlayerDeath} so the
  * owning client plays out the death locally.
  *

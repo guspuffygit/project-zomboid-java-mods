@@ -8,7 +8,7 @@ import com.sentientsimulations.projectzomboid.survivorskillobelisk.patch.Sledgeh
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
-import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
+import io.pzstorm.storm.event.lua.OnPlayerDeathEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
 import io.pzstorm.storm.util.StormEnv;
 import java.util.List;
@@ -49,7 +49,7 @@ public class SurvivorSkillObeliskMod implements ZomboidMod {
     }
 
     @SubscribeEvent
-    public void onCharacterDeath(OnCharacterDeathEvent event) {
-        DeathEventHandler.onCharacterDeath(event);
+    public void onPlayerDeath(OnPlayerDeathEvent event) {
+        DeathEventHandler.onPlayerDeath(event.player);
     }
 }

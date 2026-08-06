@@ -9,6 +9,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import zombie.characters.IsoPlayer;
+import zombie.characters.Role;
 import zombie.characters.skills.PerkFactory;
 
 /**
@@ -55,7 +56,8 @@ public final class SetObeliskTypeHandler {
         }
         String username = player.getUsername();
         long steamId = player.getSteamID();
-        String accessLevel = player.getAccessLevel();
+        Role role = player.getRole();
+        String accessLevel = role == null ? null : role.getName();
         if (accessLevel == null || !"admin".equalsIgnoreCase(accessLevel)) {
             LOGGER.warn(
                     "[SurvivorSkillObelisk] setObeliskType from non-admin {} ({}, role={});"

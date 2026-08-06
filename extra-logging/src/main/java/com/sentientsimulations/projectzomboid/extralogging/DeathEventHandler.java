@@ -4,7 +4,6 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sentientsimulations.projectzomboid.extralogging.models.DeathLog;
-import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,9 +36,8 @@ public class DeathEventHandler {
         logger.info("{}\n{}\n{}\n{}", SEPARATOR, header, SEPARATOR, body);
     }
 
-    private static void writeDeathEntryJson(OnCharacterDeathEvent event) {
+    private static void writeDeathEntryJson(IsoPlayer player) {
         try {
-            IsoPlayer player = (IsoPlayer) event.character;
             DeathLog log = new DeathLog();
 
             // Identity
@@ -121,15 +119,12 @@ public class DeathEventHandler {
         }
     }
 
-    public static void onCharacterDeath(OnCharacterDeathEvent event) {
-        if (!(event.character instanceof IsoPlayer player)) {
-            return;
-        }
+    public static void onPlayerDeath(IsoPlayer player) {
         try {
             String header = formatHeader(player);
             String body = formatBody(player);
             writeDeathEntry(header, body);
-            writeDeathEntryJson(event);
+            writeDeathEntryJson(player);
             LOGGER.info("Logged death of player: {}", player.getUsername());
         } catch (Exception e) {
             LOGGER.error("Failed to log death for player: {}", player.getUsername(), e);

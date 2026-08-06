@@ -2,7 +2,6 @@ package com.sentientsimulations.projectzomboid.survivorskillobelisk;
 
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
-import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,7 +123,7 @@ public final class DeathEventHandler {
 
     /**
      * Shared single-thread write queue for death snapshots and character baselines. FIFO order is
-     * load-bearing: a death is enqueued at {@code OnCharacterDeath} while the respawn's baseline
+     * load-bearing: a death is enqueued at {@code OnPlayerDeath} while the respawn's baseline
      * replace is enqueued at {@code OnNewGame} (which the client can only reach after the
      * character-creation screen), so {@link #writeDeath} is guaranteed to read the dying
      * character's baseline before the respawn overwrites it.
@@ -150,10 +149,7 @@ public final class DeathEventHandler {
         DB_WORK.offer(task);
     }
 
-    public static void onCharacterDeath(OnCharacterDeathEvent event) {
-        if (!(event.character instanceof IsoPlayer player)) {
-            return;
-        }
+    public static void onPlayerDeath(IsoPlayer player) {
         try {
             // Invalidate any recovery mid-pipeline for this player before the snapshot is queued —
             // its XP apply / ledger write must not land for the respawned character.

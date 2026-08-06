@@ -9,7 +9,7 @@ require("ISUI/ISCollapsableWindow")
 pcall(require, "ISUI/AfterTheFallEconomy/AfterTheFallEconomy_BalanceSidebar")
 
 local MODULE = "JumpscareBanEconomy"
-local DEFAULT_PRICE = 100
+local DEFAULT_PRICE = 1000000
 local SIDEBAR_BUTTON_ID = "jumpscareBanEconomy:openGagShop"
 
 local GAGS = {

@@ -9,7 +9,7 @@ import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.EveryHoursEvent;
-import io.pzstorm.storm.event.lua.OnCharacterDeathEvent;
+import io.pzstorm.storm.event.lua.OnPlayerDeathEvent;
 import io.pzstorm.storm.event.lua.OnServerStartedEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
 import io.pzstorm.storm.event.zomboid.OnBanSteamIDEvent;
@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.util.List;
 import zombie.characters.IsoGameCharacter;
 import zombie.characters.IsoPlayer;
-import zombie.characters.animals.IsoAnimal;
 import zombie.network.GameClient;
 
 public class SurvivorLeaderboardMod implements ZomboidMod {
@@ -76,16 +75,11 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
      * attacker-attribution pattern used in the extra-logging mod's DeathEventHandler.
      */
     @SubscribeEvent
-    public void onCharacterDeath(OnCharacterDeathEvent event) {
+    public void onPlayerDeath(OnPlayerDeathEvent event) {
         if (GameClient.client) {
             return;
         }
-        if (event.character instanceof IsoAnimal) {
-            return;
-        }
-        if (!(event.character instanceof IsoPlayer victim)) {
-            return;
-        }
+        IsoPlayer victim = event.player;
         IsoGameCharacter attacker = victim.getAttackedBy();
         if (attacker instanceof IsoPlayer killer && killer != victim) {
             boolean isAlly = SurvivorLeaderboardBridge.areAllies(killer, victim);
