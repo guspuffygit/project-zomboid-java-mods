@@ -52,6 +52,9 @@ public class SurvivorLeaderboardDatabase implements AutoCloseable {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
             stmt.execute("PRAGMA foreign_keys=ON");
+            // The DB worker thread and the HTTP admin endpoints write on separate connections;
+            // without a timeout a collision surfaces as an immediate SQLITE_BUSY failure.
+            stmt.execute("PRAGMA busy_timeout=5000");
         }
         createTables();
         migrateSchema();

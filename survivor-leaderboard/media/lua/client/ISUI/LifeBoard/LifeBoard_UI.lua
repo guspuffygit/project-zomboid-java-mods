@@ -323,9 +323,12 @@ end
 
 local function onPressLifeboardBtn()
     if not lifeboardWindow then
-        local windowHeight = 100 + (getTableLength(LifeBoard.board) * 16)
+        -- Size from the cached board; an empty cache means we're still waiting for the
+        -- server reply, so open at full height instead of a 100px sliver.
+        local rows = getTableLength(LifeBoard.board)
+        local windowHeight = 100 + (rows * 16)
 
-        if windowHeight > 500 then
+        if rows == 0 or windowHeight > 500 then
             windowHeight = 500
         end
 
@@ -334,6 +337,9 @@ local function onPressLifeboardBtn()
         lifeboardWindow:addToUIManager()
         lifeboardWindow:populateList()
         lifeboardButton:setImage(lifeboardIconOn)
+        -- The board is request-driven: the server only sends UpdateBoard in response to
+        -- this, and only to us.
+        sendClientCommand(getPlayer(), "Lifeboard", "Refresh", {})
     else
         lifeboardWindow:close()
         lifeboardWindow = nil
@@ -382,7 +388,8 @@ local function onServerCommand(module, command, arguments)
         return
     end
 
-    -- The server now sends the full board as args.board = [{displayName, dayCount, killCount, zombieKillCount}, ...]
+    -- The server sends the board as positional rows to keep key strings off the wire:
+    -- args.board = [ [displayName, dayCount, killCount, zombieKillCount], ... ]
     -- Rebuild LifeBoard.board in place so any captured references stay valid.
     for k in pairs(LifeBoard.board) do
         LifeBoard.board[k] = nil
@@ -391,10 +398,10 @@ local function onServerCommand(module, command, arguments)
     if arguments and arguments.board then
         for i, entry in pairs(arguments.board) do
             LifeBoard.board[i] = {
-                displayName = entry.displayName,
-                dayCount = entry.dayCount,
-                killCount = entry.killCount,
-                zombieKillCount = entry.zombieKillCount,
+                displayName = entry[1],
+                dayCount = entry[2],
+                killCount = entry[3],
+                zombieKillCount = entry[4],
             }
         end
     end

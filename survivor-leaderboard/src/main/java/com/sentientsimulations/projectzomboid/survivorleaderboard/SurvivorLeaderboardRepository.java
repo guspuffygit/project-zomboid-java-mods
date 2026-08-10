@@ -45,6 +45,20 @@ public class SurvivorLeaderboardRepository {
 
     private static final String ORDER_BY_ZOMBIE_KILLS = " ORDER BY zombie_kills DESC, username ASC";
 
+    // Union of the top-N ids per category, then re-select the full rows. UNION (not UNION ALL)
+    // dedups rows that rank in more than one category.
+    private static final String SELECT_TOP_BOARD =
+            SELECT_SURVIVORS_BASE
+                    + " WHERE id IN ("
+                    + "SELECT id FROM (SELECT id FROM survivors WHERE day_count <> 0"
+                    + " ORDER BY day_count DESC, username ASC LIMIT ?)"
+                    + " UNION SELECT id FROM (SELECT id FROM survivors WHERE kill_count <> 0"
+                    + " ORDER BY kill_count DESC, username ASC LIMIT ?)"
+                    + " UNION SELECT id FROM (SELECT id FROM survivors WHERE zombie_kills <> 0"
+                    + " ORDER BY zombie_kills DESC, username ASC LIMIT ?)"
+                    + ")"
+                    + ORDER_BY_DAYS;
+
     private static final String SELECT_KILLS_BASE =
             "SELECT id, killer_steam_id, killer_username, victim_steam_id, victim_username,"
                     + " is_ally, created_at FROM kills";
@@ -262,8 +276,8 @@ public class SurvivorLeaderboardRepository {
 
     /**
      * Load every row eligible to appear on at least one in-game board — i.e. {@code day_count <> 0
-     * OR kill_count <> 0}. Used to populate the broadcast payload; the client then filters per tab
-     * so zero-metric rows don't leak into the opposing view.
+     * OR kill_count <> 0 OR zombie_kills <> 0}, uncapped. The board payload itself uses {@link
+     * #loadTopBoard}; this query remains for tests that assert on full-board eligibility.
      */
     public List<SurvivorRecord> loadOrderedWithActivity() throws SQLException {
         return querySurvivors(
@@ -272,6 +286,34 @@ public class SurvivorLeaderboardRepository {
                 ORDER_BY_DAYS,
                 null,
                 null);
+    }
+
+    /**
+     * Load every row that ranks in the top {@code limitPerCategory} of at least one board category
+     * (days survived, PvP kills, zombie kills), deduped, ordered by day count. This is the
+     * request-driven board payload — the client filters and sorts per tab, so one merged list
+     * serves all three views while the payload stays bounded regardless of lifetime player count.
+     */
+    public List<SurvivorRecord> loadTopBoard(int limitPerCategory) throws SQLException {
+        List<SurvivorRecord> results = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(SELECT_TOP_BOARD)) {
+            ps.setInt(1, limitPerCategory);
+            ps.setInt(2, limitPerCategory);
+            ps.setInt(3, limitPerCategory);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    results.add(
+                            new SurvivorRecord(
+                                    rs.getLong("id"),
+                                    rs.getLong("steam_id"),
+                                    rs.getString("username"),
+                                    rs.getInt("day_count"),
+                                    rs.getInt("kill_count"),
+                                    rs.getInt("zombie_kills")));
+                }
+            }
+        }
+        return results;
     }
 
     /**

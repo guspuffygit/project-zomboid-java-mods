@@ -5,6 +5,9 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.KillLogEntry;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SqlExecutionResponse;
 import com.sentientsimulations.projectzomboid.survivorleaderboard.records.SurvivorRecord;
+import io.pzstorm.storm.event.core.SubscribeEvent;
+import io.pzstorm.storm.event.lua.OnTickEvent;
+import io.pzstorm.storm.util.StormEnv;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -23,183 +26,303 @@ import zombie.iso.areas.SafeHouse;
 import zombie.network.GameServer;
 import zombie.network.ServerWorldDatabase;
 
+/**
+ * All game-driven writes and the board query run on the {@code Lifeboard-DbWorker} daemon thread
+ * via {@link DbWorkerQueue}, so a stalled SQLite fsync never blocks the main loop. The board is
+ * request-driven: nothing is pushed until a client opens the UI and sends {@code Refresh}, and the
+ * reply goes only to that requester — the old full-board broadcast to every connection on every
+ * write was the server's single largest outbound traffic source (O(players² · rows)).
+ *
+ * <p>The sync methods further down (list*, setKillCount, executeSql, pruneBannedSurvivors) stay
+ * synchronous: the HTTP endpoints already run off the game thread, and the ban prune is a one-shot
+ * at boot before players are in.
+ */
 public final class SurvivorLeaderboardBridge {
 
     static final String MODULE = "Lifeboard";
     private static final String DB_FILENAME = "survivor_leaderboard.db";
 
+    /**
+     * Per-category row cap for the board payload. The client shows three ranked tabs; rows beyond
+     * the top 100 of every category are unreachable filler that only grew the packet as the
+     * lifetime player count grew.
+     */
+    static final int BOARD_CATEGORY_LIMIT = 100;
+
+    private static final DbWorkerQueue<Runnable, Runnable> QUEUE =
+            new DbWorkerQueue<>("Lifeboard-DbWorker", Runnable::run, Runnable::run);
+
     private SurvivorLeaderboardBridge() {}
 
     static String getDbPath() {
         File dbFile = ZomboidFileSystem.instance.getFileInCurrentSave(DB_FILENAME);
-        String path = dbFile.getAbsolutePath();
-        LOGGER.info("[Lifeboard] DB path: {}", path);
-        return path;
+        return dbFile.getAbsolutePath();
+    }
+
+    /** Game-thread drain for worker results (the board replies). */
+    @SubscribeEvent
+    public static void onTick(OnTickEvent event) {
+        if (!StormEnv.isStormServer()) {
+            return;
+        }
+        QUEUE.drainResults();
+    }
+
+    // ---- Async entry points (validated on the game thread, DB work on the worker) ----
+
+    /**
+     * Queue an insert of the player if not already present. Keyed on (steamId, username) so a
+     * single Steam account may have multiple characters on the same server.
+     */
+    public static void addPlayerAsync(IsoPlayer player) {
+        long steamId = player.getSteamID();
+        String username = player.getUsername();
+        if (username == null) {
+            return;
+        }
+        QUEUE.submit(
+                () -> {
+                    try (SurvivorLeaderboardDatabase db =
+                            new SurvivorLeaderboardDatabase(getDbPath())) {
+                        SurvivorLeaderboardRepository repo =
+                                new SurvivorLeaderboardRepository(db.getConnection());
+                        boolean inserted = repo.insertSurvivor(steamId, username);
+                        if (inserted) {
+                            LOGGER.info(
+                                    "[Lifeboard] Added survivor steamId={} username={}",
+                                    steamId,
+                                    username);
+                        }
+                    } catch (SQLException e) {
+                        LOGGER.error(
+                                "[Lifeboard] Failed to add survivor steamId={} username={}",
+                                steamId,
+                                username,
+                                e);
+                    }
+                });
+    }
+
+    /** Queue an update of the player's current day count and zombie kill count. */
+    public static void incrementDaysAsync(IsoPlayer player, int daysSurvived, int zombieKills) {
+        long steamId = player.getSteamID();
+        String username = player.getUsername();
+        if (username == null) {
+            return;
+        }
+        QUEUE.submit(
+                () -> {
+                    try (SurvivorLeaderboardDatabase db =
+                            new SurvivorLeaderboardDatabase(getDbPath())) {
+                        SurvivorLeaderboardRepository repo =
+                                new SurvivorLeaderboardRepository(db.getConnection());
+                        boolean updated = repo.updateDayCount(steamId, username, daysSurvived);
+                        if (!updated) {
+                            // Not on the board yet — add and then set.
+                            repo.insertSurvivor(steamId, username);
+                            repo.updateDayCount(steamId, username, daysSurvived);
+                        }
+                        repo.updateZombieKills(steamId, username, zombieKills);
+                    } catch (SQLException e) {
+                        LOGGER.error(
+                                "[Lifeboard] Failed to update days/zombie kills for steamId={}"
+                                        + " username={}",
+                                steamId,
+                                username,
+                                e);
+                    }
+                });
     }
 
     /**
-     * Insert the player into the leaderboard if not already present, then broadcast. Keyed on
-     * (steamId, username) so a single Steam account may have multiple characters on the same
-     * server.
-     *
-     * @return null on success, or an error message
+     * Queue crediting the killer with +1 PvP kill and resetting the victim's kill count to 0 (only
+     * if it was positive — negative values earned from ally-grief penalties are preserved so dying
+     * does not wipe the debt). Upserts rows for both players if they are not yet on the board.
+     * {@code isAlly} must be computed by the caller on the game thread ({@link #areAllies} touches
+     * Faction/SafeHouse state).
      */
-    public static String addPlayer(IsoPlayer player) {
-        long steamId = player.getSteamID();
-        String username = player.getUsername();
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            boolean inserted = repo.insertSurvivor(steamId, username);
-            if (inserted) {
-                LOGGER.info("[Lifeboard] Added survivor steamId={} username={}", steamId, username);
-            } else {
-                LOGGER.info(
-                        "[Lifeboard] Survivor already present steamId={} username={}",
-                        steamId,
-                        username);
-            }
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "[Lifeboard] Failed to add survivor steamId={} username={}",
-                    steamId,
-                    username,
-                    e);
-            return "Database error adding player.";
-        }
-    }
-
-    /** Rebroadcast the current board to everyone without touching the DB. */
-    public static String refresh(IsoPlayer player) {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to refresh board", e);
-            return "Database error refreshing board.";
-        }
-    }
-
-    /** Set the player's current day count and zombie kill count, then broadcast. */
-    public static String incrementDays(IsoPlayer player, int daysSurvived, int zombieKills) {
-        long steamId = player.getSteamID();
-        String username = player.getUsername();
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            boolean updated = repo.updateDayCount(steamId, username, daysSurvived);
-            if (!updated) {
-                // Not on the board yet — add and then set.
-                repo.insertSurvivor(steamId, username);
-                repo.updateDayCount(steamId, username, daysSurvived);
-            }
-            repo.updateZombieKills(steamId, username, zombieKills);
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "[Lifeboard] Failed to update days/zombie kills for steamId={} username={}",
-                    steamId,
-                    username,
-                    e);
-            return "Database error updating days.";
-        }
-    }
-
-    /**
-     * Credit the killer with +1 PvP kill and reset the victim's kill count to 0 (only if it was
-     * positive — negative values earned from ally-grief penalties are preserved so dying does not
-     * wipe the debt). Upserts rows for both players if they are not yet on the board. Broadcasts on
-     * success.
-     *
-     * @return null on success, or an error message
-     */
-    public static String recordPlayerKill(IsoPlayer killer, IsoPlayer victim, boolean isAlly) {
+    public static void recordPlayerKillAsync(IsoPlayer killer, IsoPlayer victim, boolean isAlly) {
         long killerSteamId = killer.getSteamID();
         String killerUsername = killer.getUsername();
         long victimSteamId = victim.getSteamID();
         String victimUsername = victim.getUsername();
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-
-            if (!repo.incrementKillCount(killerSteamId, killerUsername)) {
-                repo.insertSurvivor(killerSteamId, killerUsername);
-                repo.incrementKillCount(killerSteamId, killerUsername);
-            }
-
-            repo.insertSurvivor(victimSteamId, victimUsername);
-            repo.resetKillCountIfPositive(victimSteamId, victimUsername);
-
-            repo.insertKill(
-                    killerSteamId,
-                    killerUsername,
-                    victimSteamId,
-                    victimUsername,
-                    isAlly,
-                    System.currentTimeMillis());
-
-            // The victim is dead; wipe their outgoing kill log so their history resets with them.
-            int wiped = repo.deleteKillsByKiller(victimSteamId, victimUsername);
-            if (wiped > 0) {
-                LOGGER.info(
-                        "[Lifeboard] Cleared {} kill log entries for victim={}",
-                        wiped,
-                        victimUsername);
-            }
-
-            LOGGER.info(
-                    "[Lifeboard] Recorded PvP kill: killer={} victim={} isAlly={}",
-                    killerUsername,
-                    victimUsername,
-                    isAlly);
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error(
-                    "[Lifeboard] Failed to record PvP kill killer={} victim={}",
-                    killerUsername,
-                    victimUsername,
-                    e);
-            return "Database error recording kill.";
+        if (killerUsername == null || victimUsername == null) {
+            return;
         }
+        long nowMs = System.currentTimeMillis();
+        QUEUE.submit(
+                () -> {
+                    try (SurvivorLeaderboardDatabase db =
+                            new SurvivorLeaderboardDatabase(getDbPath())) {
+                        SurvivorLeaderboardRepository repo =
+                                new SurvivorLeaderboardRepository(db.getConnection());
+
+                        if (!repo.incrementKillCount(killerSteamId, killerUsername)) {
+                            repo.insertSurvivor(killerSteamId, killerUsername);
+                            repo.incrementKillCount(killerSteamId, killerUsername);
+                        }
+
+                        repo.insertSurvivor(victimSteamId, victimUsername);
+                        repo.resetKillCountIfPositive(victimSteamId, victimUsername);
+
+                        repo.insertKill(
+                                killerSteamId,
+                                killerUsername,
+                                victimSteamId,
+                                victimUsername,
+                                isAlly,
+                                nowMs);
+
+                        // The victim is dead; wipe their outgoing kill log so their history
+                        // resets with them.
+                        int wiped = repo.deleteKillsByKiller(victimSteamId, victimUsername);
+                        if (wiped > 0) {
+                            LOGGER.info(
+                                    "[Lifeboard] Cleared {} kill log entries for victim={}",
+                                    wiped,
+                                    victimUsername);
+                        }
+
+                        LOGGER.info(
+                                "[Lifeboard] Recorded PvP kill: killer={} victim={} isAlly={}",
+                                killerUsername,
+                                victimUsername,
+                                isAlly);
+                    } catch (SQLException e) {
+                        LOGGER.error(
+                                "[Lifeboard] Failed to record PvP kill killer={} victim={}",
+                                killerUsername,
+                                victimUsername,
+                                e);
+                    }
+                });
     }
 
     /**
-     * Reset the player's kill count to 0 when they die from a non-PvP cause, but only if it was
-     * positive — negative values from ally-grief penalties are preserved. Upserts the row if
-     * absent, then broadcasts.
-     *
-     * @return null on success, or an error message
+     * Queue resetting the player's kill count to 0 when they die from a non-PvP cause, but only if
+     * it was positive — negative values from ally-grief penalties are preserved. Upserts the row if
+     * absent.
      */
-    public static String resetKillsForPlayer(IsoPlayer victim) {
+    public static void resetKillsForPlayerAsync(IsoPlayer victim) {
         long steamId = victim.getSteamID();
         String username = victim.getUsername();
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            repo.insertSurvivor(steamId, username);
-            repo.resetKillCountIfPositive(steamId, username);
-            int wiped = repo.deleteKillsByKiller(steamId, username);
-            LOGGER.info(
-                    "[Lifeboard] Reset kills for victim={}, cleared {} kill log entries",
-                    username,
-                    wiped);
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to reset kills for {}", username, e);
-            return "Database error resetting kills.";
+        if (username == null) {
+            return;
         }
+        QUEUE.submit(
+                () -> {
+                    try (SurvivorLeaderboardDatabase db =
+                            new SurvivorLeaderboardDatabase(getDbPath())) {
+                        SurvivorLeaderboardRepository repo =
+                                new SurvivorLeaderboardRepository(db.getConnection());
+                        repo.insertSurvivor(steamId, username);
+                        repo.resetKillCountIfPositive(steamId, username);
+                        int wiped = repo.deleteKillsByKiller(steamId, username);
+                        LOGGER.info(
+                                "[Lifeboard] Reset kills for victim={}, cleared {} kill log"
+                                        + " entries",
+                                username,
+                                wiped);
+                    } catch (SQLException e) {
+                        LOGGER.error("[Lifeboard] Failed to reset kills for {}", username, e);
+                    }
+                });
+    }
+
+    /** Queue deletion of every entry whose Steam ID matches. */
+    public static void deleteBySteamIdAsync(long steamId) {
+        QUEUE.submit(
+                () -> {
+                    try (SurvivorLeaderboardDatabase db =
+                            new SurvivorLeaderboardDatabase(getDbPath())) {
+                        SurvivorLeaderboardRepository repo =
+                                new SurvivorLeaderboardRepository(db.getConnection());
+                        int removed = repo.deleteBySteamId(steamId);
+                        int killsRemoved = repo.deleteKillsByKillerSteamId(steamId);
+                        LOGGER.info(
+                                "[Lifeboard] Deleted {} survivor entries and {} kill log entries"
+                                        + " for steamId={}",
+                                removed,
+                                killsRemoved,
+                                steamId);
+                    } catch (SQLException e) {
+                        LOGGER.error(
+                                "[Lifeboard] Failed to delete entries for steamId={}", steamId, e);
+                    }
+                });
+    }
+
+    /** Queue both hourly penalty sweeps as one op so they keep their relative order. */
+    public static void processPenaltySweepsAsync() {
+        QUEUE.submit(
+                () -> {
+                    try (SurvivorLeaderboardDatabase db =
+                            new SurvivorLeaderboardDatabase(getDbPath())) {
+                        SurvivorLeaderboardRepository repo =
+                                new SurvivorLeaderboardRepository(db.getConnection());
+                        processAllyKillPenalties(repo);
+                        processRepeatVictimPenalties(repo);
+                    } catch (SQLException e) {
+                        LOGGER.error("[Lifeboard] Failed to process penalty sweeps", e);
+                    }
+                });
+    }
+
+    /**
+     * Queue a board load for a client that just opened the UI. The reply — the top {@link
+     * #BOARD_CATEGORY_LIMIT} rows of each category, deduped — goes only to the requester, via the
+     * game-thread drain (sendServerCommand is not safe off the game thread).
+     */
+    public static void requestBoardAsync(IsoPlayer player) {
+        QUEUE.submit(
+                () -> {
+                    try (SurvivorLeaderboardDatabase db =
+                            new SurvivorLeaderboardDatabase(getDbPath())) {
+                        SurvivorLeaderboardRepository repo =
+                                new SurvivorLeaderboardRepository(db.getConnection());
+                        List<SurvivorRecord> rows = repo.loadTopBoard(BOARD_CATEGORY_LIMIT);
+                        QUEUE.offerResult(() -> sendBoard(player, rows));
+                    } catch (SQLException e) {
+                        LOGGER.error("[Lifeboard] Failed to load board for request", e);
+                    }
+                });
+    }
+
+    private static void sendBoard(IsoPlayer player, List<SurvivorRecord> rows) {
+        KahluaTable args = buildBoardTable(rows);
+        GameServer.sendServerCommand(player, MODULE, "UpdateBoard", args);
+        LOGGER.info(
+                "[Lifeboard] Sent UpdateBoard ({} rows) to {}", rows.size(), player.getUsername());
+    }
+
+    /**
+     * Wire format consumed by LifeBoard_UI.lua's {@code OnServerCommand}:
+     *
+     * <pre>{ board = [ [displayName, dayCount, killCount, zombieKillCount], ... ] }</pre>
+     *
+     * Entries are positional arrays — the old string-keyed rows shipped ~50 bytes of key text per
+     * row. Numbers are written as {@link Double} because Kahlua stores all Lua numbers that way.
+     */
+    private static KahluaTable buildBoardTable(List<SurvivorRecord> survivors) {
+        KahluaTable args = LuaManager.platform.newTable();
+        KahluaTable boardTable = LuaManager.platform.newTable();
+
+        int idx = 1;
+        for (SurvivorRecord s : survivors) {
+            KahluaTable entry = LuaManager.platform.newTable();
+            entry.rawset(1, s.username());
+            entry.rawset(2, Double.valueOf(s.dayCount()));
+            entry.rawset(3, Double.valueOf(s.killCount()));
+            entry.rawset(4, Double.valueOf(s.zombieKills()));
+            boardTable.rawset(idx++, entry);
+        }
+        args.rawset("board", boardTable);
+        return args;
     }
 
     /**
      * True when two players share a faction (mutual membership/ownership) or both belong to the
-     * same safehouse as owner or member. Used to flag ally-on-ally PvP.
+     * same safehouse as owner or member. Used to flag ally-on-ally PvP. Game thread only.
      */
     public static boolean areAllies(IsoPlayer a, IsoPlayer b) {
         if (a == null || b == null || a == b) {
@@ -228,26 +351,7 @@ public final class SurvivorLeaderboardBridge {
      * contributes a penalty. Kill counts are permitted to go negative so the penalty cannot be
      * immediately masked by new legitimate kills.
      *
-     * @return number of penalties applied in this run
-     */
-    public static int processAllyKillPenalties() {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            int penalties = processAllyKillPenalties(repo);
-            if (penalties > 0) {
-                broadcast(repo);
-            }
-            return penalties;
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to process ally-kill penalties", e);
-            return 0;
-        }
-    }
-
-    /**
-     * Package-private overload used by the public entry point and by tests. Does not broadcast;
-     * callers are responsible for that.
+     * <p>Package-private; used by the async sweep op and by tests.
      *
      * @return number of penalties applied
      */
@@ -316,26 +420,7 @@ public final class SurvivorLeaderboardBridge {
      * <p>Independent of faction/safehouse — applies to every PvP kill, ally or not. Independent of
      * the ally-kill sweep as well; a kill can trigger both penalties.
      *
-     * @return number of penalties applied in this run
-     */
-    public static int processRepeatVictimPenalties() {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            int penalties = processRepeatVictimPenalties(repo);
-            if (penalties > 0) {
-                broadcast(repo);
-            }
-            return penalties;
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to process repeat-victim penalties", e);
-            return 0;
-        }
-    }
-
-    /**
-     * Package-private overload used by the public entry point and by tests. Does not broadcast;
-     * callers are responsible for that.
+     * <p>Package-private; used by the async sweep op and by tests.
      *
      * @return number of penalties applied
      */
@@ -389,10 +474,12 @@ public final class SurvivorLeaderboardBridge {
         return penalties;
     }
 
+    // ---- Sync entry points (HTTP endpoints, boot-time prune, tests) ----
+
     /**
      * Overwrite a player's {@code kill_count} to an absolute value. Upserts the row if absent so an
-     * admin can pre-set a score for a player who hasn't yet appeared on the board. Broadcasts on
-     * success.
+     * admin can pre-set a score for a player who hasn't yet appeared on the board. Runs on the
+     * caller's thread — used by the HTTP admin endpoint, which is already off the game thread.
      *
      * @return the updated record, or null if the database operation failed
      */
@@ -401,11 +488,7 @@ public final class SurvivorLeaderboardBridge {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
             SurvivorLeaderboardRepository repo =
                     new SurvivorLeaderboardRepository(db.getConnection());
-            SurvivorRecord record = setKillCount(repo, steamId, username, killCount);
-            if (record != null) {
-                broadcast(repo);
-            }
-            return record;
+            return setKillCount(repo, steamId, username, killCount);
         } catch (SQLException e) {
             LOGGER.error(
                     "[Lifeboard] Failed to setKillCount steamId={} username={}",
@@ -417,8 +500,7 @@ public final class SurvivorLeaderboardBridge {
     }
 
     /**
-     * Package-private overload used by the public entry point and by tests. Does not broadcast;
-     * callers are responsible for that.
+     * Package-private overload used by the public entry point and by tests.
      *
      * @return the updated record, or null if the update affected 0 rows
      */
@@ -442,30 +524,9 @@ public final class SurvivorLeaderboardBridge {
         return repo.findByPlayer(steamId, username);
     }
 
-    /** Delete every entry whose Steam ID matches, then broadcast. */
-    public static String deleteBySteamId(long steamId) {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            int removed = repo.deleteBySteamId(steamId);
-            int killsRemoved = repo.deleteKillsByKillerSteamId(steamId);
-            LOGGER.info(
-                    "[Lifeboard] Deleted {} survivor entries and {} kill log entries for"
-                            + " steamId={}",
-                    removed,
-                    killsRemoved,
-                    steamId);
-            broadcast(repo);
-            return null;
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to delete entries for steamId={}", steamId, e);
-            return "Database error deleting entries by Steam ID.";
-        }
-    }
-
     /**
      * Remove every leaderboard entry whose Steam ID is currently banned per {@link
-     * ServerWorldDatabase}. Intended to run once on server startup.
+     * ServerWorldDatabase}. Intended to run once on server startup, before players are in.
      *
      * @return number of rows removed
      */
@@ -647,53 +708,5 @@ public final class SurvivorLeaderboardBridge {
             LOGGER.error("[Lifeboard] Failed to list kills", e);
             return List.of();
         }
-    }
-
-    // ---- Network ----
-
-    /** Broadcast the full leaderboard to every connected client. */
-    private static void broadcast(SurvivorLeaderboardRepository repo) throws SQLException {
-        KahluaTable args = buildBoardTable(repo);
-        GameServer.sendServerCommand(MODULE, "UpdateBoard", args);
-        LOGGER.info("[Lifeboard] Broadcast UpdateBoard to all clients");
-    }
-
-    /** Send the full leaderboard to a single player. */
-    public static void syncToPlayer(IsoPlayer player) {
-        try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
-            SurvivorLeaderboardRepository repo =
-                    new SurvivorLeaderboardRepository(db.getConnection());
-            KahluaTable args = buildBoardTable(repo);
-            GameServer.sendServerCommand(player, MODULE, "UpdateBoard", args);
-            LOGGER.info("[Lifeboard] Sent UpdateBoard to {}", player.getUsername());
-        } catch (SQLException e) {
-            LOGGER.error("[Lifeboard] Failed to sync board to player", e);
-        }
-    }
-
-    /**
-     * Wire format consumed by LifeBoard_UI.lua's {@code OnServerCommand}:
-     *
-     * <pre>{ board = [ {displayName, dayCount, killCount, zombieKillCount}, ... ] }</pre>
-     *
-     * Numbers are written as {@link Double} because Kahlua stores all Lua numbers that way.
-     */
-    private static KahluaTable buildBoardTable(SurvivorLeaderboardRepository repo)
-            throws SQLException {
-        List<SurvivorRecord> survivors = repo.loadOrderedWithActivity();
-        KahluaTable args = LuaManager.platform.newTable();
-        KahluaTable boardTable = LuaManager.platform.newTable();
-
-        int idx = 1;
-        for (SurvivorRecord s : survivors) {
-            KahluaTable entry = LuaManager.platform.newTable();
-            entry.rawset("displayName", s.username());
-            entry.rawset("dayCount", (double) s.dayCount());
-            entry.rawset("killCount", (double) s.killCount());
-            entry.rawset("zombieKillCount", (double) s.zombieKills());
-            boardTable.rawset(idx++, entry);
-        }
-        args.rawset("board", boardTable);
-        return args;
     }
 }

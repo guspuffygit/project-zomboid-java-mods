@@ -39,14 +39,13 @@ BravensUtilsLB.DelayFunction = function(func, delay)
 end
 
 local function onLoadCharacter()
-    if not getWorld():getGameMode() == "Multiplayer" then
+    if getWorld():getGameMode() ~= "Multiplayer" then
         return
     end
 
     BravensUtilsLB.DelayFunction(function()
-        -- Always tell the server we're here. The server decides whether to insert
-        -- a new row or just re-broadcast, and replies with the authoritative board
-        -- via the UpdateBoard server command handled in LifeBoard_UI.lua.
+        -- Tell the server we're here so it can insert our row if needed. The board
+        -- itself is only fetched when the player opens the UI (see LifeBoard_UI.lua).
         sendClientCommand(getPlayer(), "Lifeboard", "AddPlayer", {})
     end, 300)
 end

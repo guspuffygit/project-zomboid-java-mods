@@ -14,6 +14,7 @@ import io.pzstorm.storm.event.lua.OnServerStartedEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
 import io.pzstorm.storm.event.zomboid.OnBanSteamIDEvent;
 import io.pzstorm.storm.mod.ZomboidMod;
+import io.pzstorm.storm.util.StormEnv;
 import java.sql.SQLException;
 import java.util.List;
 import zombie.characters.IsoGameCharacter;
@@ -30,6 +31,7 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
                 "[Lifeboard] Registering event handlers for {}",
                 SurvivorLeaderboardMod.class.getCanonicalName());
         StormEventDispatcher.registerEventHandler(this);
+        StormEventDispatcher.registerEventHandler(SurvivorLeaderboardBridge.class);
         StormEventDispatcher.registerEventHandler(SurvivorLeaderboardEndpoints.class);
         LOGGER.info("[Lifeboard] Event handlers registered successfully");
     }
@@ -61,10 +63,7 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
         LOGGER.info("[Lifeboard] SteamID {} banned, removing from leaderboard", event.getSteamID());
         try {
             long steamId = Long.parseLong(event.getSteamID());
-            String error = SurvivorLeaderboardBridge.deleteBySteamId(steamId);
-            if (error != null) {
-                LOGGER.warn("[Lifeboard] Failed to remove banned SteamID: {}", error);
-            }
+            SurvivorLeaderboardBridge.deleteBySteamIdAsync(steamId);
         } catch (NumberFormatException e) {
             LOGGER.error("[Lifeboard] Invalid SteamID format: {}", event.getSteamID(), e);
         }
@@ -82,16 +81,11 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
         IsoPlayer victim = event.player;
         IsoGameCharacter attacker = victim.getAttackedBy();
         if (attacker instanceof IsoPlayer killer && killer != victim) {
+            // areAllies touches Faction/SafeHouse state, so it must run here on the game thread.
             boolean isAlly = SurvivorLeaderboardBridge.areAllies(killer, victim);
-            String error = SurvivorLeaderboardBridge.recordPlayerKill(killer, victim, isAlly);
-            if (error != null) {
-                LOGGER.warn("[Lifeboard] recordPlayerKill failed: {}", error);
-            }
+            SurvivorLeaderboardBridge.recordPlayerKillAsync(killer, victim, isAlly);
         } else {
-            String error = SurvivorLeaderboardBridge.resetKillsForPlayer(victim);
-            if (error != null) {
-                LOGGER.warn("[Lifeboard] resetKillsForPlayer failed: {}", error);
-            }
+            SurvivorLeaderboardBridge.resetKillsForPlayerAsync(victim);
         }
     }
 
@@ -102,8 +96,12 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
      */
     @SubscribeEvent
     public void onEveryHours(EveryHoursEvent event) {
-        SurvivorLeaderboardBridge.processAllyKillPenalties();
-        SurvivorLeaderboardBridge.processRepeatVictimPenalties();
+        // The same jar loads on the client JVM, where this Lua event also fires — without the gate
+        // a client would spawn the worker and write a bogus local DB.
+        if (!StormEnv.isStormServer()) {
+            return;
+        }
+        SurvivorLeaderboardBridge.processPenaltySweepsAsync();
     }
 
     /** Prune banned survivors on the first tick, once ServerWorldDatabase is fully ready. */
@@ -122,40 +120,26 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
                 "[Lifeboard] onAddPlayer from {} (steamId={})",
                 event.getPlayer().getUsername(),
                 event.getPlayer().getSteamID());
-        String error = SurvivorLeaderboardBridge.addPlayer(event.getPlayer());
-        if (error != null) {
-            LOGGER.warn("[Lifeboard] addPlayer failed: {}", error);
-        }
+        SurvivorLeaderboardBridge.addPlayerAsync(event.getPlayer());
     }
 
+    /** Sent by the client when the leaderboard window is opened; replies only to the requester. */
     @OnClientCommand
     public void onRefresh(OnClientRefreshCommand event) {
         LOGGER.info("[Lifeboard] onRefresh from {}", event.getPlayer().getUsername());
-        String error = SurvivorLeaderboardBridge.refresh(event.getPlayer());
-        if (error != null) {
-            LOGGER.warn("[Lifeboard] refresh failed: {}", error);
-        }
+        SurvivorLeaderboardBridge.requestBoardAsync(event.getPlayer());
     }
 
     @OnClientCommand
     public void onIncrement(OnClientIncrementCommand event) {
         Double daysSurvived = event.getDaysSurvived();
         Double zombieKills = event.getZombieKills();
-        LOGGER.info(
-                "[Lifeboard] onIncrement from {} daysSurvived={} zombieKills={}",
-                event.getPlayer().getUsername(),
-                daysSurvived,
-                zombieKills);
         if (daysSurvived == null) {
             LOGGER.warn("[Lifeboard] increment missing daysSurvived arg");
             return;
         }
         int zombieKillsInt = zombieKills != null ? zombieKills.intValue() : 0;
-        String error =
-                SurvivorLeaderboardBridge.incrementDays(
-                        event.getPlayer(), daysSurvived.intValue(), zombieKillsInt);
-        if (error != null) {
-            LOGGER.warn("[Lifeboard] increment failed: {}", error);
-        }
+        SurvivorLeaderboardBridge.incrementDaysAsync(
+                event.getPlayer(), daysSurvived.intValue(), zombieKillsInt);
     }
 }
