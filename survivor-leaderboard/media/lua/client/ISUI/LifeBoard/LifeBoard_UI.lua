@@ -338,8 +338,12 @@ local function onPressLifeboardBtn()
         lifeboardWindow:populateList()
         lifeboardButton:setImage(lifeboardIconOn)
         -- The board is request-driven: the server only sends UpdateBoard in response to
-        -- this, and only to us.
-        sendClientCommand(getPlayer(), "Lifeboard", "Refresh", {})
+        -- this, and only to us. Repeated opens inside the Update Frequency window are
+        -- served from the cached board (see LifeBoard.shouldRefresh in LifeBoard_Client.lua).
+        if LifeBoard.shouldRefresh() then
+            sendClientCommand(getPlayer(), "Lifeboard", "Refresh", {})
+            LifeBoard.markRefreshed()
+        end
     else
         lifeboardWindow:close()
         lifeboardWindow = nil

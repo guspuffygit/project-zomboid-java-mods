@@ -1,5 +1,5 @@
 {
   "Sandbox_Lifeboard": "Survivor Leaderboard",
   "Sandbox_Lifeboard_Cooldown": "Update Frequency",
-  "Sandbox_Lifeboard_Cooldown_tooltip": "The amount of in-game minutes before the leaderboard gets updated."
+  "Sandbox_Lifeboard_Cooldown_tooltip": "In-game minutes between leaderboard updates. Controls how often each client reports its days survived and zombie kills to the server, and how long an opened leaderboard is cached before re-requesting the board."
 }
