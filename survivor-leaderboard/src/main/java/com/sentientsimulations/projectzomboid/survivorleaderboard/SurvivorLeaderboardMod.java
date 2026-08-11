@@ -111,7 +111,7 @@ public class SurvivorLeaderboardMod implements ZomboidMod {
             return;
         }
         hasPruned = true;
-        SurvivorLeaderboardBridge.pruneBannedSurvivors();
+        SurvivorLeaderboardBridge.pruneBannedSurvivorsAsync();
     }
 
     @OnClientCommand

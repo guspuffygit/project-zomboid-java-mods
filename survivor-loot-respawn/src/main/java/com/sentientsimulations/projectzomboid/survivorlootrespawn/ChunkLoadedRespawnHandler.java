@@ -7,11 +7,15 @@ import com.sentientsimulations.projectzomboid.survivorlootrespawn.metrics.Surviv
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootState;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository;
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.ContainerLootStateRepository.InsertRow;
+import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.SurvivorLootRespawnDatabase;
 import gnu.trove.map.hash.THashMap;
+import io.pzstorm.storm.event.core.SubscribeEvent;
+import io.pzstorm.storm.event.lua.OnTickEvent;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import zombie.GameTime;
 import zombie.SandboxOptions;
 import zombie.inventory.InventoryItem;
@@ -25,14 +29,35 @@ import zombie.iso.IsoObject;
 import zombie.iso.areas.IsoRoom;
 import zombie.network.GameServer;
 import zombie.network.PacketTypes;
+import zombie.network.ServerMap;
 import zombie.network.packets.INetworkPacket;
 import zombie.scripting.objects.ContainerType;
 import zombie.scripting.objects.ResourceLocation;
 import zombie.util.list.PZArrayList;
 
+/**
+ * Respawns loot in a chunk as it streams in. The flow is split across threads to keep SQLite I/O
+ * off the server main thread (same pattern as the obelisk mod's ListDeathsHandler):
+ *
+ * <ol>
+ *   <li>{@link #onChunkLoaded} runs on the main thread (LootRespawnPatch advice), walks the chunk's
+ *       squares, and hands the discovered rows plus a queued-row select to the mod's DB executor.
+ *   <li>The {@code SurvivorLootRespawn-DB} worker runs the batch insert and the select, then pushes
+ *       the queued rows onto {@link #COMPLETED}.
+ *   <li>{@link #onTick} drains {@link #COMPLETED} on the main thread, re-looks the chunk up by
+ *       coordinates, and runs the in-game respawn work; the follow-up deletes/increments go back to
+ *       the DB executor. If the chunk unloaded in the meantime the rows stay queued in the DB and
+ *       are retried on its next load.
+ * </ol>
+ */
 public final class ChunkLoadedRespawnHandler {
 
     static final int MAX_FILL_NOTHING_RETRIES = 3;
+
+    private record CompletedChunkSelect(int wx, int wy, List<ContainerLootState> queued) {}
+
+    private static final ConcurrentLinkedQueue<CompletedChunkSelect> COMPLETED =
+            new ConcurrentLinkedQueue<>();
 
     private ChunkLoadedRespawnHandler() {}
 
@@ -47,18 +72,77 @@ public final class ChunkLoadedRespawnHandler {
             if (!(chunkObj instanceof IsoChunk chunk)) {
                 return;
             }
-            discoverChunk(chunk);
-            processChunk(chunk);
+            List<InsertRow> rows = collectChunk(chunk);
+            int wx = chunk.wx;
+            int wy = chunk.wy;
+            SurvivorLootRespawnDatabase.submit(
+                    () -> {
+                        int discovered = ContainerLootStateRepository.batchInsertIfMissing(rows);
+                        SurvivorLootRespawnMetrics.recordDiscoveryInserted(discovered);
+                        if (discovered > 0) {
+                            LOGGER.debug(
+                                    "[SurvivorLootRespawn] Container discovery in chunk wx={} wy={}: discovered={}",
+                                    wx,
+                                    wy,
+                                    discovered);
+                        }
+                        List<ContainerLootState> queued =
+                                ContainerLootStateRepository.selectQueuedInChunk(wx, wy);
+                        if (!queued.isEmpty()) {
+                            COMPLETED.offer(new CompletedChunkSelect(wx, wy, queued));
+                        }
+                    });
         } catch (Throwable t) {
             SurvivorLootRespawnMetrics.recordOnChunkLoadedError();
             LOGGER.error("[SurvivorLootRespawn] onChunkLoaded failed", t);
         }
     }
 
-    public static int discoverChunk(IsoChunk chunk) {
-        if (chunk == null) {
-            return 0;
+    @SubscribeEvent
+    public static void onTick(OnTickEvent event) {
+        CompletedChunkSelect done;
+        while ((done = COMPLETED.poll()) != null) {
+            try {
+                processCompleted(done);
+            } catch (Throwable t) {
+                SurvivorLootRespawnMetrics.recordOnChunkLoadedError();
+                LOGGER.error("[SurvivorLootRespawn] chunk respawn processing failed", t);
+            }
         }
+    }
+
+    private static void processCompleted(CompletedChunkSelect done) {
+        ServerMap serverMap = ServerMap.instance;
+        IsoChunk chunk = serverMap == null ? null : serverMap.getChunk(done.wx(), done.wy());
+        if (chunk == null) {
+            LOGGER.debug(
+                    "[SurvivorLootRespawn] Chunk wx={} wy={} unloaded before respawn; {} rows stay queued",
+                    done.wx(),
+                    done.wy(),
+                    done.queued().size());
+            return;
+        }
+        long startNanos = System.nanoTime();
+        List<ContainerLootState> toDelete = new ArrayList<>();
+        List<ContainerLootState> toIncrement = new ArrayList<>();
+        int respawned = processChunkRows(chunk, done.queued(), toDelete, toIncrement);
+        SurvivorLootRespawnDatabase.submit(
+                () -> {
+                    ContainerLootStateRepository.batchDelete(toDelete);
+                    ContainerLootStateRepository.batchIncrementFillAddedNothing(toIncrement);
+                });
+        SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
+                (System.nanoTime() - startNanos) / 1e9);
+        LOGGER.debug(
+                "[SurvivorLootRespawn] Loot respawn for chunk wx={} wy={}: queued={}, respawned={}",
+                done.wx(),
+                done.wy(),
+                done.queued().size(),
+                respawned);
+    }
+
+    /** Main-thread walk of the chunk's squares; the DB insert happens on the DB executor. */
+    private static List<InsertRow> collectChunk(IsoChunk chunk) {
         long startNanos = System.nanoTime();
         int maxItems = SandboxOptions.instance.maxItemsForLootRespawn.getValue();
         double gameHours = GameTime.getInstance().getWorldAgeHours();
@@ -74,18 +158,9 @@ public final class ChunkLoadedRespawnHandler {
                 }
             }
         }
-        int discovered = ContainerLootStateRepository.batchInsertIfMissing(rows);
-        SurvivorLootRespawnMetrics.recordDiscoveryInserted(discovered);
         SurvivorLootRespawnMetrics.observeChunkDiscoverSeconds(
                 (System.nanoTime() - startNanos) / 1e9);
-        if (discovered > 0) {
-            LOGGER.debug(
-                    "[SurvivorLootRespawn] Container discovery in chunk wx={} wy={}: discovered={}",
-                    chunk.wx,
-                    chunk.wy,
-                    discovered);
-        }
-        return discovered;
+        return rows;
     }
 
     private static void collectSquare(
@@ -242,34 +317,6 @@ public final class ChunkLoadedRespawnHandler {
         } catch (Throwable t) {
             return false;
         }
-    }
-
-    public static int processChunk(IsoChunk chunk) {
-        if (chunk == null) {
-            return 0;
-        }
-        long startNanos = System.nanoTime();
-        List<ContainerLootState> queued =
-                ContainerLootStateRepository.selectQueuedInChunk(chunk.wx, chunk.wy);
-        if (queued.isEmpty()) {
-            SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
-                    (System.nanoTime() - startNanos) / 1e9);
-            return 0;
-        }
-        List<ContainerLootState> toDelete = new ArrayList<>();
-        List<ContainerLootState> toIncrement = new ArrayList<>();
-        int respawned = processChunkRows(chunk, queued, toDelete, toIncrement);
-        ContainerLootStateRepository.batchDelete(toDelete);
-        ContainerLootStateRepository.batchIncrementFillAddedNothing(toIncrement);
-        SurvivorLootRespawnMetrics.observeChunkProcessSeconds(
-                (System.nanoTime() - startNanos) / 1e9);
-        LOGGER.debug(
-                "[SurvivorLootRespawn] Loot respawn for chunk wx={} wy={}: queued={}, respawned={}",
-                chunk.wx,
-                chunk.wy,
-                queued.size(),
-                respawned);
-        return respawned;
     }
 
     /**

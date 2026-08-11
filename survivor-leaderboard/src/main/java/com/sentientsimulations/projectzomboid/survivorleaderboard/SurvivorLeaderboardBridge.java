@@ -33,9 +33,9 @@ import zombie.network.ServerWorldDatabase;
  * reply goes only to that requester — the old full-board broadcast to every connection on every
  * write was the server's single largest outbound traffic source (O(players² · rows)).
  *
- * <p>The sync methods further down (list*, setKillCount, executeSql, pruneBannedSurvivors) stay
- * synchronous: the HTTP endpoints already run off the game thread, and the ban prune is a one-shot
- * at boot before players are in.
+ * <p>The sync methods further down (list*, setKillCount, executeSql) stay synchronous: the HTTP
+ * endpoints already run off the game thread. The boot-time ban prune is queued on the worker like
+ * the game-driven writes — see {@link #pruneBannedSurvivorsAsync}.
  */
 public final class SurvivorLeaderboardBridge {
 
@@ -530,6 +530,15 @@ public final class SurvivorLeaderboardBridge {
      *
      * @return number of rows removed
      */
+    /**
+     * Queue the boot-time ban prune on the DB worker. The {@link ServerWorldDatabase} ban lookup is
+     * safe off the game thread: sqlite-jdbc runs in serialized threading mode, and vanilla itself
+     * reads it from login threads via {@code NetworkUser}.
+     */
+    public static void pruneBannedSurvivorsAsync() {
+        QUEUE.submit(() -> pruneBannedSurvivors());
+    }
+
     public static int pruneBannedSurvivors() {
         try (SurvivorLeaderboardDatabase db = new SurvivorLeaderboardDatabase(getDbPath())) {
             SurvivorLeaderboardRepository repo =

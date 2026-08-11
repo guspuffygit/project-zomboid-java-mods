@@ -18,6 +18,7 @@ public class ZoneMarkerMod implements ZomboidMod {
                 "[ZoneMarker] Registering event handlers for {}",
                 ZoneMarkerMod.class.getCanonicalName());
         StormEventDispatcher.registerEventHandler(this);
+        StormEventDispatcher.registerEventHandler(ZoneMarkerBridge.class);
         LOGGER.info("[ZoneMarker] Event handlers registered successfully");
     }
 
@@ -54,13 +55,7 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid addCategory args - one or more nulls");
             return;
         }
-        String error = ZoneMarkerBridge.addCategory(name, r, g, b, a);
-        if (error != null) {
-            LOGGER.warn("[ZoneMarker] addCategory failed: {}", error);
-            return;
-        }
-        LOGGER.info("[ZoneMarker] addCategory succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        ZoneMarkerBridge.addCategoryAsync(name, r, g, b, a);
     }
 
     @OnClientCommand
@@ -74,13 +69,7 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid removeCategory args - name is null");
             return;
         }
-        String error = ZoneMarkerBridge.removeCategory(name);
-        if (error != null) {
-            LOGGER.warn("[ZoneMarker] removeCategory failed: {}", error);
-            return;
-        }
-        LOGGER.info("[ZoneMarker] removeCategory succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        ZoneMarkerBridge.removeCategoryAsync(name);
     }
 
     @OnClientCommand
@@ -111,13 +100,7 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid addZone args - one or more nulls");
             return;
         }
-        String error = ZoneMarkerBridge.addZone(categoryName, xStart, yStart, xEnd, yEnd, region);
-        if (error != null) {
-            LOGGER.warn("[ZoneMarker] addZone failed: {}", error);
-            return;
-        }
-        LOGGER.info("[ZoneMarker] addZone succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        ZoneMarkerBridge.addZoneAsync(categoryName, xStart, yStart, xEnd, yEnd, region);
     }
 
     @OnClientCommand
@@ -132,13 +115,7 @@ public class ZoneMarkerMod implements ZomboidMod {
             LOGGER.warn("[ZoneMarker] Invalid removeZone args - one or more nulls");
             return;
         }
-        String error = ZoneMarkerBridge.removeZone(categoryName, region);
-        if (error != null) {
-            LOGGER.warn("[ZoneMarker] removeZone failed: {}", error);
-            return;
-        }
-        LOGGER.info("[ZoneMarker] removeZone succeeded, broadcasting");
-        ZoneMarkerBridge.broadcast();
+        ZoneMarkerBridge.removeZoneAsync(categoryName, region);
     }
 
     @OnClientCommand
@@ -146,6 +123,6 @@ public class ZoneMarkerMod implements ZomboidMod {
         LOGGER.info(
                 "[ZoneMarker] onRequestSync handler called by player {}",
                 event.getPlayer().getUsername());
-        ZoneMarkerBridge.syncToPlayer(event.getPlayer());
+        ZoneMarkerBridge.syncToPlayerAsync(event.getPlayer());
     }
 }

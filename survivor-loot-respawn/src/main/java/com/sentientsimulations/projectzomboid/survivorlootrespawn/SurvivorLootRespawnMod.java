@@ -24,6 +24,7 @@ public class SurvivorLootRespawnMod implements ZomboidMod {
         StormEventDispatcher.registerEventHandler(ContainerLootedHandler.class);
         StormEventDispatcher.registerEventHandler(HourlyRespawnRollHandler.class);
         StormEventDispatcher.registerEventHandler(EveryTenMinutesRespawnHandler.class);
+        StormEventDispatcher.registerEventHandler(ChunkLoadedRespawnHandler.class);
     }
 
     @Override

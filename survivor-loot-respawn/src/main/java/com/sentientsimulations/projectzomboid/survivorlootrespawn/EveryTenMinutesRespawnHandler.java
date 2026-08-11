@@ -9,14 +9,28 @@ import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.Containe
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.SurvivorLootRespawnDatabase;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.EveryTenMinutesEvent;
+import io.pzstorm.storm.event.lua.OnTickEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import zombie.iso.IsoChunk;
 import zombie.network.GameServer;
 import zombie.network.ServerMap;
 
+/**
+ * Ten-minute respawn sweep over all queued containers, split across threads to keep SQLite I/O off
+ * the server main thread: {@link #onEveryTenMinutes} queues the full queued-rows select on the
+ * mod's DB executor, {@link #onTick} drains the result on the main thread and runs the in-game
+ * respawn work, and the follow-up deletes/increments go back to the DB executor.
+ */
 public final class EveryTenMinutesRespawnHandler {
+
+    private record SweepSelect(
+            Map<Long, List<ContainerLootState>> queuedByChunk, long selectNanos) {}
+
+    private static final ConcurrentLinkedQueue<SweepSelect> COMPLETED =
+            new ConcurrentLinkedQueue<>();
 
     private EveryTenMinutesRespawnHandler() {}
 
@@ -30,15 +44,31 @@ public final class EveryTenMinutesRespawnHandler {
         if (!GameServer.server) {
             return;
         }
+        SurvivorLootRespawnDatabase.submit(
+                () -> {
+                    long selectStartNanos = System.nanoTime();
+                    Map<Long, List<ContainerLootState>> queuedByChunk =
+                            ContainerLootStateRepository.selectAllQueuedByChunk();
+                    COMPLETED.offer(
+                            new SweepSelect(queuedByChunk, System.nanoTime() - selectStartNanos));
+                });
+    }
+
+    @SubscribeEvent
+    public static void onTick(OnTickEvent event) {
+        SweepSelect done;
+        while ((done = COMPLETED.poll()) != null) {
+            runSweep(done);
+        }
+    }
+
+    private static void runSweep(SweepSelect done) {
         ServerMap serverMap = ServerMap.instance;
         if (serverMap == null) {
             return;
         }
 
-        long startNanos = System.nanoTime();
-        Map<Long, List<ContainerLootState>> queuedByChunk =
-                ContainerLootStateRepository.selectAllQueuedByChunk();
-        long afterSelectNanos = System.nanoTime();
+        long processStartNanos = System.nanoTime();
         List<ContainerLootState> toDelete = new ArrayList<>();
         List<ContainerLootState> toIncrement = new ArrayList<>();
         int totalQueued = 0;
@@ -46,7 +76,7 @@ public final class EveryTenMinutesRespawnHandler {
         int chunksSkippedNotLoaded = 0;
         int respawned = 0;
 
-        for (Map.Entry<Long, List<ContainerLootState>> entry : queuedByChunk.entrySet()) {
+        for (Map.Entry<Long, List<ContainerLootState>> entry : done.queuedByChunk().entrySet()) {
             List<ContainerLootState> rows = entry.getValue();
             totalQueued += rows.size();
             long key = entry.getKey();
@@ -64,7 +94,7 @@ public final class EveryTenMinutesRespawnHandler {
         long afterProcessNanos = System.nanoTime();
 
         SurvivorLootRespawnMetrics.observeTenMinSweepSeconds(
-                (afterProcessNanos - startNanos) / 1e9);
+                (afterProcessNanos - processStartNanos) / 1e9);
         LOGGER.debug(
                 "[SurvivorLootRespawn] 10-minute sweep: queued={}, chunks_processed={}, chunks_skipped_not_loaded={}, respawned={}",
                 totalQueued,
@@ -87,8 +117,8 @@ public final class EveryTenMinutesRespawnHandler {
 
                     LOGGER.debug(
                             "[SurvivorLootRespawn] 10-minute sweep timings (ms): select={}, process={}, batchDelete={}, batchIncrement={}, countTotal={}, countQueued={}",
-                            String.format("%.2f", (afterSelectNanos - startNanos) / 1e6),
-                            String.format("%.2f", (afterProcessNanos - afterSelectNanos) / 1e6),
+                            String.format("%.2f", done.selectNanos() / 1e6),
+                            String.format("%.2f", (afterProcessNanos - processStartNanos) / 1e6),
                             String.format("%.2f", (afterDeleteNanos - submitStartNanos) / 1e6),
                             String.format("%.2f", (afterIncrementNanos - afterDeleteNanos) / 1e6),
                             String.format(
