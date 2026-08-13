@@ -1,0 +1,26 @@
+
+modInfo {
+	name = 'Proximity Inventory B42 port by Gus Puffy'
+	workshopId = '3782687383'
+	workshopIdProd = '3676859976'
+	requiresStorm = false
+	description = '''[h1]Proximity Inventory B42 Port[/h1]
+
+B42 proximity inventory that brings back the context menu right click.
+
+Includes "Move to Floor" button in Proximity Inventory view allowing you to move all items from surrounding containers to the floor.
+
+Updated for 42.20.0
+
+Includes CN and ES languages translated via Claude
+
+Workshop ID: 3676859976
+Mod ID: proximity-inventory-b42
+
+[hr][/hr]
+[url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
+
+[h2]Sponsors[/h2]
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
+[hr][/hr]'''
+}

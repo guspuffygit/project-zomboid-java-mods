@@ -1,0 +1,6 @@
+VERSION = 1,
+
+option ProximityInventory.ZombieOnly = {
+  type = boolean, default = false, 
+  page = ProximityInventory, translation = ZombieOnly,
+}
