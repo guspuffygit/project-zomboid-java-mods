@@ -1,23 +1,24 @@
 modInfo {
-	name = 'ATF Server Patches by Gus Puffy'
+	name = 'ATF Patches by Gus Puffy'
 	workshopId = '3777678573'
 	workshopIdStage = ''
 	workshopIdProd = '3777677987'
-	description = '''[h1]ATF Server Patches[/h1]
+	description = '''[h1]ATF Patches[/h1]
 
-A collection of server-side performance and compatibility patches specific to the After the Fall server.
+A collection of performance and compatibility patches specific to the After the Fall server. Ships both server-side patches and client-side compat shims for third-party workshop mods.
 
-[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Server-side only. Vanilla clients connect normally, nothing to install on their end.
+[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Clients auto-subscribe via Workshop on connect.
 
 [h1]Included Patches[/h1]
 [list]
-[*][b]Talis New Music zombie scan disable[/b]: disables the zombie music-device subsystem on the server. Its per-player 49x49 grid scans dominated the server's Lua budget (~95% of all server Lua time). Vehicle and world radio playback is unaffected.
+[*][b]Talis New Music zombie scan disable[/b] (server): disables the zombie music-device subsystem on the server. Its per-player 49x49 grid scans dominated the server's Lua budget (~95% of all server Lua time). Vehicle and world radio playback is unaffected.
+[*][b]True Music Radio whereAreYou fix[/b] (client): fixes a typo in TMRadio.whereAreYou that threw "attempted index: device of non-table: null" every frame when a walkie-talkie (vanilla or workshop) was transferred into a container, forcing players to ESC to stop the error spam.
 [/list]
 
 [hr][/hr]
 
 [b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
 
-Tested and compatible with 42.20.0'''
-	modVersion = '1.0.0'
+Tested and compatible with 42.20.2'''
+	modVersion = '1.1.0'
 }
