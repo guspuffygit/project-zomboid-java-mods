@@ -7,7 +7,7 @@ plugins {
 	id 'io.freefair.lombok' version '9.2.0' apply false
 }
 
-String stormVersion = '42.20.3_2.6.0-SNAPSHOT'
+String stormVersion = '42.20.3_2.6.0'
 
 def os = OperatingSystem.current()
 def styluaVersion = '2.4.1'

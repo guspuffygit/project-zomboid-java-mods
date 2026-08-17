@@ -68,8 +68,13 @@ local function applyPatch()
             x, y, z = sq:getX(), sq:getY(), sq:getZ()
         end
 
-        if not x and deviceData.isInventoryDevice and deviceData:isInventoryDevice()
-                and device.getOutermostContainer and device:getOutermostContainer() then
+        if
+            not x
+            and deviceData.isInventoryDevice
+            and deviceData:isInventoryDevice()
+            and device.getOutermostContainer
+            and device:getOutermostContainer()
+        then
             local outer = device:getOutermostContainer()
             local parent = outer.getParent and outer:getParent() or nil
             if parent and parent.getX then
