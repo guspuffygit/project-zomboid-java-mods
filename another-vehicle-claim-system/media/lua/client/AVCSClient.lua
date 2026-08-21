@@ -78,6 +78,29 @@ function AVCS.updateClientVehicleCoordinate(arg)
     AVCS.dbByVehicleSQLID[arg.VehicleID].LastLocationUpdateDateTime = arg.LastLocationUpdateDateTime
 end
 
+-- Batched form sent by the Storm pre-save location sync (AvcsVehicleLocationSync.java)
+function AVCS.updateClientVehicleCoordinates(arg)
+    if not AVCS.dbByVehicleSQLID then
+        requestFullSync()
+        return
+    end
+
+    local missing = false
+    for _, v in ipairs(arg) do
+        local entry = AVCS.dbByVehicleSQLID[v.VehicleID]
+        if entry then
+            entry.LastLocationX = v.LastLocationX
+            entry.LastLocationY = v.LastLocationY
+            entry.LastLocationUpdateDateTime = v.LastLocationUpdateDateTime
+        else
+            missing = true
+        end
+    end
+    if missing then
+        requestFullSync()
+    end
+end
+
 function AVCS.updateClientLastLogon(arg)
     if not AVCS.dbByPlayerID then
         requestFullSync()
@@ -120,6 +143,39 @@ function AVCS.registerClientVehicleSQLID(arg)
     end
 end
 
+-- Admin-only (server re-checks the role): move a claimed vehicle next to the admin
+function AVCS.requestAdminTeleportVehicle(vehicleID)
+    sendClientCommand(getPlayer(), "AVCS", "adminTeleportVehicle", {
+        VehicleID = vehicleID,
+        OffsetX = AVCS.AdminTeleportOffset.x,
+        OffsetY = AVCS.AdminTeleportOffset.y,
+    })
+end
+
+function AVCS.onAdminTeleportVehicleResult(arg)
+    if type(arg) ~= "table" then
+        return
+    end
+    local reason = arg.reason or "badArgs"
+    local msg = getTextOrNull("IGUI_AVCS_Admin_Teleport_" .. reason)
+        or getText("IGUI_AVCS_Admin_Teleport_badArgs")
+    if arg.ok and arg.X and arg.Y then
+        msg = getText("IGUI_AVCS_Admin_Teleport_moved", arg.X, arg.Y)
+        if arg.VehicleID and AVCS.dbByVehicleSQLID and AVCS.dbByVehicleSQLID[arg.VehicleID] then
+            AVCS.dbByVehicleSQLID[arg.VehicleID].LastLocationX = arg.X
+            AVCS.dbByVehicleSQLID[arg.VehicleID].LastLocationY = arg.Y
+            AVCS.dbByVehicleSQLID[arg.VehicleID].LastLocationUpdateDateTime = getTimestamp()
+        end
+        if AVCS.UI.AdminInstance then
+            AVCS.UI.AdminInstance:updateVehicleLocation(arg.VehicleID, arg.X, arg.Y)
+        end
+        if AVCS.UI.UserInstance then
+            AVCS.UI.UserInstance:updateVehicleLocation(arg.VehicleID, arg.X, arg.Y)
+        end
+    end
+    getPlayer():setHaloNote(msg, 250, 250, 250, 300)
+end
+
 AVCS.OnServerCommand = function(moduleName, command, arg)
     if moduleName ~= "AVCS" then
         return
@@ -135,6 +191,8 @@ AVCS.OnServerCommand = function(moduleName, command, arg)
         AVCS.updateClientUnclaimVehicle(arg)
     elseif command == "updateClientVehicleCoordinate" then
         AVCS.updateClientVehicleCoordinate(arg)
+    elseif command == "updateClientVehicleCoordinates" then
+        AVCS.updateClientVehicleCoordinates(arg)
     elseif command == "updateClientLastLogon" then
         AVCS.updateClientLastLogon(arg)
     elseif command == "requestFullResync" then
@@ -143,6 +201,8 @@ AVCS.OnServerCommand = function(moduleName, command, arg)
         AVCS.updateClientSpecifyVehicleUserPermission(arg)
     elseif command == "registerClientVehicleSQLID" then
         AVCS.registerClientVehicleSQLID(arg)
+    elseif command == "adminTeleportVehicleResult" then
+        AVCS.onAdminTeleportVehicleResult(arg)
     end
 end
 

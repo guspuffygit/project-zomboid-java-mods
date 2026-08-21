@@ -78,5 +78,7 @@ Tested and compatible with 42.20.0
 3/12/2026 - Fixed a bug that would prevent mechanic XP gain when removing a vehicle part
 3/16/2026 - Fixed a bug that would allow trailers without trunks to be looted. Allow opening trunk now controls access to allow another player to loot the inside or outside of a car. Someone can be a passenger without being able to loot the car.
 3/22/2026 - Removed Storm dependency for map rendering. Map view now works with vanilla client via pure Lua.
-4/28/2026 - Recipe for car claim does not consume the entire bottle of glue.'''
+4/28/2026 - Recipe for car claim does not consume the entire bottle of glue.
+8/21/2026 - Storm servers: claimed-vehicle locations are re-synced from vehicles.db (and loaded vehicles) at server start and before every server save, so the managers and map no longer drift from where cars really are.
+8/21/2026 - Storm servers: admins get a Teleport button in both vehicle managers that brings the selected claimed vehicle to their own position (+2,+2 tiles), loading its area first if needed; admin role is enforced server-side.'''
 }

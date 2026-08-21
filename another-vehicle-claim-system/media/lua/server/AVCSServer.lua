@@ -398,6 +398,16 @@ AVCS.onClientCommand = function(moduleName, command, playerObj, arg)
             return
         end
         AVCS.updateSpecifyVehicleUserPermission(arg)
+    elseif moduleName == "AVCS" and command == "adminTeleportVehicle" then
+        -- Handled in Java (AvcsAdminVehicleTeleport) on Storm servers; that handler sets the flag
+        if not AvcsAdminTeleportEnabled then
+            sendServerCommand(
+                playerObj,
+                "AVCS",
+                "adminTeleportVehicleResult",
+                { ok = false, reason = "noStorm", VehicleID = arg and arg.VehicleID or nil }
+            )
+        end
     elseif moduleName == "AVCS" and command == "rebuildDB" then
         if playerObj:getAccessLevel() == "admin" then
             AVCS.rebuildDB()

@@ -21,6 +21,9 @@ function AVCS.UI.UserManagerMain:setVehiclePreview(vehicleID)
         self.lblVehicleLastLocationUpdateInfo:setName("-")
         self.btnModify:setEnable(false)
         self.btnUnclaim:setEnable(false)
+        if self.btnTeleport then
+            self.btnTeleport:setEnable(false)
+        end
     else
         self.vehiclePreview.javaObject:fromLua2(
             "setVehicleScript",
@@ -50,6 +53,72 @@ function AVCS.UI.UserManagerMain:setVehiclePreview(vehicleID)
         )
         self.btnModify:setEnable(true)
         self.btnUnclaim:setEnable(true)
+        if self.btnTeleport then
+            self.btnTeleport:setEnable(true)
+        end
+    end
+end
+
+function AVCS.UI.UserManagerMain:btnTeleport_onClick()
+    if
+        self.listVehicles.selected == 0 or not self.listVehicles.items[self.listVehicles.selected]
+    then
+        return
+    end
+    local vehicleID = self.listVehicles.items[self.listVehicles.selected].item
+    if not vehicleID or not AVCS.dbByVehicleSQLID[vehicleID] then
+        return
+    end
+    if self.modDialog ~= nil then
+        self.modDialog:close()
+        self.modDialog:removeFromUIManager()
+        self.modDialog = nil
+    end
+    local carFullName = AVCS.dbByVehicleSQLID[vehicleID].CarModel
+    local index = string.find(carFullName, "%.")
+    carFullName = getTextOrNull(
+        "IGUI_VehicleName" .. string.sub(carFullName, index + 1, string.len(carFullName))
+    ) or AVCS.dbByVehicleSQLID[vehicleID].CarModel
+    self.modDialog = ISModalDialog:new(
+        (getCore():getScreenWidth() / 2) - (300 / 2),
+        (getCore():getScreenHeight() / 2) - (120 / 2),
+        300,
+        120,
+        getText(
+            "IGUI_AVCS_Admin_Teleport_Confirm",
+            carFullName,
+            AVCS.dbByVehicleSQLID[vehicleID].OwnerPlayerID
+        ),
+        true,
+        self,
+        AVCS.UI.UserManagerMain.btnTeleport_onConfirmClick,
+        getPlayer():getPlayerNum(),
+        nil
+    )
+    self.modDialog:initialise()
+    self.modDialog:addToUIManager()
+end
+
+function AVCS.UI.UserManagerMain:btnTeleport_onConfirmClick(btn, _, _)
+    if btn.internal == "NO" then
+        return
+    end
+    if
+        self.listVehicles.selected == 0 or not self.listVehicles.items[self.listVehicles.selected]
+    then
+        return
+    end
+    AVCS.requestAdminTeleportVehicle(self.listVehicles.items[self.listVehicles.selected].item)
+end
+
+-- Called from AVCS.onAdminTeleportVehicleResult so the preview follows the move
+function AVCS.UI.UserManagerMain:updateVehicleLocation(vehicleID, x, y)
+    if
+        self.listVehicles.selected ~= 0
+        and self.listVehicles.items[self.listVehicles.selected]
+        and self.listVehicles.items[self.listVehicles.selected].item == vehicleID
+    then
+        self.lblVehicleLocationInfo:setName(x .. ", " .. y)
     end
 end
 
@@ -654,6 +723,35 @@ function AVCS.UI.UserManagerMain:createChildren()
     self.btnUnclaim:instantiate()
     self.btnUnclaim:setEnable(false)
     self:addChild(self.btnUnclaim)
+
+    -- Admin-only: bring the selected vehicle to the admin (server re-checks the role)
+    if isClient() and string.lower(getPlayer():getAccessLevel()) == "admin" then
+        local y = getTextManager():getFontHeight(UIFont.NewSmall) + 1 + 5
+        y = y + (self.tabBtnSize * (#self.tabButtons + 2)) + 5
+        if #self.tabButtons > 1 then
+            y = y + ((#self.tabButtons - 1 + 2) * 5)
+        end
+        self.btnTeleport = ISButton:new(
+            math.floor(5 * AVCS.getUIFontScale()),
+            y,
+            self.tabBtnSize,
+            self.tabBtnSize,
+            "",
+            self,
+            AVCS.UI.UserManagerMain.btnTeleport_onClick
+        )
+        self.btnTeleport.internal = "btnTeleport"
+        self.btnTeleport.borderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 }
+        self.btnTeleport.backgroundColor = { r = 0, g = 0, b = 0, a = 1 }
+        self.btnTeleport.displayBackground = true
+        self.btnTeleport:setTooltip(getText("IGUI_AVCS_User_Manager_btnTeleport_Tooltip"))
+        self.btnTeleport:setImage(getTexture("media/ui/avcs_teleport.png"))
+        self.btnTeleport:setTextureRGBA(1, 0, 0, 1)
+        self.btnTeleport:initialise()
+        self.btnTeleport:instantiate()
+        self.btnTeleport:setEnable(false)
+        self:addChild(self.btnTeleport)
+    end
 
     self:updateListVehicles()
 end

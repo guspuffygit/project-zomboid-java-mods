@@ -8,6 +8,8 @@
 -- Generic Functions that can be used by either client or server
 AVCS = AVCS or {}
 AVCS.UI = AVCS.UI or {}
+-- Tiles between the admin and where an admin-teleported vehicle is placed (server clamps to +-2)
+AVCS.AdminTeleportOffset = AVCS.AdminTeleportOffset or { x = 2, y = 2 }
 
 --[[
 Claim databases, same variable names on both sides but different backing:

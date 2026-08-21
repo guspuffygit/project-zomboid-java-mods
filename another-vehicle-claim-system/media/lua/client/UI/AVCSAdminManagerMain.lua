@@ -38,6 +38,7 @@ function AVCS.UI.AdminManagerMain:listOnSelectionChange()
     self.btnViewFaction:setEnable(false)
     self.btnModifyPermissions:setEnable(false)
     self.btnDelete:setEnable(false)
+    self.btnTeleport:setEnable(false)
 
     if self.panelModify ~= nil then
         self.panelModify:close()
@@ -60,6 +61,7 @@ function AVCS.UI.AdminManagerMain:listOnSelectionChange()
     then
         self.btnModifyPermissions:setEnable(true)
         self.btnDelete:setEnable(true)
+        self.btnTeleport:setEnable(isClient())
         if
             SafeHouse.hasSafehouse(self.listData.items[self.listData.selected].item.OwnerPlayerID)
         then
@@ -524,6 +526,32 @@ function AVCS.UI.AdminManagerMain:createChildren()
     self.btnDelete:setTooltip(getText("IGUI_AVCS_Admin_Manager_btnDelete_Tooltip"))
     self:addChild(self.btnDelete)
 
+    tempImage = getTexture("media/ui/avcs_teleport.png")
+    self.btnTeleport = ISButton:new(
+        6,
+        tabBtnSize * 4
+            + 10
+            + getTextManager():getFontHeight(UIFont.NewSmall)
+            + 8
+            + 1 * AVCS.getUIFontScale(),
+        tabBtnSize,
+        tabBtnSize,
+        "",
+        self,
+        self.btnOnClick
+    )
+    self.btnTeleport.internal = "btnTeleport"
+    self.btnTeleport.borderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 }
+    self.btnTeleport.backgroundColor = { r = 0, g = 0, b = 0, a = 1 }
+    self.btnTeleport.displayBackground = true
+    self.btnTeleport:setImage(tempImage)
+    self.btnTeleport:setTextureRGBA(1, 0, 0, 1)
+    self.btnTeleport:initialise()
+    self.btnTeleport:instantiate()
+    self.btnTeleport:setEnable(false)
+    self.btnTeleport:setTooltip(getText("IGUI_AVCS_Admin_Manager_btnTeleport_Tooltip"))
+    self:addChild(self.btnTeleport)
+
     self:initList()
     self.listOnSelectionChange(self)
 end
@@ -534,6 +562,7 @@ function AVCS.UI.AdminManagerMain:btnOnClick(btn)
         and btn.internal ~= "btnViewFaction"
         and btn.internal ~= "btnModifyPermissions"
         and btn.internal ~= "btnDelete"
+        and btn.internal ~= "btnTeleport"
     then
         return
     end
@@ -599,6 +628,39 @@ function AVCS.UI.AdminManagerMain:btnOnClick(btn)
         )
         self.modDialog:initialise()
         self.modDialog:addToUIManager()
+    elseif btn.internal == "btnTeleport" then
+        local item = self.listData.items[self.listData.selected].item
+        self.modDialog = ISModalDialog:new(
+            (getCore():getScreenWidth() / 2) - (300 / 2),
+            (getCore():getScreenHeight() / 2) - (120 / 2),
+            300,
+            120,
+            getText("IGUI_AVCS_Admin_Teleport_Confirm", item.carFullName, item.OwnerPlayerID),
+            true,
+            self,
+            AVCS.UI.AdminManagerMain.btnTeleport_onConfirmClick,
+            getPlayer():getPlayerNum(),
+            nil
+        )
+        self.modDialog:initialise()
+        self.modDialog:addToUIManager()
+    end
+end
+
+function AVCS.UI.AdminManagerMain:btnTeleport_onConfirmClick(btn, _, _)
+    if btn.internal == "NO" then
+        return
+    end
+    AVCS.requestAdminTeleportVehicle(self.listData.items[self.listData.selected].item.vehicleID)
+end
+
+-- Called from AVCS.onAdminTeleportVehicleResult so the Location column follows the move
+function AVCS.UI.AdminManagerMain:updateVehicleLocation(vehicleID, x, y)
+    for _, v in ipairs(self.varData) do
+        if v.vehicleID == vehicleID then
+            v.Location = x .. "," .. y
+            return
+        end
     end
 end
 
