@@ -66,6 +66,79 @@ tasks.register('installStylua') {
 	}
 }
 
+def pztoolVersion = '1.0.0'
+def pztoolBinaryName = os.isWindows() ? 'pztool.exe' : 'pztool'
+// Cached outside build/ for the same reason as StyLua above
+def pztoolCacheDir = file(".gradle/pztool/${pztoolVersion}")
+def pztoolOverride = findProperty('pztoolPath') ?: System.getenv('PZTOOL')
+def pztoolBinary = pztoolOverride ? file(pztoolOverride) : new File(pztoolCacheDir, "pztool/${pztoolBinaryName}")
+
+ext.pztoolBinary = pztoolBinary
+
+tasks.register('installPztool') {
+	group = 'build'
+	description = "Downloads pztool v${pztoolVersion} for this OS/arch if not already cached."
+	outputs.file(pztoolBinary)
+
+	doLast {
+		if (pztoolOverride) {
+			if (!pztoolBinary.exists()) {
+				throw new GradleException("pztoolPath points at ${pztoolBinary}, which does not exist")
+			}
+			logger.lifecycle("Using pztool override at ${pztoolBinary}")
+			return
+		}
+
+		if (pztoolBinary.exists() && pztoolBinary.canExecute()) {
+			return
+		}
+
+		def arch = System.getProperty('os.arch')
+		def normalizedArch
+		if (arch == 'amd64' || arch == 'x86_64') {
+			normalizedArch = 'amd64'
+		} else if (arch == 'aarch64' || arch == 'arm64') {
+			normalizedArch = 'arm64'
+		} else {
+			throw new GradleException("Unsupported architecture for pztool: ${arch}")
+		}
+
+		def platform
+		if (os.isMacOsX()) {
+			platform = 'darwin'
+		} else if (os.isLinux()) {
+			platform = 'linux'
+		} else if (os.isWindows()) {
+			platform = 'windows'
+		} else {
+			throw new GradleException("Unsupported OS for pztool")
+		}
+
+		def extension = os.isWindows() ? 'zip' : 'tar.gz'
+		def archiveName = "pztool-v${pztoolVersion}-${platform}-${normalizedArch}.${extension}"
+		def url = "https://github.com/guspuffygit/project-zomboid-tile-cli/releases/download/v${pztoolVersion}/${archiveName}"
+		pztoolCacheDir.mkdirs()
+		def archive = new File(pztoolCacheDir, archiveName)
+
+		logger.lifecycle("Downloading pztool v${pztoolVersion} from ${url}")
+		new URL(url).withInputStream { input ->
+			archive.withOutputStream { it << input }
+		}
+
+		if (os.isWindows()) {
+			ant.unzip(src: archive, dest: pztoolCacheDir)
+		} else {
+			ant.untar(src: archive, dest: pztoolCacheDir, compression: 'gzip')
+		}
+		archive.delete()
+
+		if (!pztoolBinary.exists()) {
+			throw new GradleException("pztool binary not found at ${pztoolBinary} after extraction")
+		}
+		pztoolBinary.setExecutable(true)
+	}
+}
+
 interface ModInfo {
 	Property<String> getName()
 	Property<String> getPoster()

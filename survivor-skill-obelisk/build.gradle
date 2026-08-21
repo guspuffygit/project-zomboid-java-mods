@@ -4,15 +4,18 @@ tasks.register('packageTexturepack', Exec) {
 	group = 'build'
 	description = 'Packs art/ tilesheets into media/texturepacks/*.pack via pztool.'
 
+	dependsOn rootProject.tasks.named('installPztool')
+
 	def artDir = project.file('art')
 	def outFile = project.file("media/texturepacks/${packName}.pack")
 
 	inputs.dir(artDir)
+	inputs.file(rootProject.ext.pztoolBinary)
 	outputs.file(outFile)
 
 	doFirst { outFile.parentFile.mkdirs() }
 
-	commandLine 'pztool', 'pack', 'pack', artDir.absolutePath,
+	commandLine rootProject.ext.pztoolBinary.absolutePath, 'pack', 'pack', artDir.absolutePath,
 			'-o', outFile.absolutePath,
 			'--pack-name', packName
 }
@@ -21,13 +24,16 @@ tasks.register('packageTiledefs', Exec) {
 	group = 'build'
 	description = 'Compiles tiles/*.tiles.txt into media/*.tiles via pztool. PZ loads .tiles from media/<name>.tiles per the mod.info tiledef=<name> N line — not from media/tiledefinitions/.'
 
+	dependsOn rootProject.tasks.named('installPztool')
+
 	def source = project.file("tiles/${packName}.tiles.txt")
 	def outFile = project.file("media/${packName}.tiles")
 
 	inputs.file(source)
+	inputs.file(rootProject.ext.pztoolBinary)
 	outputs.file(outFile)
 
-	commandLine 'pztool', 'tiles', 'pack', source.absolutePath, '-o', outFile.absolutePath
+	commandLine rootProject.ext.pztoolBinary.absolutePath, 'tiles', 'pack', source.absolutePath, '-o', outFile.absolutePath
 }
 
 tasks.register('packageAssets') {

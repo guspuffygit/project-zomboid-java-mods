@@ -181,8 +181,11 @@ Each child table has an index on `death_id`. Only media with at least one watche
 The binary `.tiles` and `.pack` files under `media/tiledefinitions/` and
 `media/texturepacks/` are **generated** from sources under `art/` and `tiles/`
 by [`pztool`](https://github.com/guspuffygit/project-zomboid-tile-cli).
-Install `pztool` on `PATH` — a prebuilt binary lives at
-`../../project-zomboid-tile-cli/dist/pztool-<os>-<arch>`.
+You do not need it installed — the root `installPztool` task downloads the
+release build matching your OS and architecture into `.gradle/pztool/<version>/`
+on first use and caches it there. Bump `pztoolVersion` in the root
+`build.gradle` to move to a newer release. To test an unreleased build, run with
+`-PpztoolPath=/path/to/pztool` (or set `PZTOOL` in the environment).
 
 Layout:
 ```
