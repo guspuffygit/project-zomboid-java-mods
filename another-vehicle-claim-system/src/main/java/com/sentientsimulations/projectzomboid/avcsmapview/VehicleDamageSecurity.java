@@ -15,20 +15,26 @@ import zombie.vehicles.VehiclePart;
 
 /**
  * Server-side guard that blocks player-inflicted damage to claimed vehicles while no player is
- * inside. Player damage reaches the server through exactly two client channels, both gated here:
+ * inside. Player damage reaches the server through three channels, all gated here:
  *
  * <ul>
  *   <li>{@code PlayerHitVehiclePacket} &rarr; {@code BaseVehicle.processHit} (guns and melee) —
- *       vetoed by {@link BaseVehicleProcessHitPatch} via {@link #shouldBlockHit}.
+ *       vetoed by {@link BaseVehicleDamageGuardPatch} via {@link #shouldBlockHit}.
  *   <li>the {@code vehicle.damageWindow} client command (window smashes; the vanilla Lua handler
  *       applies the client-sent amount with no validation) — vetoed by {@link
  *       LuaEventManagerVehicleRemovePatch} via {@link #shouldBlockDamageWindowCommand}.
+ *   <li>{@code BaseVehicle.crash} (ramming with another vehicle) — vetoed by {@link
+ *       BaseVehicleDamageGuardPatch} via {@link #shouldBlockCrash}. Both the server-physics path
+ *       and the {@code vehicle.crash} client command funnel into this one method. Crash carries no
+ *       attacker identity, so the block is unconditional for a protected parked claim: even the
+ *       owner ramming their own parked car does no damage while the option is on.
  * </ul>
  *
- * <p>Occupied vehicles are always fair game: shooting at a driver or passenger still damages the
- * car, and zombies thumping a car someone is hiding in are unaffected. The owner, faction/safehouse
- * members (per AllowFaction/AllowSafehouse) and admins may always damage the vehicle. Environmental
- * damage (crashes, run-overs) never passes through these channels and is untouched.
+ * <p>Occupied vehicles are always fair game: shooting at or ramming a car with a driver or
+ * passenger inside works as vanilla, and zombies thumping a car someone is hiding in are
+ * unaffected. For the two attacker-attributed channels the owner, faction/safehouse members (per
+ * AllowFaction/AllowSafehouse) and admins may always damage the vehicle. Run-over ped damage
+ * ({@code damageFromHitChr}) only ever applies to a driven vehicle and is untouched.
  */
 public final class VehicleDamageSecurity {
 
@@ -87,25 +93,43 @@ public final class VehicleDamageSecurity {
         }
     }
 
+    /** Called from advice on {@code BaseVehicle.crash}; untyped so the advice stays minimal. */
+    public static boolean shouldBlockCrash(Object vehicleObj) {
+        try {
+            if (!(vehicleObj instanceof BaseVehicle vehicle)) {
+                return false;
+            }
+            if (!isProtectedParked(vehicle)) {
+                return false;
+            }
+            LOGGER.debug(
+                    "[AVCS] BLOCKED crash damage on parked claimed vehicle id={}", vehicle.getId());
+            return true;
+        } catch (Throwable t) {
+            LOGGER.error("[AVCS] vehicle damage guard failed; allowing crash", t);
+            return false;
+        }
+    }
+
     private static boolean shouldBlock(BaseVehicle vehicle, IsoPlayer attacker) {
         if (attacker.getUsername() == null) {
             return false;
         }
-        if (!AvcsClaimPermissions.booleanOption("AVCS.ProtectParkedFromDamage")) {
-            return false;
-        }
-        if (hasPlayerInside(vehicle)) {
+        if (!isProtectedParked(vehicle)) {
             return false;
         }
         String owner = AvcsClaimPermissions.claimedOwner(vehicle);
-        if (owner == null) {
-            return false;
-        }
         if (AvcsClaimPermissions.isPermitted(attacker, owner)) {
             return false;
         }
         notifyBlocked(attacker);
         return true;
+    }
+
+    private static boolean isProtectedParked(BaseVehicle vehicle) {
+        return AvcsClaimPermissions.booleanOption("AVCS.ProtectParkedFromDamage")
+                && !hasPlayerInside(vehicle)
+                && AvcsClaimPermissions.claimedOwner(vehicle) != null;
     }
 
     private static boolean hasPlayerInside(BaseVehicle vehicle) {
