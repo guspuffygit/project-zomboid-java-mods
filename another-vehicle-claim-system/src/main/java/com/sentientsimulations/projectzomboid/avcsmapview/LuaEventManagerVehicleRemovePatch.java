@@ -10,12 +10,13 @@ import net.bytebuddy.pool.TypePool;
 /**
  * Intercepts the 5-arg {@code LuaEventManager.triggerEvent(String, Object, Object, Object, Object)}
  * on the dedicated server and skips the dispatch when the event is an AVCS-blocked {@code
- * vehicle.remove} {@code OnClientCommand}.
+ * OnClientCommand}: {@code vehicle.remove} ({@link VehicleRemoveSecurity}) or {@code
+ * vehicle.damageWindow} on a parked claimed vehicle ({@link VehicleDamageSecurity}).
  *
  * <p>The advice fires for the gated wrapper that Storm's {@code
  * GameServerReceiveClientCommandPatch} substitutes into {@code GameServer.receiveClientCommand}, as
- * well as any other caller of the same overload. {@link VehicleRemoveSecurity#shouldBlock} filters
- * on event/module/command, so non-vehicle-remove dispatches pass through untouched.
+ * well as any other caller of the same overload. The security predicates filter on
+ * event/module/command, so all other dispatches pass through untouched.
  */
 public class LuaEventManagerVehicleRemovePatch extends StormClassTransformer {
 
@@ -42,7 +43,9 @@ public class LuaEventManagerVehicleRemovePatch extends StormClassTransformer {
                 @Advice.Argument(2) Object command,
                 @Advice.Argument(3) Object player,
                 @Advice.Argument(4) Object args) {
-            return VehicleRemoveSecurity.shouldBlock(event, module, command, player, args);
+            return VehicleRemoveSecurity.shouldBlock(event, module, command, player, args)
+                    || VehicleDamageSecurity.shouldBlockDamageWindowCommand(
+                            event, module, command, player, args);
         }
     }
 }

@@ -203,6 +203,8 @@ AVCS.OnServerCommand = function(moduleName, command, arg)
         AVCS.registerClientVehicleSQLID(arg)
     elseif command == "adminTeleportVehicleResult" then
         AVCS.onAdminTeleportVehicleResult(arg)
+    elseif command == "damageBlocked" then
+        getPlayer():setHaloNote(getText("IGUI_AVCS_Vehicle_No_Permission"), 250, 250, 250, 300)
     end
 end
 

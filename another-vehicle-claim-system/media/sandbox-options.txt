@@ -12,6 +12,12 @@ option AVCS.AllowSafehouse
 		page = AVCS, translation = AVCS_AllowSafehouse,
 }
 
+option AVCS.ProtectParkedFromDamage
+{
+		type = boolean, default = true,
+		page = AVCS, translation = AVCS_ProtectParkedFromDamage,
+}
+
 option AVCS.MaxVehicle
 {
 		type = integer, min = 1, max = 999, default = 5,

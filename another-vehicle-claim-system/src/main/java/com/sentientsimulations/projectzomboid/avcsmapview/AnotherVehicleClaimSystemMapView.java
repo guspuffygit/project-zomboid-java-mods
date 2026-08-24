@@ -43,6 +43,6 @@ public class AnotherVehicleClaimSystemMapView implements ZomboidMod {
         if (!StormEnv.isStormServer()) {
             return Collections.emptyList();
         }
-        return List.of(new LuaEventManagerVehicleRemovePatch());
+        return List.of(new LuaEventManagerVehicleRemovePatch(), new BaseVehicleProcessHitPatch());
     }
 }
