@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.sentientsimulations.projectzomboid.avcsmapview.AvcsVehicleLocationSync.LiveVehicle;
 import com.sentientsimulations.projectzomboid.avcsmapview.AvcsVehicleLocationSync.Result;
 import com.sentientsimulations.projectzomboid.avcsmapview.VehiclesDbLocations.Position;
+import com.sentientsimulations.projectzomboid.avcsmapview.VehiclesDbLocations.VerifiedRead;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,21 +53,34 @@ class AvcsVehicleLocationSyncTest {
 
     private final List<KahluaTable> sent = new ArrayList<>();
     private final List<Collection<Integer>> dbQueries = new ArrayList<>();
+    private final List<Map<Integer, Double>> dbExpectedKeys = new ArrayList<>();
 
     private Result run(
             KahluaTable db, Map<Integer, LiveVehicle> live, Map<Integer, Position> inDb) {
+        return run(db, live, inDb, Set.of());
+    }
+
+    private Result run(
+            KahluaTable db,
+            Map<Integer, LiveVehicle> live,
+            Map<Integer, Position> inDb,
+            Set<Integer> unverifiedInDb) {
         return AvcsVehicleLocationSync.sync(
                 db,
                 live,
-                ids -> {
-                    dbQueries.add(new ArrayList<>(ids));
+                byKey -> {
+                    dbQueries.add(new ArrayList<>(byKey.keySet()));
+                    dbExpectedKeys.add(new HashMap<>(byKey));
                     Map<Integer, Position> out = new HashMap<>();
-                    for (int id : ids) {
-                        if (inDb.containsKey(id)) {
+                    Set<Integer> unverified = new HashSet<>();
+                    for (int id : byKey.keySet()) {
+                        if (unverifiedInDb.contains(id)) {
+                            unverified.add(id);
+                        } else if (inDb.containsKey(id)) {
                             out.put(id, inDb.get(id));
                         }
                     }
-                    return out;
+                    return new VerifiedRead(out, unverified);
                 },
                 AvcsVehicleLocationSyncTest::table,
                 sent::add,
@@ -77,58 +91,66 @@ class AvcsVehicleLocationSyncTest {
     void liveVehiclesWinDbFillsTheRestAndOnlyChangesAreBroadcast() {
         KahluaTable db = table();
         KahluaTable loaded = claim(db, 1, 10d, 10d);
-        KahluaTable recycled = claim(db, 2, 20d, 20d);
+        KahluaTable recycledLoaded = claim(db, 2, 20d, 20d);
         KahluaTable unloaded = claim(db, 3, 30d, 30d);
         KahluaTable gone = claim(db, 4, 40d, 40d);
         KahluaTable unchanged = claim(db, 5, 50d, 51d);
-        KahluaTable noSqlIdYet = claim(db, 6, 60d, 60d);
+        KahluaTable recycledUnclaimed = claim(db, 6, 60d, 60d);
         KahluaTable orphaned = claim(db, 7, 70d, 70d);
         KahluaTable reclaimed = claim(db, key(TS + 100, 7), 71d, 71d);
+        KahluaTable recycledUnloaded = claim(db, 8, 80d, 80d);
         db.rawset("garbage", table());
         db.rawset(123d, table());
 
         Map<Integer, LiveVehicle> live = new HashMap<>();
         live.put(1, new LiveVehicle(key(1), 12.7f, 13.2f));
+        // sqlId 2 came back on a car claimed under a different key
         live.put(2, new LiveVehicle(key(99), 1f, 1f));
+        // sqlId 6 came back on a never-claimed car: no imprint at all
         live.put(6, new LiveVehicle(null, 61.9f, 62.1f));
         Map<Integer, Position> inDb = new HashMap<>();
         inDb.put(3, new Position(30.5f, 31.9f));
         inDb.put(5, new Position(50.9f, 51.1f));
         inDb.put(7, new Position(77.5f, 78.5f));
+        inDb.put(8, new Position(88.5f, 88.5f));
 
-        Result result = run(db, live, inDb);
+        Result result = run(db, live, inDb, Set.of(8));
 
-        assertEquals(new Result(8, 2, 2, 3, 2, 1, 4), result);
+        assertEquals(new Result(9, 2, 1, 3, 3, 1, 1, 3), result);
         assertEquals(1, dbQueries.size());
-        assertEquals(Set.of(3, 4, 5, 7), new HashSet<>(dbQueries.get(0)));
+        assertEquals(Set.of(3, 4, 5, 7, 8), new HashSet<>(dbQueries.get(0)));
+        // the db is asked to verify each row against the claim's own key
+        assertEquals(key(3), dbExpectedKeys.get(0).get(3));
+        assertEquals(key(TS + 100, 7), dbExpectedKeys.get(0).get(7));
 
         assertEquals(12d, loaded.rawget("LastLocationX"));
         assertEquals(13d, loaded.rawget("LastLocationY"));
         assertEquals((double) NOW, loaded.rawget("LastLocationUpdateDateTime"));
-        assertEquals(20d, recycled.rawget("LastLocationX"));
-        assertEquals(TS, recycled.rawget("LastLocationUpdateDateTime"));
+        assertEquals(20d, recycledLoaded.rawget("LastLocationX"));
+        assertEquals(TS, recycledLoaded.rawget("LastLocationUpdateDateTime"));
         assertEquals(30d, unloaded.rawget("LastLocationX"));
         assertEquals(31d, unloaded.rawget("LastLocationY"));
         assertEquals(40d, gone.rawget("LastLocationX"));
         assertEquals(TS, unchanged.rawget("LastLocationUpdateDateTime"));
-        assertEquals(61d, noSqlIdYet.rawget("LastLocationX"));
-        assertEquals(62d, noSqlIdYet.rawget("LastLocationY"));
+        assertEquals(60d, recycledUnclaimed.rawget("LastLocationX"));
+        assertEquals(TS, recycledUnclaimed.rawget("LastLocationUpdateDateTime"));
         assertEquals(70d, orphaned.rawget("LastLocationX"));
         assertEquals(77d, reclaimed.rawget("LastLocationX"));
         assertEquals(78d, reclaimed.rawget("LastLocationY"));
+        assertEquals(80d, recycledUnloaded.rawget("LastLocationX"));
+        assertEquals(TS, recycledUnloaded.rawget("LastLocationUpdateDateTime"));
 
         assertEquals(1, sent.size());
         KahluaTable batch = sent.get(0);
-        assertEquals(4, batch.len());
-        assertNull(batch.rawget(5));
+        assertEquals(3, batch.len());
+        assertNull(batch.rawget(4));
         Map<Object, KahluaTable> byVehicle = new HashMap<>();
-        for (int i = 1; i <= 4; i++) {
+        for (int i = 1; i <= 3; i++) {
             KahluaTable delta = (KahluaTable) batch.rawget(i);
             byVehicle.put(delta.rawget("VehicleID"), delta);
         }
         assertEquals(12d, byVehicle.get(key(1)).rawget("LastLocationX"));
         assertEquals(31d, byVehicle.get(key(3)).rawget("LastLocationY"));
-        assertEquals((double) NOW, byVehicle.get(key(6)).rawget("LastLocationUpdateDateTime"));
         assertEquals(77d, byVehicle.get(key(TS + 100, 7)).rawget("LastLocationX"));
     }
 

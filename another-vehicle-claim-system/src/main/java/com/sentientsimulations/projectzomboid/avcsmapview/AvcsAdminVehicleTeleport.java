@@ -3,6 +3,7 @@ package com.sentientsimulations.projectzomboid.avcsmapview;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.avcsmapview.VehiclesDbLocations.Position;
+import com.sentientsimulations.projectzomboid.avcsmapview.VehiclesDbLocations.VerifiedRead;
 import io.pzstorm.storm.event.core.OnClientCommand;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
@@ -10,7 +11,6 @@ import io.pzstorm.storm.event.zomboid.OnZomboidGlobalsLoadEvent;
 import io.pzstorm.storm.util.StormEnv;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +43,11 @@ import zombie.world.moddata.GlobalModData;
  *
  * <p>Only the {@code admin} role may trigger this; the check is server-side, the UI gating is just
  * convenience.
+ *
+ * <p>A claim is never resolved by sqlId alone — vanilla recycles the lowest free id, so an orphaned
+ * claim's id can point at a stranger's newer vehicle. Every candidate (loaded vehicle or {@code
+ * vehicles.db} row) must be imprinted with exactly the requested claim key, else the teleport is
+ * refused with {@link Reason#recycledId}.
  */
 public final class AvcsAdminVehicleTeleport {
 
@@ -72,6 +77,7 @@ public final class AvcsAdminVehicleTeleport {
         notInDb,
         inProgress,
         tooManyPending,
+        recycledId,
         notGround,
         hasOccupants,
         towing,
@@ -170,6 +176,11 @@ public final class AvcsAdminVehicleTeleport {
 
         BaseVehicle loaded = findLoaded(sqlId);
         if (loaded != null) {
+            if (!AvcsClaimIdentity.matchesClaim(loaded, claimKey)) {
+                logRecycled(adminName, sqlId, claimKey, loaded);
+                reply(admin, claimKey, Reason.recycledId, null);
+                return;
+            }
             finish(new Job(sqlId, claimKey, admin, adminName, target, 0, 0, 0L), loaded);
             return;
         }
@@ -181,7 +192,14 @@ public final class AvcsAdminVehicleTeleport {
             reply(admin, claimKey, Reason.tooManyPending, null);
             return;
         }
-        Position stored = VehiclesDbLocations.readFromCurrentSave(List.of(sqlId)).get(sqlId);
+        VerifiedRead read =
+                VehiclesDbLocations.readVerifiedFromCurrentSave(Map.of(sqlId, (Double) claimKey));
+        if (read.unverified().contains(sqlId)) {
+            logRecycled(adminName, sqlId, claimKey, null);
+            reply(admin, claimKey, Reason.recycledId, null);
+            return;
+        }
+        Position stored = read.positions().get(sqlId);
         if (stored == null) {
             reply(admin, claimKey, Reason.notInDb, null);
             return;
@@ -225,7 +243,12 @@ public final class AvcsAdminVehicleTeleport {
                 BaseVehicle vehicle = findLoaded(job.sqlId);
                 if (vehicle != null) {
                     it.remove();
-                    finish(job, vehicle);
+                    if (AvcsClaimIdentity.matchesClaim(vehicle, job.claimKey)) {
+                        finish(job, vehicle);
+                    } else {
+                        logRecycled(job.adminName, job.sqlId, job.claimKey, vehicle);
+                        reply(job.admin, job.claimKey, Reason.recycledId, null);
+                    }
                 } else if (job.expired(now)) {
                     it.remove();
                     LOGGER.warn(
@@ -345,6 +368,16 @@ public final class AvcsAdminVehicleTeleport {
             }
         }
         return false;
+    }
+
+    private static void logRecycled(
+            String adminName, int sqlId, Object claimKey, @Nullable BaseVehicle vehicle) {
+        LOGGER.warn(
+                "[AVCS] refused teleport for {}: sqlId {} was recycled; claim {} is not the {}",
+                adminName,
+                sqlId,
+                claimKey,
+                vehicle == null ? "vehicle in vehicles.db" : "loaded " + vehicle.getScriptName());
     }
 
     private static @Nullable BaseVehicle findLoaded(int sqlId) {

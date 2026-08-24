@@ -169,6 +169,7 @@ function AVCS.checkPermission(playerObj, vehicleObj)
     if level == "admin" then
         local details = {
             permissions = true,
+            reason = "admin",
             ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
             LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
         }
@@ -179,6 +180,7 @@ function AVCS.checkPermission(playerObj, vehicleObj)
     if AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID == playerObj:getUsername() then
         local details = {
             permissions = true,
+            reason = "owner",
             ownerid = playerObj:getUsername(),
             LastKnownLogonTime = AVCS.dbByPlayerID[playerObj:getUsername()].LastKnownLogonTime,
         }
@@ -192,6 +194,7 @@ function AVCS.checkPermission(playerObj, vehicleObj)
             if factionObj:getOwner() == playerObj:getUsername() then
                 local details = {
                     permissions = true,
+                    reason = "faction-owner",
                     ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
                     LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
                 }
@@ -203,6 +206,7 @@ function AVCS.checkPermission(playerObj, vehicleObj)
                 if tempPlayers:get(i) == playerObj:getUsername() then
                     local details = {
                         permissions = true,
+                        reason = "faction-member",
                         ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
                         LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
                     }
@@ -221,6 +225,7 @@ function AVCS.checkPermission(playerObj, vehicleObj)
                 if tempPlayers:get(i) == playerObj:getUsername() then
                     local details = {
                         permissions = true,
+                        reason = "safehouse-member",
                         ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
                         LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
                     }
@@ -233,10 +238,19 @@ function AVCS.checkPermission(playerObj, vehicleObj)
     -- No permission
     local details = {
         permissions = false,
+        reason = "denied",
         ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
         LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
     }
     return details
+end
+
+-- Which rule in checkPermission granted (or refused) access, for the audit log
+function AVCS.getPermissionReason(details)
+    if type(details) ~= "table" then
+        return "unowned"
+    end
+    return details.reason or "?"
 end
 
 -- Simple function to convert detailed result of checkPermission into simple true or false

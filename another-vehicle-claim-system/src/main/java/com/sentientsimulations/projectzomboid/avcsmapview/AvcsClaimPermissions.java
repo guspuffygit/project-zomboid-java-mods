@@ -20,15 +20,15 @@ final class AvcsClaimPermissions {
 
     /** Claim owner username, or {@code null} when the vehicle is not claimed. */
     static String claimedOwner(BaseVehicle vehicle) {
-        Object sqlidObj = vehicle.getModData().rawget("SQLID");
-        if (!(sqlidObj instanceof Number)) {
+        Object claimKey = AvcsClaimIdentity.effectiveClaimKey(vehicle);
+        if (claimKey == null) {
             return null;
         }
         KahluaTable byVehicleSqlid = ModData.get("AVCSByVehicleSQLID");
         if (byVehicleSqlid == null) {
             return null;
         }
-        Object claimObj = byVehicleSqlid.rawget(sqlidObj);
+        Object claimObj = byVehicleSqlid.rawget(claimKey);
         if (!(claimObj instanceof KahluaTable claim)) {
             return null;
         }

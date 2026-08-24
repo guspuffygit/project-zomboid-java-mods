@@ -44,6 +44,7 @@
   "IGUI_AVCS_Admin_Teleport_badArgs": "Teletrasporto fallito: richiesta non valida",
   "IGUI_AVCS_Admin_Teleport_unknownClaim": "Teletrasporto fallito: claim non trovato sul server",
   "IGUI_AVCS_Admin_Teleport_notInDb": "Teletrasporto fallito: il veicolo non esiste in vehicles.db",
+  "IGUI_AVCS_Admin_Teleport_recycledId": "Teletrasporto rifiutato: il veicolo rivendicato non esiste più; il suo id appartiene ora a un altro veicolo",
   "IGUI_AVCS_Admin_Teleport_inProgress": "Quel veicolo è già in fase di teletrasporto",
   "IGUI_AVCS_Admin_Teleport_tooManyPending": "Troppi teletrasporti in corso, riprova tra poco",
   "IGUI_AVCS_Admin_Teleport_notGround": "Devi essere al piano terra per teletrasportare un veicolo",

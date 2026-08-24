@@ -44,6 +44,7 @@
   "IGUI_AVCS_Admin_Teleport_badArgs": "Vehicle teleport failed: invalid request",
   "IGUI_AVCS_Admin_Teleport_unknownClaim": "Vehicle teleport failed: claim not found on the server",
   "IGUI_AVCS_Admin_Teleport_notInDb": "Vehicle teleport failed: vehicle does not exist in vehicles.db",
+  "IGUI_AVCS_Admin_Teleport_recycledId": "Vehicle teleport refused: the claimed vehicle no longer exists; its id now belongs to another vehicle",
   "IGUI_AVCS_Admin_Teleport_inProgress": "That vehicle is already being teleported",
   "IGUI_AVCS_Admin_Teleport_tooManyPending": "Too many vehicle teleports in progress, try again shortly",
   "IGUI_AVCS_Admin_Teleport_notGround": "Stand on ground level to teleport a vehicle to you",
