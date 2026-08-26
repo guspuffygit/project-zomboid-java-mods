@@ -1,0 +1,333 @@
+VERSION = 1,
+
+option AtfCasino.Enabled
+{
+    type = boolean,
+    default = false,
+    page = AtfCasino,
+    translation = AtfCasino_Enabled,
+}
+
+option AtfCasino.BlackjackEnabled
+{
+    type = boolean,
+    default = true,
+    page = AtfCasino,
+    translation = AtfCasino_BlackjackEnabled,
+}
+
+option AtfCasino.MinBet
+{
+    type = integer,
+    min = 1,
+    max = 1000000000,
+    default = 1000,
+    page = AtfCasino,
+    translation = AtfCasino_MinBet,
+}
+
+option AtfCasino.MaxBet
+{
+    type = integer,
+    min = 1,
+    max = 1000000000,
+    default = 1000000,
+    page = AtfCasino,
+    translation = AtfCasino_MaxBet,
+}
+
+option AtfCasino.BlackjackBetWindowSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 20,
+    page = AtfCasino,
+    translation = AtfCasino_BlackjackBetWindowSeconds,
+}
+
+option AtfCasino.BlackjackTurnSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 20,
+    page = AtfCasino,
+    translation = AtfCasino_BlackjackTurnSeconds,
+}
+
+option AtfCasino.BlackjackRoundPauseSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 8,
+    page = AtfCasino,
+    translation = AtfCasino_BlackjackRoundPauseSeconds,
+}
+
+option AtfCasino.RouletteEnabled
+{
+    type = boolean,
+    default = true,
+    page = AtfCasino,
+    translation = AtfCasino_RouletteEnabled,
+}
+
+option AtfCasino.RouletteBetWindowSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 30,
+    page = AtfCasino,
+    translation = AtfCasino_RouletteBetWindowSeconds,
+}
+
+option AtfCasino.RouletteSpinSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 6,
+    page = AtfCasino,
+    translation = AtfCasino_RouletteSpinSeconds,
+}
+
+option AtfCasino.RoulettePauseSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 8,
+    page = AtfCasino,
+    translation = AtfCasino_RoulettePauseSeconds,
+}
+
+option AtfCasino.TexasHoldemEnabled
+{
+    type = boolean,
+    default = true,
+    page = AtfCasino,
+    translation = AtfCasino_TexasHoldemEnabled,
+}
+
+option AtfCasino.TexasHoldemBigBlind
+{
+    type = integer,
+    min = 2,
+    max = 1000000000,
+    default = 1000,
+    page = AtfCasino,
+    translation = AtfCasino_TexasHoldemBigBlind,
+}
+
+option AtfCasino.TexasHoldemMinBuyInBlinds
+{
+    type = integer,
+    min = 1,
+    max = 100000,
+    default = 20,
+    page = AtfCasino,
+    translation = AtfCasino_TexasHoldemMinBuyInBlinds,
+}
+
+option AtfCasino.TexasHoldemMaxBuyInBlinds
+{
+    type = integer,
+    min = 1,
+    max = 1000000,
+    default = 100,
+    page = AtfCasino,
+    translation = AtfCasino_TexasHoldemMaxBuyInBlinds,
+}
+
+option AtfCasino.TexasHoldemTurnSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 20,
+    page = AtfCasino,
+    translation = AtfCasino_TexasHoldemTurnSeconds,
+}
+
+option AtfCasino.TexasHoldemPauseSeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 10,
+    page = AtfCasino,
+    translation = AtfCasino_TexasHoldemPauseSeconds,
+}
+
+option AtfCasino.TexasHoldemStartDelaySeconds
+{
+    type = integer,
+    min = 1,
+    max = 600,
+    default = 5,
+    page = AtfCasino,
+    translation = AtfCasino_TexasHoldemStartDelaySeconds,
+}
+
+option AtfCasino.FloorZ
+{
+    type = integer,
+    min = -32,
+    max = 31,
+    default = -1,
+    page = AtfCasino,
+    translation = AtfCasino_FloorZ,
+}
+
+option AtfCasino.GuardLeftX
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 615,
+    page = AtfCasino,
+    translation = AtfCasino_GuardLeftX,
+}
+
+option AtfCasino.GuardLeftY
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 9414,
+    page = AtfCasino,
+    translation = AtfCasino_GuardLeftY,
+}
+
+option AtfCasino.GuardLeftFacing
+{
+    type = enum,
+    numValues = 8,
+    default = 5,
+    page = AtfCasino,
+    translation = AtfCasino_GuardLeftFacing,
+    valueTranslation = AtfCasino_Facing,
+}
+
+option AtfCasino.GuardRightX
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 619,
+    page = AtfCasino,
+    translation = AtfCasino_GuardRightX,
+}
+
+option AtfCasino.GuardRightY
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 9414,
+    page = AtfCasino,
+    translation = AtfCasino_GuardRightY,
+}
+
+option AtfCasino.GuardRightFacing
+{
+    type = enum,
+    numValues = 8,
+    default = 5,
+    page = AtfCasino,
+    translation = AtfCasino_GuardRightFacing,
+    valueTranslation = AtfCasino_Facing,
+}
+
+option AtfCasino.DealerX
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 615,
+    page = AtfCasino,
+    translation = AtfCasino_DealerX,
+}
+
+option AtfCasino.DealerY
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 9422,
+    page = AtfCasino,
+    translation = AtfCasino_DealerY,
+}
+
+option AtfCasino.DealerFacing
+{
+    type = enum,
+    numValues = 8,
+    default = 5,
+    page = AtfCasino,
+    translation = AtfCasino_DealerFacing,
+    valueTranslation = AtfCasino_Facing,
+}
+
+option AtfCasino.CroupierX
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 619,
+    page = AtfCasino,
+    translation = AtfCasino_CroupierX,
+}
+
+option AtfCasino.CroupierY
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 9422,
+    page = AtfCasino,
+    translation = AtfCasino_CroupierY,
+}
+
+option AtfCasino.CroupierFacing
+{
+    type = enum,
+    numValues = 8,
+    default = 5,
+    page = AtfCasino,
+    translation = AtfCasino_CroupierFacing,
+    valueTranslation = AtfCasino_Facing,
+}
+
+option AtfCasino.PokerDealerX
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 614,
+    page = AtfCasino,
+    translation = AtfCasino_PokerDealerX,
+}
+
+option AtfCasino.PokerDealerY
+{
+    type = integer,
+    min = 0,
+    max = 50000,
+    default = 9418,
+    page = AtfCasino,
+    translation = AtfCasino_PokerDealerY,
+}
+
+option AtfCasino.PokerDealerFacing
+{
+    type = enum,
+    numValues = 8,
+    default = 5,
+    page = AtfCasino,
+    translation = AtfCasino_PokerDealerFacing,
+    valueTranslation = AtfCasino_Facing,
+}
