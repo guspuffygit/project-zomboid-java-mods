@@ -44,6 +44,7 @@
   "IGUI_AVCS_Admin_Teleport_badArgs": "Falha no teleporte: pedido inválido",
   "IGUI_AVCS_Admin_Teleport_unknownClaim": "Falha no teleporte: reivindicação não encontrada no servidor",
   "IGUI_AVCS_Admin_Teleport_notInDb": "Falha no teleporte: o veículo não existe em vehicles.db",
+  "IGUI_AVCS_Admin_Teleport_recycledId": "Teleporte recusado: o veículo reivindicado não existe mais; seu id agora pertence a outro veículo",
   "IGUI_AVCS_Admin_Teleport_inProgress": "Esse veículo já está sendo teleportado",
   "IGUI_AVCS_Admin_Teleport_tooManyPending": "Muitos teleportes em andamento, tente novamente em instantes",
   "IGUI_AVCS_Admin_Teleport_notGround": "Fique no nível do chão para teleportar um veículo até você",

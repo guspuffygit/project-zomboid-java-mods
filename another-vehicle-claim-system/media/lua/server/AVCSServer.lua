@@ -185,13 +185,34 @@ function AVCS.claimVehicle(playerObj, vehicleID)
         end
 
         sendServerCommand("AVCS", "updateClientClaimVehicle", tempArr)
+
+        AVCS.audit(
+            "Claimed",
+            playerObj:getUsername(),
+            vehicleID,
+            AVCS.dbByVehicleSQLID[vehicleID],
+            "[orb=" .. tostring(item ~= nil) .. "]"
+        )
     end
 end
 
 -- vehicleID is SQL ID
-function AVCS.unclaimVehicle(playerObj, vehicleID)
+---@param auditActor string|nil defaults to playerObj; an AVCS.AUDIT_ACTOR_* for automated removals
+---@param auditReason string|nil which checkPermission rule allowed it, or why it fired
+function AVCS.unclaimVehicle(playerObj, vehicleID, auditActor, auditReason)
     if AVCS.dbByVehicleSQLID[vehicleID] then
-        local ownerPlayerID = AVCS.dbByVehicleSQLID[vehicleID].OwnerPlayerID
+        local record = AVCS.dbByVehicleSQLID[vehicleID]
+        local ownerPlayerID = record.OwnerPlayerID
+
+        -- Audit before the delete; the record is the only source for model and coordinates
+        AVCS.audit(
+            "Unclaimed",
+            auditActor or (playerObj and playerObj:getUsername()),
+            vehicleID,
+            record,
+            "[via=" .. tostring(auditReason or "?") .. "]"
+        )
+
         AVCS.dbByVehicleSQLID[vehicleID] = nil
 
         -- Store the updated ModData --
@@ -349,7 +370,12 @@ AVCS.onClientCommand = function(moduleName, command, playerObj, arg)
             sendServerCommand(playerObj, "AVCS", "requestFullResync", {})
             return
         end
-        AVCS.unclaimVehicle(playerObj, arg[1])
+        AVCS.unclaimVehicle(
+            playerObj,
+            arg[1],
+            playerObj:getUsername(),
+            AVCS.getPermissionReason(checkResult)
+        )
     elseif moduleName == "AVCS" and command == "updateLastKnownLogonTime" then
         AVCS.updateLastKnownLogonTime(playerObj)
     elseif moduleName == "AVCS" and command == "updateSpecifyVehicleUserPermission" then
@@ -440,7 +466,7 @@ function AVCS.removePlayerCompletely(playerID)
     if AVCS.dbByPlayerID[playerID] ~= nil then
         for k, v in pairs(AVCS.dbByPlayerID[playerID]) do
             if k ~= "LastKnownLogonTime" then
-                AVCS.unclaimVehicle(nil, k)
+                AVCS.unclaimVehicle(nil, k, AVCS.AUDIT_ACTOR_TIMEOUT, "claim-timeout")
             end
         end
     end

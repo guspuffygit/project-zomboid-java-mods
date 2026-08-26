@@ -97,6 +97,19 @@ local function applyPatch()
             end
 
             for _, v in ipairs(toRemove) do
+                -- The janitor deletes the vehicle but not its claim, so the owner
+                -- is left holding a record that points at nothing
+                local sqlID = AVCS.getVehicleID(v)
+                if sqlID and AVCS.dbByVehicleSQLID[sqlID] then
+                    AVCS.audit(
+                        "Janitor removed claimed vehicle",
+                        AVCS.AUDIT_ACTOR_JANITOR,
+                        sqlID,
+                        AVCS.dbByVehicleSQLID[sqlID],
+                        "[orphanedClaim=true] [abandonedDays=" .. tostring(limit) .. "]"
+                    )
+                end
+
                 v:permanentlyRemove()
                 removed = removed + 1
                 if SandboxVars.VLCS and SandboxVars.VLCS.MaintainPopulation then

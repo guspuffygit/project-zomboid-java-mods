@@ -6,6 +6,7 @@ import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.FBORender
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkBackupBlamPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkSetMinMaxLevelGuardPatch;
 import io.pzstorm.storm.core.StormClassTransformer;
+import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.mod.ZomboidMod;
 import io.pzstorm.storm.util.StormEnv;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class GuspuffyAtfPatchesMod implements ZomboidMod {
         }
         LOGGER.debug(
                 "[GuspuffyAtfPatches] Registering for {}", GuspuffyAtfPatchesMod.class.getName());
+        StormEventDispatcher.registerEventHandler(VroLegacyTrunkSweepDisable.class);
     }
 
     @Override

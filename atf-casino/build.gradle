@@ -1,0 +1,73 @@
+def packName = 'atf_casino'
+
+modInfo {
+	name = 'ATF Mod'
+	workshopId = '3790513528'
+	workshopIdStage = ''
+	workshopIdProd = '3787641058'
+	description = '''Cool ATF mod'''
+	modVersion = '0.1.0'
+	pack = packName
+	tiledef = "${packName} 8103"
+}
+
+tasks.register('sliceCards', Exec) {
+	group = 'build'
+	description = 'Regenerates the individual card textures from TemplateCards.png'
+	commandLine file('tools/slice-cards.sh').absolutePath
+}
+
+tasks.register('packageTexturepack', Exec) {
+	group = 'build'
+	description = "Packs art/${packName}.png into media/texturepacks/${packName}.pack via pztool."
+
+	dependsOn rootProject.tasks.named('installPztool')
+
+	def artDir = project.file('art')
+	def outFile = project.file("media/texturepacks/${packName}.pack")
+
+	inputs.dir(artDir)
+	inputs.file(rootProject.ext.pztoolBinary)
+	outputs.file(outFile)
+
+	doFirst { outFile.parentFile.mkdirs() }
+
+	commandLine rootProject.ext.pztoolBinary.absolutePath, 'pack', 'pack', artDir.absolutePath,
+			'-o', outFile.absolutePath,
+			'--pack-name', packName
+}
+
+tasks.register('packageTiledefs', Exec) {
+	group = 'build'
+	description = "Compiles tiles/${packName}.tiles.txt into media/${packName}.tiles via pztool. PZ loads .tiles from media/<name>.tiles per the mod.info tiledef=<name> N line — not from media/tiledefinitions/."
+
+	dependsOn rootProject.tasks.named('installPztool')
+
+	def source = project.file("tiles/${packName}.tiles.txt")
+	def outFile = project.file("media/${packName}.tiles")
+
+	inputs.file(source)
+	inputs.file(rootProject.ext.pztoolBinary)
+	outputs.file(outFile)
+
+	commandLine rootProject.ext.pztoolBinary.absolutePath, 'tiles', 'pack', source.absolutePath, '-o', outFile.absolutePath
+}
+
+tasks.register('packageDepthmaps', Exec) {
+	group = 'build'
+	description = "Generates common/media/depthmaps/DEPTH_${packName}.png (wall-face depth plane) so the sign renders in front of walls. The game only loads mod depthmaps when common/media/tileGeometry.txt exists."
+
+	inputs.file('art/atf_casino.png')
+	inputs.file('tools/gen-depthmap.py')
+	outputs.file("common/media/depthmaps/DEPTH_${packName}.png")
+
+	commandLine 'python3', file('tools/gen-depthmap.py').absolutePath
+}
+
+tasks.register('packageAssets') {
+	group = 'build'
+	description = 'Rebuilds all binary art assets (pack + tiledefs + depthmaps) from sources under art/ and tiles/.'
+	dependsOn 'packageTexturepack', 'packageTiledefs', 'packageDepthmaps'
+}
+
+tasks.named('deployMod') { dependsOn 'packageAssets' }

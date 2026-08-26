@@ -3,17 +3,15 @@ package com.sentientsimulations.projectzomboid.avcsmapview;
 import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 
 import com.sentientsimulations.projectzomboid.avcsmapview.VehiclesDbLocations.Position;
+import com.sentientsimulations.projectzomboid.avcsmapview.VehiclesDbLocations.VerifiedRead;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.lua.OnTickEvent;
 import io.pzstorm.storm.event.zomboid.OnPreSaveEvent;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -38,9 +36,11 @@ import zombie.world.moddata.GlobalModData;
  * vehicles contribute their live position; everything else comes from {@code vehicles.db}.
  *
  * <p>Vanilla hands out the lowest free sqlId, so a destroyed car's id comes back on a new one and
- * an orphaned claim can alias a stranger's vehicle. Two guards: when several claims decode to the
- * same sqlId only the newest (largest timestamp prefix) is refreshed, and a loaded vehicle whose
- * own {@code modData.SQLID} is a different claim key leaves the claim untouched.
+ * an orphaned claim can alias a stranger's vehicle. Three guards: when several claims decode to the
+ * same sqlId only the newest (largest timestamp prefix) is refreshed; a loaded vehicle whose
+ * imprinted claim key (modData, with the mule-part fallback) is not exactly the claim's key leaves
+ * the claim untouched; and an unloaded vehicle's {@code vehicles.db} row only counts when its data
+ * blob carries the claim key ({@link VehiclesDbLocations#readVerified}).
  */
 public final class AvcsVehicleLocationSync {
 
@@ -65,6 +65,7 @@ public final class AvcsVehicleLocationSync {
             int live,
             int fromDb,
             int stale,
+            int unverifiedDb,
             int missing,
             int changed) {}
 
@@ -105,7 +106,7 @@ public final class AvcsVehicleLocationSync {
                     sync(
                             db,
                             liveVehicles(),
-                            VehiclesDbLocations::readFromCurrentSave,
+                            VehiclesDbLocations::readVerifiedFromCurrentSave,
                             LuaManager.platform::newTable,
                             AvcsVehicleLocationSync::broadcast,
                             System.currentTimeMillis() / 1000L);
@@ -131,9 +132,12 @@ public final class AvcsVehicleLocationSync {
             if (sqlId < 1) {
                 continue;
             }
-            Object claimKey =
-                    vehicle.hasModData() ? vehicle.getModData().rawget(MOD_DATA_SQLID) : null;
-            out.put(sqlId, new LiveVehicle(claimKey, vehicle.getX(), vehicle.getY()));
+            out.put(
+                    sqlId,
+                    new LiveVehicle(
+                            AvcsClaimIdentity.effectiveClaimKey(vehicle),
+                            vehicle.getX(),
+                            vehicle.getY()));
         }
         return out;
     }
@@ -145,7 +149,7 @@ public final class AvcsVehicleLocationSync {
     static Result sync(
             KahluaTable db,
             Map<Integer, LiveVehicle> live,
-            Function<Collection<Integer>, Map<Integer, Position>> dbLookup,
+            Function<Map<Integer, Double>, VerifiedRead> dbLookup,
             Supplier<KahluaTable> newTable,
             Consumer<KahluaTable> send,
             long nowSeconds) {
@@ -170,7 +174,7 @@ public final class AvcsVehicleLocationSync {
         }
 
         Map<Claim, Position> resolved = new HashMap<>();
-        Set<Integer> needDb = new LinkedHashSet<>();
+        Map<Integer, Double> needDb = new LinkedHashMap<>();
         int liveCount = 0;
         int stale = 0;
         for (Claim claim : claims) {
@@ -180,9 +184,9 @@ public final class AvcsVehicleLocationSync {
             }
             LiveVehicle vehicle = live.get(claim.sqlId());
             if (vehicle == null) {
-                needDb.add(claim.sqlId());
-            } else if (vehicle.claimKey() instanceof Double
-                    && !Objects.equals(vehicle.claimKey(), claim.key())) {
+                needDb.put(claim.sqlId(), (Double) claim.key());
+            } else if (!claim.key().equals(vehicle.claimKey())) {
+                // recycled sqlId: the loaded vehicle is not (or no longer) this claim's car
                 stale++;
             } else {
                 resolved.put(claim, new Position(vehicle.x(), vehicle.y()));
@@ -190,19 +194,22 @@ public final class AvcsVehicleLocationSync {
             }
         }
 
-        Map<Integer, Position> fromDb = needDb.isEmpty() ? Map.of() : dbLookup.apply(needDb);
+        VerifiedRead fromDb = needDb.isEmpty() ? VerifiedRead.EMPTY : dbLookup.apply(needDb);
         int dbCount = 0;
+        int unverifiedDb = 0;
         int missing = 0;
         for (Claim claim : claims) {
-            if (newestBySqlId.get(claim.sqlId()) != claim || !needDb.contains(claim.sqlId())) {
+            if (newestBySqlId.get(claim.sqlId()) != claim || !needDb.containsKey(claim.sqlId())) {
                 continue;
             }
-            Position position = fromDb.get(claim.sqlId());
-            if (position == null) {
-                missing++;
-            } else {
+            Position position = fromDb.positions().get(claim.sqlId());
+            if (position != null) {
                 resolved.put(claim, position);
                 dbCount++;
+            } else if (fromDb.unverified().contains(claim.sqlId())) {
+                unverifiedDb++;
+            } else {
+                missing++;
             }
         }
 
@@ -243,7 +250,15 @@ public final class AvcsVehicleLocationSync {
         if (batch != null) {
             send.accept(batch);
         }
-        return new Result(claims.size(), undecodable, liveCount, dbCount, stale, missing, changed);
+        return new Result(
+                claims.size(),
+                undecodable,
+                liveCount,
+                dbCount,
+                stale,
+                unverifiedDb,
+                missing,
+                changed);
     }
 
     // the timestamp prefix makes a larger key the later claim

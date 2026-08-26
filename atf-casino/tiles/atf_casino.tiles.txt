@@ -1,0 +1,12 @@
+version = 1
+tileset
+{
+    file = atf_casino
+    size = 8,8
+    id = 1
+    // atf_casino_0 — "NO GUNS, NO GODS, NO SHOVING" sign; decorative tile only, not buildable/moveable
+    tile
+    {
+        xy = 0,0
+    }
+}
