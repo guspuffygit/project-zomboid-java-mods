@@ -62,6 +62,11 @@ public final class RouletteHandler {
 
     private RouletteHandler() {}
 
+    /** Whether the player currently holds a seat here. Used by {@link CasinoSeatGuard}. */
+    static boolean isSeated(String username) {
+        return TABLE.seatOf(username) != null;
+    }
+
     // --- client commands (server main thread) ---
 
     @OnClientCommand
@@ -105,6 +110,11 @@ public final class RouletteHandler {
             case "sit" -> {
                 if (!nearCroupier(player)) {
                     sendError(player, "TOO_FAR", null);
+                    return;
+                }
+                String otherTable = CasinoSeatGuard.seatedElsewhere(username, CasinoGame.ROULETTE);
+                if (otherTable != null) {
+                    sendError(player, "OTHER_TABLE", otherTable);
                     return;
                 }
                 VIEWERS.add(username);

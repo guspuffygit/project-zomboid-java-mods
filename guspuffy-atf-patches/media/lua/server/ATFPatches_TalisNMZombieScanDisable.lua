@@ -33,37 +33,41 @@ only fire on multiples of 10/90.
 ]]
 
 if isClient() and not isServer() then
-	return
+    return
 end
 
 local DISABLED_STRATEGY = "atf_patches_zombie_scans_disabled"
 
 local function applyPatch()
-	if not NMZombieLiveStrategy then
-		print("[ATFPatches] Talis New Music not loaded; zombie-scan disable skipped.")
-		return false
-	end
+    if not NMZombieLiveStrategy then
+        print("[ATFPatches] Talis New Music not loaded; zombie-scan disable skipped.")
+        return false
+    end
 
-	NMZombieLiveStrategy.getLiveVisualStrategy = function()
-		return DISABLED_STRATEGY
-	end
+    NMZombieLiveStrategy.getLiveVisualStrategy = function()
+        return DISABLED_STRATEGY
+    end
 
-	if NMServerMPZombieAssignmentFlow then
-		NMServerMPZombieAssignmentFlow.onTick = function() end
-		NMServerMPZombieAssignmentFlow.onZombieUpdate = function() end
-	end
+    if NMServerMPZombieAssignmentFlow then
+        NMServerMPZombieAssignmentFlow.onTick = function() end
+        NMServerMPZombieAssignmentFlow.onZombieUpdate = function() end
+    end
 
-	if NMServerZombieVisualTargetPublisher then
-		NMServerZombieVisualTargetPublisher.onTick = function() end
-	end
+    if NMServerZombieVisualTargetPublisher then
+        NMServerZombieVisualTargetPublisher.onTick = function() end
+    end
 
-	print("[ATFPatches] Talis New Music server zombie scanning disabled (strategy=" .. DISABLED_STRATEGY .. ").")
-	return true
+    print(
+        "[ATFPatches] Talis New Music server zombie scanning disabled (strategy="
+            .. DISABLED_STRATEGY
+            .. ")."
+    )
+    return true
 end
 
 local function onFirstTick()
-	Events.OnTick.Remove(onFirstTick)
-	applyPatch()
+    Events.OnTick.Remove(onFirstTick)
+    applyPatch()
 end
 
 Events.OnTick.Add(onFirstTick)

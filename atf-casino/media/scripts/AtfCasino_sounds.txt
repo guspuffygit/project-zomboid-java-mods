@@ -1,0 +1,67 @@
+module AtfCasino
+{
+	sound AtfCasinoCardDeal
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_CardPlace1.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_CardPlace2.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_CardPlace3.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_CardPlace4.ogg, volume = 0.8, }
+	}
+
+	sound AtfCasinoCardFlip
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_CardSlide1.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_CardSlide2.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_CardSlide3.ogg, volume = 0.8, }
+	}
+
+	sound AtfCasinoCardShuffle
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_CardShuffle.ogg, volume = 0.7, }
+	}
+
+	sound AtfCasinoChipBet
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_ChipLay1.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_ChipLay2.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_ChipLay3.ogg, volume = 0.8, }
+	}
+
+	sound AtfCasinoChipPayout
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_ChipsStack1.ogg, volume = 0.9, }
+		clip { file = media/sound/AtfCasino/AtfCasino_ChipsStack2.ogg, volume = 0.9, }
+		clip { file = media/sound/AtfCasino/AtfCasino_ChipsStack3.ogg, volume = 0.9, }
+	}
+
+	sound AtfCasinoRouletteSpin
+	{
+		category = UI, loop = true, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_RouletteSpin.ogg, volume = 0.6, }
+	}
+
+	sound AtfCasinoRouletteBall
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_DiceThrow1.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_DiceThrow2.ogg, volume = 0.8, }
+		clip { file = media/sound/AtfCasino/AtfCasino_DiceThrow3.ogg, volume = 0.8, }
+	}
+
+	sound AtfCasinoWin
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_WinJingle.ogg, volume = 0.7, }
+	}
+
+	sound AtfCasinoLose
+	{
+		category = UI, loop = false, is3D = false,
+		clip { file = media/sound/AtfCasino/AtfCasino_LoseJingle.ogg, volume = 0.6, }
+	}
+}

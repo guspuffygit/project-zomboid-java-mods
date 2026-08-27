@@ -20,6 +20,16 @@ final class AvcsClaimPermissions {
 
     /** Claim owner username, or {@code null} when the vehicle is not claimed. */
     static String claimedOwner(BaseVehicle vehicle) {
+        KahluaTable claim = claimTable(vehicle);
+        if (claim == null) {
+            return null;
+        }
+        Object ownerObj = claim.rawget("OwnerPlayerID");
+        return ownerObj instanceof String owner ? owner : null;
+    }
+
+    /** The vehicle's claim table from Global ModData, or {@code null} when unclaimed. */
+    static KahluaTable claimTable(BaseVehicle vehicle) {
         Object claimKey = AvcsClaimIdentity.effectiveClaimKey(vehicle);
         if (claimKey == null) {
             return null;
@@ -29,11 +39,17 @@ final class AvcsClaimPermissions {
             return null;
         }
         Object claimObj = byVehicleSqlid.rawget(claimKey);
-        if (!(claimObj instanceof KahluaTable claim)) {
-            return null;
-        }
-        Object ownerObj = claim.rawget("OwnerPlayerID");
-        return ownerObj instanceof String owner ? owner : null;
+        return claimObj instanceof KahluaTable claim ? claim : null;
+    }
+
+    /**
+     * A per-vehicle public permission toggle ({@code AllowPassenger}, {@code AllowDrive}, ...) on a
+     * claimed vehicle, mirroring Lua {@code AVCS.getPublicPermission}: the claim's flag value,
+     * false when the flag is absent. Owners grant these to everyone, outside any faction/safehouse.
+     */
+    static boolean publicPermission(BaseVehicle vehicle, String flag) {
+        KahluaTable claim = claimTable(vehicle);
+        return claim != null && Boolean.TRUE.equals(claim.rawget(flag));
     }
 
     static boolean isPermitted(IsoPlayer p, String owner) {

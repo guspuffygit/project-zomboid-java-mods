@@ -5,6 +5,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.FBORenderCutawaysRecreateLevelGuardPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkBackupBlamPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkSetMinMaxLevelGuardPatch;
+import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.VehiclePartStatsOverloadPatch;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.mod.ZomboidMod;
@@ -33,6 +34,8 @@ public class GuspuffyAtfPatchesMod implements ZomboidMod {
         List<StormClassTransformer> transformers = new ArrayList<>();
         transformers.add(new IsoChunkSetMinMaxLevelGuardPatch());
         transformers.add(new IsoChunkBackupBlamPatch());
+        // Both JVMs: VRO's broken no-arg call runs server-side in MP but client-side in SP/host.
+        transformers.add(new VehiclePartStatsOverloadPatch());
         // Client-only: the FBO cutaway render path never runs on the dedicated server.
         if (!StormEnv.isStormServer()) {
             transformers.add(new FBORenderCutawaysRecreateLevelGuardPatch());

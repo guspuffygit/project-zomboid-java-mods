@@ -58,6 +58,11 @@ public final class HoldemHandler {
 
     private HoldemHandler() {}
 
+    /** Whether the player currently holds a seat here. Used by {@link CasinoSeatGuard}. */
+    static boolean isSeated(String username) {
+        return TABLE.seatOf(username) != null;
+    }
+
     // --- client commands (server main thread) ---
 
     @OnClientCommand
@@ -101,6 +106,11 @@ public final class HoldemHandler {
             case "sit" -> {
                 if (!nearDealer(player)) {
                     sendError(player, "TOO_FAR", null);
+                    return;
+                }
+                String otherTable = CasinoSeatGuard.seatedElsewhere(username, CasinoGame.HOLDEM);
+                if (otherTable != null) {
+                    sendError(player, "OTHER_TABLE", otherTable);
                     return;
                 }
                 VIEWERS.add(username);

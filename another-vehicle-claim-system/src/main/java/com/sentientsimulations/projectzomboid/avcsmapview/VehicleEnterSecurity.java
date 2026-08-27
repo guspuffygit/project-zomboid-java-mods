@@ -29,9 +29,12 @@ import zombie.vehicles.BaseVehicle;
  * {@code AVCS enterBlocked} client command, whose handler backs their character out of the seat
  * they entered predictively.
  *
- * <p>The permission ladder is the shared {@link AvcsClaimPermissions} one (admin, owner,
- * faction/safehouse members per sandbox options). Unclaimed vehicles pass through untouched, and
- * any guard failure fails open: entering vehicles must never break because of a broken guard.
+ * <p>The check must mirror the client-side {@code ISEnterVehicle}/{@code ISSwitchVehicleSeat}
+ * overrides exactly, or the guard blocks seats the client legitimately offered: first the claim's
+ * per-vehicle public toggles ({@code AllowPassenger} for any passenger seat, {@code AllowDrive} for
+ * seat 0), then the shared {@link AvcsClaimPermissions} ladder (admin, owner, faction/safehouse
+ * members per sandbox options). Unclaimed vehicles pass through untouched, and any guard failure
+ * fails open: entering vehicles must never break because of a broken guard.
  */
 public final class VehicleEnterSecurity {
 
@@ -56,7 +59,15 @@ public final class VehicleEnterSecurity {
                 return false;
             }
             String owner = AvcsClaimPermissions.claimedOwner(vehicle);
-            if (owner == null || AvcsClaimPermissions.isPermitted(player, owner)) {
+            if (owner == null) {
+                return false;
+            }
+            int seatTo = seatToOf(packetObj);
+            String publicFlag = seatTo == 0 ? "AllowDrive" : "AllowPassenger";
+            if (AvcsClaimPermissions.publicPermission(vehicle, publicFlag)) {
+                return false;
+            }
+            if (AvcsClaimPermissions.isPermitted(player, owner)) {
                 return false;
             }
             String line =
@@ -92,6 +103,10 @@ public final class VehicleEnterSecurity {
 
     private static IsoPlayer playerOf(Object packet) throws ReflectiveOperationException {
         return ((PlayerID) field(packet, "playerId")).getPlayer();
+    }
+
+    private static int seatToOf(Object packet) throws ReflectiveOperationException {
+        return (Integer) field(packet, "seatTo");
     }
 
     private static Object field(Object o, String name) throws ReflectiveOperationException {

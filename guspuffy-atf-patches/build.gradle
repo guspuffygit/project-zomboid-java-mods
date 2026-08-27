@@ -15,6 +15,7 @@ A collection of performance and compatibility patches specific to the After the 
 [*][b]True Music Radio whereAreYou fix[/b] (client): fixes a typo in TMRadio.whereAreYou that threw "attempted index: device of non-table: null" every frame when a walkie-talkie (vanilla or workshop) was transferred into a container, forcing players to ESC to stop the error spam.
 [*][b]VRO legacy trunk sweep disable[/b] (server): unregisters the Vehicle Repair Overhaul fix pack's one-time trunk-capacity migration from EveryOneMinute. That migration finished long ago but kept walking every loaded vehicle and every part of each one every in-game minute, measuring 13.9% of the server main thread and stalling the tick for ~1s every 6.2s. VRO's actual post-repair capacity fix is untouched and still runs every tick.
 [*][b]Destroy tile shortcut[/b] (client, admin-only): adds a top-level "Destroy tile" entry to the right-click menu with the same tile picker as Debug > Brush Tool > Destroy tile. Visible only to roles with the debug context menu capability.
+[*][b]VRO repair un-breaker[/b] (server+client): the 2026-08-26 Vehicle Repair Overhaul update calls VehiclePart:doInventoryItemStats() with no arguments, which throws in B42 and silently voids every part repair (no condition sync, no consumables, no completion). Adds the missing no-arg overload so VRO's repairs work again; harmless once VRO fixes the call.
 [/list]
 
 [hr][/hr]
@@ -22,5 +23,5 @@ A collection of performance and compatibility patches specific to the After the 
 [b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
 
 Tested and compatible with 42.20.2'''
-	modVersion = '1.3.0'
+	modVersion = '1.4.0'
 }

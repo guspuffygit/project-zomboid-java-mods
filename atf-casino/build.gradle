@@ -1,11 +1,35 @@
 def packName = 'atf_casino'
 
 modInfo {
-	name = 'ATF Mod'
+	name = 'ATF Casino'
 	workshopId = '3790513528'
 	workshopIdStage = ''
 	workshopIdProd = '3787641058'
-	description = '''Cool ATF mod'''
+	description = '''[h1]ATF Casino[/h1]
+
+A multiplayer casino for the After the Fall server. Sit down at a table, buy chips against your ATF Economy balance, and play real hands against other survivors or the house.
+
+[b]Requires the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3670772371]Storm[/url] mod loader on the server.[/b] Clients auto-subscribe via Workshop on connect.
+
+[h1]Games[/h1]
+[list]
+[*][b]Blackjack[/b] — multi-seat table vs. a house dealer, shoe-shuffled, standard hit/stand/double/split rules.
+[*][b]Roulette[/b] — full inside and outside bet board, animated wheel, multiple players per spin.
+[*][b]Texas Hold'em[/b] — cash-game tables with blinds, betting rounds, and side pots; showdown handled by a real hand evaluator on the server.
+[/list]
+
+[h1]The Floor[/h1]
+[list]
+[*]NPC dealers and patrons populate the casino so it feels alive even when the room is quiet.
+[*]Chips settle through the ATF Economy on the server — no client-side balances, no desync.
+[*]Anti-cheat guards on seats, packet parsing, and assault detection: no shooting the dealer to skip the payout.
+[/list]
+
+[hr][/hr]
+
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
+
+Tested and compatible with 42.20.2'''
 	modVersion = '0.1.0'
 	pack = packName
 	tiledef = "${packName} 8103"

@@ -1,0 +1,23 @@
+Sound credits for AtfCasino.
+
+Card, chip and dice sounds (AtfCasino_CardPlace*, AtfCasino_CardSlide*,
+AtfCasino_CardShuffle, AtfCasino_ChipLay*, AtfCasino_ChipsStack*,
+AtfCasino_DiceThrow*):
+  "Casino Audio" by Kenney (kenney.nl) - CC0
+  https://kenney.nl/assets/casino-audio
+
+AtfCasino_RouletteSpin.ogg:
+  "Roulette Wheel Spin Loop 1_1" by Joao_Janz - CC0
+  https://freesound.org/people/Joao_Janz/sounds/482663/
+
+AtfCasino_WinJingle.ogg:
+  "You've succeeded (game jingle)" by Rolly-SFX - CC0
+  https://freesound.org/people/Rolly-SFX/sounds/626259/
+
+AtfCasino_LoseJingle.ogg:
+  "You failed (game jingle)" by Rolly-SFX - CC0
+  https://freesound.org/people/Rolly-SFX/sounds/626260/
+
+All sources are Creative Commons Zero (public domain). Freesound files are
+the HQ preview encodes, re-encoded to Ogg Vorbis with silence trim and
+loudness normalization.
