@@ -1,3 +1,49 @@
+def packName = 'atf_generators'
+
+tasks.register('packageTexturepack', Exec) {
+	group = 'build'
+	description = 'Packs art/ tilesheets into media/texturepacks/*.pack via pztool.'
+
+	dependsOn rootProject.tasks.named('installPztool')
+
+	def artDir = project.file('art')
+	def outFile = project.file("media/texturepacks/${packName}.pack")
+
+	inputs.dir(artDir)
+	inputs.file(rootProject.ext.pztoolBinary)
+	outputs.file(outFile)
+
+	doFirst { outFile.parentFile.mkdirs() }
+
+	commandLine rootProject.ext.pztoolBinary.absolutePath, 'pack', 'pack', artDir.absolutePath,
+			'-o', outFile.absolutePath,
+			'--pack-name', packName
+}
+
+tasks.register('packageTiledefs', Exec) {
+	group = 'build'
+	description = 'Compiles tiles/*.tiles.txt into media/*.tiles via pztool. PZ loads .tiles from media/<name>.tiles per the mod.info tiledef=<name> N line — not from media/tiledefinitions/.'
+
+	dependsOn rootProject.tasks.named('installPztool')
+
+	def source = project.file("tiles/${packName}.tiles.txt")
+	def outFile = project.file("media/${packName}.tiles")
+
+	inputs.file(source)
+	inputs.file(rootProject.ext.pztoolBinary)
+	outputs.file(outFile)
+
+	commandLine rootProject.ext.pztoolBinary.absolutePath, 'tiles', 'pack', source.absolutePath, '-o', outFile.absolutePath
+}
+
+tasks.register('packageAssets') {
+	group = 'build'
+	description = 'Rebuilds all binary art assets (pack + tiledefs) from sources under art/ and tiles/.'
+	dependsOn 'packageTexturepack', 'packageTiledefs'
+}
+
+tasks.named('deployMod') { dependsOn 'packageAssets' }
+
 modInfo {
 	name = 'ATF Patches by Gus Puffy'
 	workshopId = '3777678573'
@@ -16,6 +62,7 @@ A collection of performance and compatibility patches specific to the After the 
 [*][b]VRO legacy trunk sweep disable[/b] (server): unregisters the Vehicle Repair Overhaul fix pack's one-time trunk-capacity migration from EveryOneMinute. That migration finished long ago but kept walking every loaded vehicle and every part of each one every in-game minute, measuring 13.9% of the server main thread and stalling the tick for ~1s every 6.2s. VRO's actual post-repair capacity fix is untouched and still runs every tick.
 [*][b]Destroy tile shortcut[/b] (client, admin-only): adds a top-level "Destroy tile" entry to the right-click menu with the same tile picker as Debug > Brush Tool > Destroy tile. Visible only to roles with the debug context menu capability.
 [*][b]VRO repair un-breaker[/b] (server+client): the 2026-08-26 Vehicle Repair Overhaul update calls VehiclePart:doInventoryItemStats() with no arguments, which throws in B42 and silently voids every part repair (no condition sync, no consumables, no completion). Adds the missing no-arg overload so VRO's repairs work again; harmless once VRO fixes the call.
+[*][b]Generator - Infinite[/b] (server): an admin-placed generator that never degrades, never runs out of fuel, and makes no sound. Spawn Base.generator_infinite and place it (or brush-tool the atf_generators_01_0 tile); the server converts it into a real powered generator and keeps it topped up. It cannot be picked up, disassembled, or destroyed by normal players — a player who tries to sledgehammer it is struck dead. Admin roles with the brush tool can remove it.
 [/list]
 
 [hr][/hr]
@@ -23,5 +70,7 @@ A collection of performance and compatibility patches specific to the After the 
 [b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
 
 Tested and compatible with 42.20.2'''
-	modVersion = '1.4.0'
+	modVersion = '1.5.0'
+	pack = 'atf_generators'
+	tiledef = 'atf_generators 8104'
 }

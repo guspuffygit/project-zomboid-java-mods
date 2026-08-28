@@ -1,0 +1,25 @@
+version = 1
+tileset
+{
+    file = atf_generators_01
+    size = 8,8
+    id = 1
+    // atf_generators_01_0 — vanilla red generator sprite (appliances_misc_01_1), S facing.
+    // Same properties as the skill obelisk tiles (BlocksPlacement/ContainerPosition/
+    // Surface/solid). GeneratorSound names a sound that does not exist: IsoGenerator
+    // builds every Loop/Starting/Stopping/Backfire play from this prefix and
+    // FMODSoundEmitter.playSoundImpl no-ops on unknown sounds, so the generator is silent.
+    tile
+    {
+        xy = 0,0
+        BlocksPlacement =
+        ContainerPosition = Low
+        CustomItem = Base.generator_infinite
+        CustomName = Generator - Infinite
+        Facing = S
+        GeneratorSound = ATFSilentGenerator
+        GroupName = ATF Generators
+        Surface = 34
+        solid =
+    }
+}

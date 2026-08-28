@@ -23,65 +23,65 @@
 LSDeathCompat = LSDeathCompat or {}
 
 local function hasInventoryUi(playerNum)
-    if playerNum == nil then
-        return false
-    end
-    local inv = getPlayerInventory(playerNum)
-    local loot = getPlayerLoot(playerNum)
-    return inv ~= nil and inv.inventoryPane ~= nil and loot ~= nil and loot.inventoryPane ~= nil
+	if playerNum == nil then
+		return false
+	end
+	local inv = getPlayerInventory(playerNum)
+	local loot = getPlayerLoot(playerNum)
+	return inv ~= nil and inv.inventoryPane ~= nil and loot ~= nil and loot.inventoryPane ~= nil
 end
 
 local function wrapUpdateInvScripts()
-    local cls = _G.CLSInv
-    if cls == nil or type(cls.UpdateInvScripts) ~= "function" then
-        return false
-    end
-    if cls.__lsdUpdateInvWrapped then
-        return true
-    end
-    local orig = cls.__lsdOrigUpdateInvScripts or cls.UpdateInvScripts
-    cls.__lsdOrigUpdateInvScripts = orig
-    cls.__lsdUpdateInvWrapped = true
-    cls.UpdateInvScripts = function(character)
-        local playerNum = character and character:getPlayerNum()
-        if not hasInventoryUi(playerNum) then
-            return
-        end
-        return orig(character)
-    end
-    return true
+	local cls = _G.CLSInv
+	if cls == nil or type(cls.UpdateInvScripts) ~= "function" then
+		return false
+	end
+	if cls.__lsdUpdateInvWrapped then
+		return true
+	end
+	local orig = cls.__lsdOrigUpdateInvScripts or cls.UpdateInvScripts
+	cls.__lsdOrigUpdateInvScripts = orig
+	cls.__lsdUpdateInvWrapped = true
+	cls.UpdateInvScripts = function(character)
+		local playerNum = character and character:getPlayerNum()
+		if not hasInventoryUi(playerNum) then
+			return
+		end
+		return orig(character)
+	end
+	return true
 end
 
 local function wrapEveryMinute()
-    local orig = _G.__lsdOrigLSEveryMinute or _G.LSEveryMinute
-    if type(orig) ~= "function" then
-        return false
-    end
-    if _G.__lsdEveryMinuteWrapped then
-        return true
-    end
-    _G.__lsdOrigLSEveryMinute = orig
-    _G.__lsdEveryMinuteWrapped = true
-    local wrapped = function()
-        local p = getPlayer()
-        if p == nil or not hasInventoryUi(p:getPlayerNum()) then
-            return
-        end
-        return orig()
-    end
-    Events.EveryOneMinute.Remove(orig)
-    Events.EveryOneMinute.Add(wrapped)
-    _G.LSEveryMinute = wrapped
-    return true
+	local orig = _G.__lsdOrigLSEveryMinute or _G.LSEveryMinute
+	if type(orig) ~= "function" then
+		return false
+	end
+	if _G.__lsdEveryMinuteWrapped then
+		return true
+	end
+	_G.__lsdOrigLSEveryMinute = orig
+	_G.__lsdEveryMinuteWrapped = true
+	local wrapped = function()
+		local p = getPlayer()
+		if p == nil or not hasInventoryUi(p:getPlayerNum()) then
+			return
+		end
+		return orig()
+	end
+	Events.EveryOneMinute.Remove(orig)
+	Events.EveryOneMinute.Add(wrapped)
+	_G.LSEveryMinute = wrapped
+	return true
 end
 
 local function uninstallHooks(state)
-    if state == nil or state.hooks == nil then
-        return
-    end
-    if state.hooks.tickSweep ~= nil then
-        Events.OnTick.Remove(state.hooks.tickSweep)
-    end
+	if state == nil or state.hooks == nil then
+		return
+	end
+	if state.hooks.tickSweep ~= nil then
+		Events.OnTick.Remove(state.hooks.tickSweep)
+	end
 end
 
 uninstallHooks(LSDeathCompat._state)
@@ -90,19 +90,19 @@ uninstallHooks(LSDeathCompat._state)
 -- a few ticks then stop.
 local pendingTicks = 300
 local function tickSweep()
-    if pendingTicks == nil then
-        return
-    end
-    local a = wrapUpdateInvScripts()
-    local b = wrapEveryMinute()
-    if a and b then
-        pendingTicks = nil
-        return
-    end
-    pendingTicks = pendingTicks - 1
-    if pendingTicks <= 0 then
-        pendingTicks = nil
-    end
+	if pendingTicks == nil then
+		return
+	end
+	local a = wrapUpdateInvScripts()
+	local b = wrapEveryMinute()
+	if a and b then
+		pendingTicks = nil
+		return
+	end
+	pendingTicks = pendingTicks - 1
+	if pendingTicks <= 0 then
+		pendingTicks = nil
+	end
 end
 
 wrapUpdateInvScripts()

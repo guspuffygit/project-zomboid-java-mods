@@ -1,0 +1,23 @@
+module Base
+{
+    /*
+     * Admin-placed infinite generator. base:generator tag puts the sprite in
+     * IsoGenerator's sprite-to-item map, so the running generator reads this
+     * item's SoundRadius/SoundVolume for the zombie-attracting world sound —
+     * 1/1 is the minimum (0 falls back to the vanilla default of 20).
+     */
+    item generator_infinite
+    {
+        DisplayName = Generator - Infinite,
+        DisplayCategory = Electronics,
+        ItemType = base:moveable,
+        Icon = Generator,
+        Weight = 40.0,
+        WorldObjectSprite = atf_generators_01_0,
+        Tags = base:generator,
+        ConditionMax = 100,
+        ConditionLowerChanceOneIn = 100000,
+        SoundRadius = 1,
+        SoundVolume = 1,
+    }
+}
