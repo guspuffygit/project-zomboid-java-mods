@@ -16,7 +16,8 @@ import zombie.network.packets.hit.PlayerHit;
 import zombie.network.packets.hit.PlayerHitPlayerPacket;
 
 /**
- * Collects melee/shove/gunshot attacks on the casino NPCs so the guards can retaliate.
+ * Collects melee/shove/gunshot attacks on the casino NPCs — and damaging hits on other players — so
+ * the guards can retaliate.
  *
  * <p>The NPCs are synthetic players that are never registered in {@link GameServer#IDToPlayerMap},
  * so when a client hits one, the vanilla server drops the {@link PlayerHitPlayerPacket} at {@code
@@ -24,20 +25,35 @@ import zombie.network.packets.hit.PlayerHitPlayerPacket;
  * hooks {@code parse} (via {@code PlayerHitPlayerPacketParsePatch}) instead of Storm's packet
  * events. The attack still does nothing to the NPC; this only records who swung.
  *
+ * <p>Hits on real players take the other hook, {@code process}-exit: it only runs once vanilla has
+ * passed {@code isConsistent} and every anticheat (PVP off, safety on, non-PVP zone etc. all bail
+ * before it) and has applied the damage — so the victim still takes the hit, and the guards only
+ * ever punish damage that actually landed. Whether the brawl happened on the casino floor is
+ * checked at drain time, when positions are readable on the main thread.
+ *
  * <p>{@link #onHitParsed} runs on whatever thread drains the net-data queue; the queue is drained
  * and acted on from {@link CasinoNpcManager}'s tick on the server main thread.
  */
 public final class CasinoAssaultWatch {
 
-    /** One reported attack on a casino NPC, pending guard retaliation. */
+    /** One reported attack on a casino NPC or another player, pending guard retaliation. */
     static final class Assault {
         final UdpConnection connection;
         final short attackerOnlineId;
+        final short victimOnlineId;
+        final boolean onStaff;
         final long atMs;
 
-        Assault(UdpConnection connection, short attackerOnlineId, long atMs) {
+        Assault(
+                UdpConnection connection,
+                short attackerOnlineId,
+                short victimOnlineId,
+                boolean onStaff,
+                long atMs) {
             this.connection = connection;
             this.attackerOnlineId = attackerOnlineId;
+            this.victimOnlineId = victimOnlineId;
+            this.onStaff = onStaff;
             this.atMs = atMs;
         }
     }
@@ -61,7 +77,8 @@ public final class CasinoAssaultWatch {
             if (!GameServer.server) {
                 return;
             }
-            if (!CasinoNpcManager.isNpcId(packet.target.getID())) {
+            short targetId = packet.target.getID();
+            if (!CasinoNpcManager.isNpcId(targetId)) {
                 return;
             }
             if (!AtfCasinoConfig.isEnabled() || !(connection instanceof UdpConnection udp)) {
@@ -74,9 +91,53 @@ public final class CasinoAssaultWatch {
             if (PENDING.size() >= MAX_PENDING) {
                 return;
             }
-            PENDING.add(new Assault(udp, attacker.getOnlineID(), System.currentTimeMillis()));
+            PENDING.add(
+                    new Assault(
+                            udp,
+                            attacker.getOnlineID(),
+                            targetId,
+                            true,
+                            System.currentTimeMillis()));
         } catch (Throwable t) {
             LOGGER.warn("[AtfCasino] assault watch failed: {}", t.toString());
+        }
+    }
+
+    /**
+     * Called from the process-exit advice on {@link PlayerHitPlayerPacket}, i.e. only for hits on
+     * real players that vanilla accepted and applied damage for. Queues the attacker for guard
+     * retaliation; {@link CasinoNpcManager} decides at drain time whether the fight was on the
+     * casino floor. Never throws.
+     */
+    public static void onPlayerHitProcessed(PlayerHitPlayerPacket packet) {
+        try {
+            if (!GameServer.server || !AtfCasinoConfig.isEnabled()) {
+                return;
+            }
+            IsoPlayer attacker = packet.getWielder();
+            IsoPlayer victim = packet.target.getPlayer();
+            if (attacker == null || attacker.getUsername() == null || victim == null) {
+                return;
+            }
+            if (attacker == victim) {
+                return;
+            }
+            UdpConnection udp = GameServer.getConnectionFromPlayer(attacker);
+            if (udp == null) {
+                return;
+            }
+            if (PENDING.size() >= MAX_PENDING) {
+                return;
+            }
+            PENDING.add(
+                    new Assault(
+                            udp,
+                            attacker.getOnlineID(),
+                            victim.getOnlineID(),
+                            false,
+                            System.currentTimeMillis()));
+        } catch (Throwable t) {
+            LOGGER.warn("[AtfCasino] pvp watch failed: {}", t.toString());
         }
     }
 

@@ -27,7 +27,9 @@ import zombie.network.packets.sound.PlayWorldSoundPacket;
  * the poker dealer) and drives them from the server main-thread tick: keeps them streamed to every
  * client that has the floor loaded, and runs the guards' rules — anyone on the casino floor who
  * pulls out a firearm, or who is there with god mode enabled, is shot dead on the spot, and so is
- * anyone who shoves or hits any of the five Spiffos (reported by {@link CasinoAssaultWatch}).
+ * anyone who shoves or hits any of the five Spiffos, or who damages another player on the floor —
+ * the victim still takes the hit, then the guards execute the attacker (both reported by {@link
+ * CasinoAssaultWatch}).
  *
  * <p>Positions and facings come from the {@code AtfCasino.<Npc>X/Y/Facing} + {@code FloorZ} sandbox
  * options (defaults in {@link CasinoLayout}) and are re-read every tick, so an admin can move and
@@ -249,12 +251,15 @@ public final class CasinoNpcManager {
                 retry.add(a);
                 continue;
             }
+            if (!a.onStaff && !pvpOnCasinoFloor(a, p)) {
+                continue;
+            }
             Long last = LAST_SHOT_BY_USER.get(p.getUsername());
             if (last != null && now - last < RESHOOT_MS) {
                 continue;
             }
             LAST_SHOT_BY_USER.put(p.getUsername(), now);
-            shoot(p, a.connection, ShotReason.ASSAULT);
+            shoot(p, a.connection, a.onStaff ? ShotReason.ASSAULT : ShotReason.PVP);
         }
         if (retry != null) {
             for (CasinoAssaultWatch.Assault a : retry) {
@@ -316,7 +321,11 @@ public final class CasinoNpcManager {
         ASSAULT(
                 "assault",
                 "attacked casino staff",
-                "%s was gunned down by the Creepy Spiffos for laying hands on the staff");
+                "%s was gunned down by the Creepy Spiffos for laying hands on the staff"),
+        PVP(
+                "pvp",
+                "attacked another patron",
+                "%s was gunned down by the Creepy Spiffos for attacking another patron");
 
         final String wire;
         final String logVerb;
@@ -331,6 +340,16 @@ public final class CasinoNpcManager {
         String announcement(String username) {
             return String.format(announceFormat, username);
         }
+    }
+
+    // The staff Spiffos only exist on the floor, but a player-on-player hit can happen anywhere
+    // on the map — the guards only care when either party was on their floor.
+    private static boolean pvpOnCasinoFloor(CasinoAssaultWatch.Assault a, IsoPlayer attacker) {
+        if (onCasinoFloor(attacker)) {
+            return true;
+        }
+        IsoPlayer victim = GameServer.IDToPlayerMap.get(a.victimOnlineId);
+        return victim != null && victim.getCurrentSquare() != null && onCasinoFloor(victim);
     }
 
     private static boolean onCasinoFloor(IsoPlayer p) {

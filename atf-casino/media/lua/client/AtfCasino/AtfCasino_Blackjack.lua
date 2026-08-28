@@ -721,6 +721,8 @@ local function onServerCommand(module, command, args)
                 )
             elseif args and args.reason == "assault" then
                 text = txt("IGUI_AtfCasino_GuardShotAssault", "Nobody lays hands on the staff!")
+            elseif args and args.reason == "pvp" then
+                text = txt("IGUI_AtfCasino_GuardShotPvp", "No fighting on the casino floor!")
             end
             player:setHaloNote(text, 255, 40, 40, 300)
         end

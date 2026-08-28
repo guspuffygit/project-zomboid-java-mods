@@ -33,6 +33,8 @@
   "IGUI_AtfCasino_Blackjack_WalkedAway": "You walked away from the table",
   "IGUI_AtfCasino_GuardShot": "The Creepy Spiffos open fire!",
   "IGUI_AtfCasino_GuardShotGodMode": "The Creepy Spiffos don't serve god-mode admins!",
+  "IGUI_AtfCasino_GuardShotAssault": "Nobody lays hands on the staff!",
+  "IGUI_AtfCasino_GuardShotPvp": "No fighting on the casino floor!",
   "IGUI_AtfCasino_Blackjack_CloseTip": "Hides the table. Your seat and hand are kept while you stay near the dealer.",
   "IGUI_AtfCasino_Roulette_Title": "Roulette - Creepy Spiffo Croupier",
   "IGUI_AtfCasino_Roulette_ContextOption": "Play Roulette with the Creepy Spiffo Croupier",
