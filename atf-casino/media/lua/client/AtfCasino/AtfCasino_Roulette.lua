@@ -66,7 +66,6 @@ local ERROR_TEXT = {
     TOO_FAR = "You are too far from the croupier",
     TABLE_FULL = "The table is full",
     ALREADY_SEATED = "You are already seated",
-    OTHER_TABLE = "One game at a time - leave your other table first",
     NOT_SEATED = "Sit down first",
     NOT_BETTING_PHASE = "Bets are closed - wait for the next spin",
     BET_TOO_LOW = "That chip is below the table minimum",
@@ -986,7 +985,9 @@ local function onServerCommand(module, command, args)
             w:close()
         end
         local player = getSpecificPlayer(0)
-        if player and (args == nil or args.reason ~= "DEAD") then
+        local reason = args and args.reason
+        -- OTHER_TABLE closes silently: the player just sat down at another game.
+        if player and reason ~= "DEAD" and reason ~= "OTHER_TABLE" then
             player:setHaloNote(
                 txt("IGUI_AtfCasino_Roulette_WalkedAway", "You walked away from the wheel"),
                 255,

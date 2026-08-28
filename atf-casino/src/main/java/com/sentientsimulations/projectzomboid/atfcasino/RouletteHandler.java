@@ -62,9 +62,21 @@ public final class RouletteHandler {
 
     private RouletteHandler() {}
 
-    /** Whether the player currently holds a seat here. Used by {@link CasinoSeatGuard}. */
-    static boolean isSeated(String username) {
-        return TABLE.seatOf(username) != null;
+    /**
+     * Stands the player up and closes their window here because they sat down at another game. Used
+     * by {@link CasinoSeatGuard}; chips on the board are settled by {@link RouletteTable#leave}.
+     */
+    static void standUp(IsoPlayer player, long now) {
+        String username = player.getUsername();
+        if (TABLE.seatOf(username) == null) {
+            return;
+        }
+        TABLE.leave(username);
+        VIEWERS.remove(username);
+        KahluaTable args = LuaManager.platform.newTable();
+        args.rawset("reason", "OTHER_TABLE");
+        GameServer.sendServerCommand(player, MODULE, CLOSED_COMMAND, args);
+        broadcastIfDirty(now);
     }
 
     // --- client commands (server main thread) ---
@@ -112,11 +124,7 @@ public final class RouletteHandler {
                     sendError(player, "TOO_FAR", null);
                     return;
                 }
-                String otherTable = CasinoSeatGuard.seatedElsewhere(username, CasinoGame.ROULETTE);
-                if (otherTable != null) {
-                    sendError(player, "OTHER_TABLE", otherTable);
-                    return;
-                }
+                CasinoSeatGuard.standUpElsewhere(player, CasinoGame.ROULETTE, now);
                 VIEWERS.add(username);
                 result = TABLE.sit(username, player.getSteamID());
             }

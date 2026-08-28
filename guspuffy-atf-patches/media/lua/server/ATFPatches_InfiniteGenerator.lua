@@ -28,7 +28,7 @@ ObeliskCurseHandler for the full history).
 ]]
 
 if not isServer() then
-	return
+    return
 end
 
 local SPRITE_PREFIX = "atf_generators_"
@@ -41,117 +41,117 @@ ATFPatches_InfiniteGenerator = ATFPatches_InfiniteGenerator or {}
 local Gen = ATFPatches_InfiniteGenerator
 
 local function isInfiniteGenSprite(obj)
-	if not obj or not obj.getSprite then
-		return false
-	end
-	local sprite = obj:getSprite()
-	local name = sprite and sprite:getName() or nil
-	return name ~= nil and string.sub(name, 1, #SPRITE_PREFIX) == SPRITE_PREFIX
+    if not obj or not obj.getSprite then
+        return false
+    end
+    local sprite = obj:getSprite()
+    local name = sprite and sprite:getName() or nil
+    return name ~= nil and string.sub(name, 1, #SPRITE_PREFIX) == SPRITE_PREFIX
 end
 
 local function registry()
-	return ModData.getOrCreate(MODDATA_KEY)
+    return ModData.getOrCreate(MODDATA_KEY)
 end
 
 local function squareKey(square)
-	return square:getX() .. ":" .. square:getY() .. ":" .. square:getZ()
+    return square:getX() .. ":" .. square:getY() .. ":" .. square:getZ()
 end
 
 -- Same policy as the obelisk guard: only a role that can use the brush tool
 -- may remove one. Fails closed if the capability lookup errors.
 local function isRemovalAllowed(character)
-	if not character then
-		return false
-	end
-	local ok, allowed = pcall(function()
-		local role = character:getRole()
-		return role ~= nil and role:hasCapability(Capability.UseBrushToolManager)
-	end)
-	return ok and allowed == true
+    if not character then
+        return false
+    end
+    local ok, allowed = pcall(function()
+        local role = character:getRole()
+        return role ~= nil and role:hasCapability(Capability.UseBrushToolManager)
+    end)
+    return ok and allowed == true
 end
 
 local function smite(character)
-	if not character or character:isDead() then
-		return
-	end
-	local ok, err = pcall(function()
-		character:Kill(character)
-		character:die()
-	end)
-	if not ok then
-		print("[ATFPatches] Infinite generator smite failed: " .. tostring(err))
-	end
+    if not character or character:isDead() then
+        return
+    end
+    local ok, err = pcall(function()
+        character:Kill(character)
+        character:die()
+    end)
+    if not ok then
+        print("[ATFPatches] Infinite generator smite failed: " .. tostring(err))
+    end
 end
 
 function Gen.onObjectAdded(obj)
-	if instanceof(obj, "IsoGenerator") then
-		if isInfiniteGenSprite(obj) and obj:getSquare() then
-			registry()[squareKey(obj:getSquare())] = true
-		end
-		return
-	end
-	if not isInfiniteGenSprite(obj) then
-		return
-	end
-	local square = obj:getSquare()
-	if not square then
-		return
-	end
-	-- The chunk generator registry is position-keyed; a second generator on
-	-- the same tile kills the live one's power. Leave the tile decorative.
-	if square:getGenerator() then
-		print(
-			"[ATFPatches] Infinite generator NOT converted at "
-				.. squareKey(square)
-				.. ": square already has a generator"
-		)
-		return
-	end
-	square:transmitRemoveItemFromSquareOnClients(obj)
-	square:RemoveTileObject(obj)
-	-- Constructor adds itself to the square and transmits to clients; the
-	-- setters below each self-sync on the server.
-	local gen = IsoGenerator.new(instanceItem(ITEM_FULL_TYPE), getCell(), square)
-	gen:setConnected(true)
-	gen:setCondition(MAX_CONDITION)
-	gen:setFuel(MAX_FUEL)
-	gen:setActivated(true)
-	registry()[squareKey(square)] = true
-	print("[ATFPatches] Infinite generator placed at " .. squareKey(square))
+    if instanceof(obj, "IsoGenerator") then
+        if isInfiniteGenSprite(obj) and obj:getSquare() then
+            registry()[squareKey(obj:getSquare())] = true
+        end
+        return
+    end
+    if not isInfiniteGenSprite(obj) then
+        return
+    end
+    local square = obj:getSquare()
+    if not square then
+        return
+    end
+    -- The chunk generator registry is position-keyed; a second generator on
+    -- the same tile kills the live one's power. Leave the tile decorative.
+    if square:getGenerator() then
+        print(
+            "[ATFPatches] Infinite generator NOT converted at "
+                .. squareKey(square)
+                .. ": square already has a generator"
+        )
+        return
+    end
+    square:transmitRemoveItemFromSquareOnClients(obj)
+    square:RemoveTileObject(obj)
+    -- Constructor adds itself to the square and transmits to clients; the
+    -- setters below each self-sync on the server.
+    local gen = IsoGenerator.new(instanceItem(ITEM_FULL_TYPE), getCell(), square)
+    gen:setConnected(true)
+    gen:setCondition(MAX_CONDITION)
+    gen:setFuel(MAX_FUEL)
+    gen:setActivated(true)
+    registry()[squareKey(square)] = true
+    print("[ATFPatches] Infinite generator placed at " .. squareKey(square))
 end
 
 -- Fuel/condition only drain while the chunk is loaded (IsoGenerator.update),
 -- so topping up loaded squares is enough. Unloaded squares are skipped and
 -- squares whose generator an admin brush-tooled away are forgotten.
 function Gen.everyTenMinutes()
-	local reg = registry()
-	local dead = nil
-	for k, _ in pairs(reg) do
-		local x, y, z = string.match(k, "^(-?%d+):(-?%d+):(-?%d+)$")
-		local square = x and getSquare(tonumber(x), tonumber(y), tonumber(z)) or nil
-		if square then
-			local gen = square:getGenerator()
-			if gen and isInfiniteGenSprite(gen) then
-				if gen:getCondition() < MAX_CONDITION then
-					gen:setCondition(MAX_CONDITION)
-				end
-				if gen:getFuel() < MAX_FUEL then
-					gen:setFuel(MAX_FUEL)
-				end
-				if not gen:isActivated() then
-					gen:setActivated(true)
-				end
-			else
-				dead = dead or {}
-				table.insert(dead, k)
-			end
-		end
-	end
-	if dead then
-		for _, k in ipairs(dead) do
-			reg[k] = nil
-		end
-	end
+    local reg = registry()
+    local dead = nil
+    for k, _ in pairs(reg) do
+        local x, y, z = string.match(k, "^(-?%d+):(-?%d+):(-?%d+)$")
+        local square = x and getSquare(tonumber(x), tonumber(y), tonumber(z)) or nil
+        if square then
+            local gen = square:getGenerator()
+            if gen and isInfiniteGenSprite(gen) then
+                if gen:getCondition() < MAX_CONDITION then
+                    gen:setCondition(MAX_CONDITION)
+                end
+                if gen:getFuel() < MAX_FUEL then
+                    gen:setFuel(MAX_FUEL)
+                end
+                if not gen:isActivated() then
+                    gen:setActivated(true)
+                end
+            else
+                dead = dead or {}
+                table.insert(dead, k)
+            end
+        end
+    end
+    if dead then
+        for _, k in ipairs(dead) do
+            reg[k] = nil
+        end
+    end
 end
 
 -- Vanilla re-marks the whole building toxic (generator fumes) every in-game
@@ -159,47 +159,47 @@ end
 -- live inside a base without gassing it. Caveat: this also un-gasses a real
 -- generator running in the SAME building.
 function Gen.everyOneMinute()
-	for k, _ in pairs(registry()) do
-		local x, y, z = string.match(k, "^(-?%d+):(-?%d+):(-?%d+)$")
-		local square = x and getSquare(tonumber(x), tonumber(y), tonumber(z)) or nil
-		local building = square and square:getBuilding() or nil
-		if building and building:isToxic() then
-			building:setToxic(false)
-		end
-	end
+    for k, _ in pairs(registry()) do
+        local x, y, z = string.match(k, "^(-?%d+):(-?%d+):(-?%d+)$")
+        local square = x and getSquare(tonumber(x), tonumber(y), tonumber(z)) or nil
+        local building = square and square:getBuilding() or nil
+        if building and building:isToxic() then
+            building:setToxic(false)
+        end
+    end
 end
 
 Gen.origDestroyComplete = Gen.origDestroyComplete or ISDestroyStuffAction.complete
 function ISDestroyStuffAction:complete()
-	if not isInfiniteGenSprite(self.item) or isRemovalAllowed(self.character) then
-		return Gen.origDestroyComplete(self)
-	end
-	smite(self.character)
-	return true
+    if not isInfiniteGenSprite(self.item) or isRemovalAllowed(self.character) then
+        return Gen.origDestroyComplete(self)
+    end
+    smite(self.character)
+    return true
 end
 
 Gen.origMoveComplete = Gen.origMoveComplete or ISMoveablesAction.complete
 function ISMoveablesAction:complete()
-	if self.mode == "pickup" or self.mode == "scrap" then
-		local target = self.moveProps and self.moveProps.object or nil
-		if isInfiniteGenSprite(target) and not isRemovalAllowed(self.character) then
-			return true
-		end
-	end
-	return Gen.origMoveComplete(self)
+    if self.mode == "pickup" or self.mode == "scrap" then
+        local target = self.moveProps and self.moveProps.object or nil
+        if isInfiniteGenSprite(target) and not isRemovalAllowed(self.character) then
+            return true
+        end
+    end
+    return Gen.origMoveComplete(self)
 end
 
 -- Trampoline pattern: register once, dispatch through the global table so a
 -- hot reload replaces the handlers without double-registering.
 if not Gen.__eventsRegistered then
-	Gen.__eventsRegistered = true
-	Events.OnObjectAdded.Add(function(obj)
-		ATFPatches_InfiniteGenerator.onObjectAdded(obj)
-	end)
-	Events.EveryTenMinutes.Add(function()
-		ATFPatches_InfiniteGenerator.everyTenMinutes()
-	end)
-	Events.EveryOneMinute.Add(function()
-		ATFPatches_InfiniteGenerator.everyOneMinute()
-	end)
+    Gen.__eventsRegistered = true
+    Events.OnObjectAdded.Add(function(obj)
+        ATFPatches_InfiniteGenerator.onObjectAdded(obj)
+    end)
+    Events.EveryTenMinutes.Add(function()
+        ATFPatches_InfiniteGenerator.everyTenMinutes()
+    end)
+    Events.EveryOneMinute.Add(function()
+        ATFPatches_InfiniteGenerator.everyOneMinute()
+    end)
 end
