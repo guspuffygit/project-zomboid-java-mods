@@ -8,6 +8,7 @@ import com.sentientsimulations.projectzomboid.extralogging.patch.*;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
 import io.pzstorm.storm.event.core.SubscribeEvent;
+import io.pzstorm.storm.event.lua.OnAnimalDeathEvent;
 import io.pzstorm.storm.event.lua.OnPlayerDeathEvent;
 import io.pzstorm.storm.event.packet.*;
 import io.pzstorm.storm.event.zomboid.OnItemTransferCompletedEvent;
@@ -47,6 +48,11 @@ public class ExtraLoggingMod implements ZomboidMod {
     @SubscribeEvent
     public void onPlayerDeath(OnPlayerDeathEvent event) {
         DeathEventHandler.onPlayerDeath(event.player);
+    }
+
+    @SubscribeEvent
+    public void onAnimalDeath(OnAnimalDeathEvent event) {
+        AnimalDeathEventHandler.onAnimalDeath(event.animal);
     }
 
     // Item events
