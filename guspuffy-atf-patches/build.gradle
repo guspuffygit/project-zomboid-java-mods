@@ -63,6 +63,7 @@ A collection of performance and compatibility patches specific to the After the 
 [*][b]Destroy tile shortcut[/b] (client, admin-only): adds a top-level "Destroy tile" entry to the right-click menu with the same tile picker as Debug > Brush Tool > Destroy tile. Visible only to roles with the debug context menu capability.
 [*][b]VRO repair un-breaker[/b] (server+client): the 2026-08-26 Vehicle Repair Overhaul update calls VehiclePart:doInventoryItemStats() with no arguments, which throws in B42 and silently voids every part repair (no condition sync, no consumables, no completion). Adds the missing no-arg overload so VRO's repairs work again; harmless once VRO fixes the call.
 [*][b]Generator - Infinite[/b] (server): an admin-placed generator that never degrades, never runs out of fuel, and makes no sound. Spawn Base.generator_infinite and place it (or brush-tool the atf_generators_01_0 tile); the server converts it into a real powered generator and keeps it topped up. It cannot be picked up, disassembled, or destroyed by normal players — a player who tries to sledgehammer it is struck dead. Admin roles with the brush tool can remove it.
+[*][b]True Music Radio playlist unicast[/b] (server): True Music Radio answered every client's load-time playlist request by re-broadcasting the six ~59 KB terminal playlists (plus channels and blacklist) to every online player, ~48 MB of traffic per player join at 137 players and 15-19% of the server's outbound bandwidth. Request replies now go only to the requester; playlist edits still broadcast.
 [/list]
 
 [hr][/hr]
@@ -70,7 +71,7 @@ A collection of performance and compatibility patches specific to the After the 
 [b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b]: the #1 multiplayer server in the world
 
 Tested and compatible with 42.20.2'''
-	modVersion = '1.5.0'
+	modVersion = '1.6.0'
 	pack = 'atf_generators'
 	tiledef = 'atf_generators 8104'
 }
