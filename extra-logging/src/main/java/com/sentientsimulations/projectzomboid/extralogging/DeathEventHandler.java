@@ -28,9 +28,10 @@ public class DeathEventHandler {
             "================================================================================";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("deaths");
+    private static final org.slf4j.Logger logger =
+            ExtraLoggerFactory.createLogger("deaths", "log", 5);
     private static final org.slf4j.Logger jsonLogger =
-            ExtraLoggerFactory.createLogger("deaths", "json");
+            ExtraLoggerFactory.createLogger("deaths", "json", 5);
 
     private static void writeDeathEntry(String header, String body) {
         logger.info("{}\n{}\n{}\n{}", SEPARATOR, header, SEPARATOR, body);

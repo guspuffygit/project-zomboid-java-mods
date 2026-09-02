@@ -1,20 +1,123 @@
 package com.sentientsimulations.projectzomboid.extralogging;
 
 import io.pzstorm.storm.event.packet.*;
+import io.pzstorm.storm.event.zomboid.OnItemTransferCompletedEvent;
 import io.pzstorm.storm.lua.StormKahluaTable;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import se.krka.kahlua.vm.KahluaTableIterator;
+import zombie.characters.IsoPlayer;
 import zombie.inventory.InventoryItem;
 import zombie.inventory.ItemContainer;
 import zombie.inventory.types.Food;
+import zombie.iso.IsoGridSquare;
+import zombie.iso.IsoObject;
+import zombie.network.PZNetKahluaNull;
+import zombie.network.PZNetKahluaTableImpl;
 import zombie.network.fields.ContainerID;
+import zombie.network.fields.NetObject;
 import zombie.scripting.entity.components.crafting.CraftRecipe;
 
+/**
+ * Routes player activity into three files by what an investigation greps for, not by packet type.
+ * {@code world.log} holds every change to the map (destroy, scrap, build, smash, barricade...),
+ * {@code items.log} holds inventory movement, and {@code actions.log} takes the remaining timed
+ * actions (vehicle doors, equip, eat...) that make up ~90% of the volume. Vehicle theft and
+ * tampering actions go to {@code vehicles.log} next to PlayerHitVehicle.
+ */
 public class ItemEventHandler {
 
-    private static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("items");
+    private static final org.slf4j.Logger worldLogger =
+            ExtraLoggerFactory.createLogger("world", "log", 5);
+    private static final org.slf4j.Logger itemsLogger =
+            ExtraLoggerFactory.createLogger("items", "log", 3);
+    private static final org.slf4j.Logger actionsLogger =
+            ExtraLoggerFactory.createLogger("actions");
+    private static final org.slf4j.Logger vehiclesLogger = VehicleEventHandler.logger;
+
+    private static final Set<String> WORLD_ACTIONS =
+            Set.of(
+                    "ISMoveablesAction",
+                    "ISDestroyStuffAction",
+                    "ISDismantleAction",
+                    "LSIWScrap",
+                    "LSIWAction",
+                    "LSIWAddItems",
+                    "ISLightActions",
+                    "ISSmashWindow",
+                    "ISRemoveBrokenGlass",
+                    "ISRemoveGlass",
+                    "ISPickupBrokenGlass",
+                    "ISBarricadeAction",
+                    "ISUnbarricadeAction",
+                    "ISAddSheetRope",
+                    "ISRemoveSheetRope",
+                    "ISAddSheetAction",
+                    "ISRemoveSheetAction",
+                    "ISBuildAction",
+                    "ISBuildIsoEntity",
+                    "ISPaintAction",
+                    "ISPlumbItem",
+                    "ISPlaceTrap",
+                    "ISRemoveTrapAction",
+                    "ISTakeTrap",
+                    "ISPlaceFishingNetAction",
+                    "ISRemoveFishingNetAction",
+                    "ISRemoveCampfireAction",
+                    "ISPutOutCampfireAction",
+                    "ISTakeGenerator",
+                    "ISPlaceCarBatteryChargerAction",
+                    "ISTakeCarBatteryChargerAction",
+                    "ISChopTreeAction",
+                    "ISRemoveBush",
+                    "ISRemoveGrass",
+                    "ISScything",
+                    "ISShovelGround",
+                    "ISShovelAction",
+                    "ISPlowAction",
+                    "ISDigGraveAction",
+                    "ISFillGrave",
+                    "ISBuryCorpse",
+                    "ISPickUpGroundCoverItem",
+                    "ISPickAxeGroundCoverItem",
+                    "ISTakeBricks",
+                    "ISLockDoor",
+                    "ISLockDoors",
+                    "ISPadlockAction",
+                    "ISPadlockByCodeAction");
+
+    private static final Set<String> ITEM_ACTIONS =
+            Set.of(
+                    "ISDropWorldItemAction",
+                    "ISDropVehicleItemAction",
+                    "ISGrabCorpseAction",
+                    "ISGrabCorpseItem",
+                    "ISDropCorpseIntoContainer",
+                    "ISDropAnimalCorpseAndThen",
+                    "ISThrowCorpseOverFence",
+                    "ISThrowCorpseThroughWindow",
+                    "ISDumpContentsAction",
+                    "ISKillAnimalInInventory");
+
+    private static final Set<String> VEHICLE_ACTIONS =
+            Set.of(
+                    "ISInstallVehiclePart",
+                    "ISUninstallVehiclePart",
+                    "ISAVCSUninstallVehiclePart",
+                    "ISAVCSTakeEngineParts",
+                    "ISHotwireVehicle",
+                    "ISUnlockVehicleDoor",
+                    "ISLockVehicleDoor",
+                    "ISTakeGasolineFromVehicle",
+                    "ISAddGasolineToVehicle",
+                    "ISRefuelFromGasPump",
+                    "ISRepairEngine",
+                    "ISInflateTire",
+                    "ISDeflateTire",
+                    "ISStartVehicleEngine",
+                    "ISWashVehicle");
 
     /**
      * Since PZ 42.20.0 all client-initiated item movement (container-to-container and drops to the
@@ -39,7 +142,7 @@ public class ItemEventHandler {
                                     .map(ItemEventHandler::describeEntry)
                                     .collect(Collectors.joining("; "));
 
-            logger.info(
+            itemsLogger.info(
                     "{}: steamId={}, user={}, state={}, consistent={}, extra={}, entries=[{}]",
                     event.getName(),
                     event.steamId,
@@ -49,7 +152,7 @@ public class ItemEventHandler {
                     extra,
                     entryLog);
         } catch (Exception e) {
-            logger.error("Failed to log onItemTransaction", e);
+            itemsLogger.error("Failed to log onItemTransaction", e);
         }
     }
 
@@ -102,74 +205,193 @@ public class ItemEventHandler {
                 .formatted(containerId.containerType, containerId.x, containerId.y, containerId.z);
     }
 
+    /**
+     * Fires after {@code processServer}. {@code state} is the server verdict. {@code action} is
+     * null when the server failed to rebuild the action from the client's args (typically the
+     * referenced world object no longer exists server-side) — the server rejects those, and the raw
+     * {@code actionArgs} are the only description left, so they are dumped instead.
+     */
     public static void onNetTimedAction(NetTimedActionPacketEvent event) {
         try {
+            String actionType = event.getActionType();
             String extraLog = "";
             try {
-                if (event.getActionType().equals("ISMoveablesAction")) {
-                    String spriteName = event.getAction().getString("origSpriteName");
-                    String mode = event.getAction().getString("mode");
-                    extraLog += ", spriteName=%s, mode=%s".formatted(spriteName, mode);
-                } else if (event.getActionType().equals("ISDropWorldItemAction")) {
-                    Object item = event.getAction().rawget("item");
-                    if (item instanceof InventoryItem inventoryItem) {
-                        extraLog +=
-                                ", %s=%s"
-                                        .formatted(
-                                                inventoryItem.getClass().getSimpleName(),
-                                                inventoryItem.getFullType());
-                    } else {
-                        extraLog += ", item=%s".formatted(item);
-                    }
-                } else if (event.getActionType().equals("ISEatFoodAction")) {
-                    Double percentage = event.getAction().getDouble("percentage");
-                    extraLog += ", percentage=%s".formatted(percentage);
-
-                    Object foodObject = event.getAction().rawget("item");
-                    if (foodObject instanceof Food food) {
-                        extraLog += ", foodName=%s".formatted(food.getName());
-                    }
-                } else if (event.getActionType().equals("ISHandcraftAction")) {
-                    Object craftRecipeObject = event.getAction().rawget("craftRecipe");
-                    if (craftRecipeObject instanceof CraftRecipe craftRecipe) {
-                        extraLog += ", craftItem=%s".formatted(craftRecipe.getName());
-                    }
-                } else if (event.getActionType().equals("ISEquipWeaponAction")
-                        || event.getActionType().equals("ISUnequipAction")
-                        || event.getActionType().equals("ISWearClothing")) {
-                    Object itemObject = event.getAction().rawget("item");
-                    if (itemObject instanceof InventoryItem inventoryItem) {
-                        extraLog +=
-                                ", %s=%s"
-                                        .formatted(
-                                                inventoryItem.getClass().getSimpleName(),
-                                                inventoryItem.getFullType());
-                    }
-                } else if (event.getActionType().equals("ISBuildIsoEntity")) {
-
+                if (event.getPacket().action == null) {
+                    extraLog =
+                            ", rejected=server-constructor-failed, args={%s}"
+                                    .formatted(describeArgs(event.getActionArgs()));
+                } else {
+                    extraLog = describeAction(actionType, event.getAction());
                 }
             } catch (Exception e) {
-                logger.error("Unable to add extraLog information to {}", event.getActionType(), e);
+                loggerFor(actionType)
+                        .error("Unable to add extraLog information to {}", actionType, e);
             }
 
-            logger.info(
-                    "{}: steamId={}, user={}, pos=({},{},{}), actionType={}{}",
-                    event.getName(),
-                    event.steamId,
-                    event.username,
-                    event.getPlayerId().getX(),
-                    event.getPlayerId().getY(),
-                    event.getPlayerId().getZ(),
-                    event.getActionType(),
-                    extraLog);
+            loggerFor(actionType)
+                    .info(
+                            "{}: steamId={}, user={}, pos=({},{},{}), state={}, actionType={}{}",
+                            event.getName(),
+                            event.steamId,
+                            event.username,
+                            event.getPlayerId().getX(),
+                            event.getPlayerId().getY(),
+                            event.getPlayerId().getZ(),
+                            event.getField("state"),
+                            actionType,
+                            extraLog);
         } catch (Exception e) {
-            logger.error("Failed to log onNetTimedAction", e);
+            actionsLogger.error("Failed to log onNetTimedAction", e);
+        }
+    }
+
+    private static org.slf4j.Logger loggerFor(String actionType) {
+        if (WORLD_ACTIONS.contains(actionType)) {
+            return worldLogger;
+        }
+        if (ITEM_ACTIONS.contains(actionType)) {
+            return itemsLogger;
+        }
+        if (VEHICLE_ACTIONS.contains(actionType)) {
+            return vehiclesLogger;
+        }
+        return actionsLogger;
+    }
+
+    private static String describeAction(String actionType, StormKahluaTable action) {
+        switch (actionType) {
+            case "ISMoveablesAction":
+                return ", spriteName=%s, mode=%s"
+                                .formatted(
+                                        action.getString("origSpriteName"),
+                                        action.getString("mode"))
+                        + describeWorldObject(action.rawget("object"));
+            case "ISDestroyStuffAction":
+                return describeWorldObject(action.rawget("item"));
+            case "ISDismantleAction":
+                return describeWorldObject(action.rawget("thumpable"));
+            case "LSIWScrap":
+                return describeWorldObject(action.rawget("obj"));
+            case "ISLightActions":
+                return ", mode=%s".formatted(action.getString("mode"))
+                        + describeWorldObject(action.rawget("lightswitch"))
+                        + describeItem("item", action.rawget("item"));
+            case "ISDropWorldItemAction":
+            case "ISEquipWeaponAction":
+            case "ISUnequipAction":
+            case "ISWearClothing":
+                return describeItem(null, action.rawget("item"));
+            case "ISEatFoodAction":
+                String food = ", percentage=%s".formatted(action.getDouble("percentage"));
+                if (action.rawget("item") instanceof Food foodItem) {
+                    food += ", foodName=%s".formatted(foodItem.getName());
+                }
+                return food;
+            case "ISHandcraftAction":
+                if (action.rawget("craftRecipe") instanceof CraftRecipe craftRecipe) {
+                    return ", craftItem=%s".formatted(craftRecipe.getName());
+                }
+                return "";
+            default:
+                return "";
+        }
+    }
+
+    /** With a null label the item's class name is the key, matching the historical format. */
+    private static String describeItem(String label, Object value) {
+        if (value instanceof InventoryItem item) {
+            String key = label != null ? label : item.getClass().getSimpleName();
+            return ", %s=%s".formatted(key, item.getFullType());
+        }
+        return label != null ? ", %s=%s".formatted(label, value) : ", item=%s".formatted(value);
+    }
+
+    private static String describeArgs(PZNetKahluaTableImpl args) {
+        if (args == null) {
+            return "";
+        }
+        StringBuilder out = new StringBuilder();
+        KahluaTableIterator it = args.iterator();
+        while (it.advance()) {
+            if (out.length() > 0) {
+                out.append(", ");
+            }
+            out.append(it.getKey()).append('=').append(describeArgValue(it.getValue()));
+        }
+        return out.toString();
+    }
+
+    private static String describeArgValue(Object value) {
+        if (value == null || value instanceof PZNetKahluaNull) {
+            return "nil";
+        }
+        if (value instanceof InventoryItem item) {
+            return item.getFullType();
+        }
+        if (value instanceof IsoPlayer player) {
+            return player.getUsername();
+        }
+        if (value instanceof IsoGridSquare square) {
+            return "square(%d,%d,%d)".formatted(square.getX(), square.getY(), square.getZ());
+        }
+        if (value instanceof IsoObject object) {
+            return describeWorldObject(object).substring(", object=".length());
+        }
+        return String.valueOf(value);
+    }
+
+    /**
+     * Scrap/dismantle/destroy actions are the only record of container and furniture destruction;
+     * the player position alone can't say what was removed or from which square.
+     */
+    private static String describeWorldObject(Object target) {
+        if (!(target instanceof IsoObject object)) {
+            return ", object=%s".formatted(target);
+        }
+        String description =
+                ", object=%s, objectName=%s".formatted(object.getSpriteName(), object.getName());
+        IsoGridSquare square = object.getSquare();
+        if (square != null) {
+            description +=
+                    ", objectPos=(%d,%d,%d)".formatted(square.getX(), square.getY(), square.getZ());
+        }
+        ItemContainer container = object.getContainer();
+        if (container != null) {
+            description +=
+                    ", container=%s, containerItems=%d"
+                            .formatted(container.getType(), container.getItems().size());
+        }
+        return description;
+    }
+
+    /**
+     * Storm-routed transfers (floor pickups, container moves via StormTransfer.transferItem) never
+     * reach the server as an ItemTransactionPacket, so cmd.txt only records the command name.
+     */
+    public static void onItemTransferCompleted(OnItemTransferCompletedEvent event) {
+        try {
+            IsoPlayer player = event.getPlayer();
+            InventoryItem item = event.getItem();
+            itemsLogger.info(
+                    "{}: steamId={}, user={}, pos=({},{},{}), item={}, itemId={}, src={}, dest={}",
+                    event.getName(),
+                    player.getSteamID(),
+                    player.getUsername(),
+                    (int) player.getX(),
+                    (int) player.getY(),
+                    (int) player.getZ(),
+                    item.getFullType(),
+                    item.getID(),
+                    event.getSrcRef(),
+                    event.getDestRef());
+        } catch (Exception e) {
+            itemsLogger.error("Failed to log onItemTransferCompleted", e);
         }
     }
 
     public static void onPlayerDropHeldItems(PlayerDropHeldItemsPacketEvent event) {
         try {
-            logger.info(
+            itemsLogger.info(
                     "{}: steamId={}, user={}, pos=({},{},{}), heavy={}, throw={}",
                     event.getName(),
                     event.steamId,
@@ -180,13 +402,13 @@ public class ItemEventHandler {
                     event.isHeavy(),
                     event.isThrow());
         } catch (Exception e) {
-            logger.error("Failed to log onPlayerDropHeldItems", e);
+            itemsLogger.error("Failed to log onPlayerDropHeldItems", e);
         }
     }
 
     public static void onRemoveItemFromSquare(RemoveItemFromSquarePacketEvent event) {
         try {
-            logger.info(
+            worldLogger.info(
                     "{}: steamId={}, user={}, pos=({},{},{}), index={}",
                     event.getName(),
                     event.steamId,
@@ -196,13 +418,13 @@ public class ItemEventHandler {
                     event.getZ(),
                     event.getIndex());
         } catch (Exception e) {
-            logger.error("Failed to log onRemoveItemFromSquare", e);
+            worldLogger.error("Failed to log onRemoveItemFromSquare", e);
         }
     }
 
     public static void onSledgehammerDestroy(SledgehammerDestroyPacketEvent event) {
         try {
-            logger.info(
+            worldLogger.info(
                     "{}: steamId={}, user={}, pos=({},{},{}), index={}",
                     event.getName(),
                     event.steamId,
@@ -212,7 +434,25 @@ public class ItemEventHandler {
                     event.getZ(),
                     event.getIndex());
         } catch (Exception e) {
-            logger.error("Failed to log onSledgehammerDestroy", e);
+            worldLogger.error("Failed to log onSledgehammerDestroy", e);
+        }
+    }
+
+    /** {@code action} is a package-private enum, so it's logged via its name only. */
+    public static void onSmashWindow(SmashWindowPacketEvent event) {
+        try {
+            Object action = event.getField("action");
+            Object window = event.getField("window");
+            Object target = window instanceof NetObject netObject ? netObject.getObject() : null;
+            worldLogger.info(
+                    "{}: steamId={}, user={}, action={}{}",
+                    event.getName(),
+                    event.steamId,
+                    event.username,
+                    action,
+                    describeWorldObject(target));
+        } catch (Exception e) {
+            worldLogger.error("Failed to log onSmashWindow", e);
         }
     }
 
@@ -226,7 +466,7 @@ public class ItemEventHandler {
                 translationName = craftRecipe.getTranslationName();
             }
 
-            logger.info(
+            worldLogger.info(
                     "{}: steamId={}, user={}, pos=({},{},{}), type={}, name={}, translationName={}",
                     event.getName(),
                     event.steamId,
@@ -241,11 +481,11 @@ public class ItemEventHandler {
             if (item != null) {
                 KahluaTableIterator it = item.iterator();
                 while (it.advance()) {
-                    logger.debug("  item key={}, value={}", it.getKey(), it.getValue());
+                    worldLogger.debug("  item key={}, value={}", it.getKey(), it.getValue());
                 }
             }
         } catch (Exception e) {
-            logger.error("Failed to log onBuildAction", e);
+            worldLogger.error("Failed to log onBuildAction", e);
         }
     }
 }

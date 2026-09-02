@@ -87,6 +87,11 @@ public class ExtraLoggingMod implements ZomboidMod {
         ItemEventHandler.onSledgehammerDestroy(event);
     }
 
+    @SubscribeEvent
+    public void onSmashWindow(SmashWindowPacketEvent event) {
+        ItemEventHandler.onSmashWindow(event);
+    }
+
     // Safehouse events
 
     @SubscribeEvent
@@ -145,6 +150,7 @@ public class ExtraLoggingMod implements ZomboidMod {
 
     @SubscribeEvent
     public void onItemTransferCompleted(OnItemTransferCompletedEvent event) {
+        ItemEventHandler.onItemTransferCompleted(event);
         ContainerHistoryHandler.onItemTransferCompleted(event);
     }
 }

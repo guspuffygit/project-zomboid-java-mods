@@ -7,8 +7,9 @@ import org.slf4j.Logger;
  * Thin wrapper around {@link StormFileLoggerFactory} that gives extra-logging its own log directory
  * (defaulting to {@code <STORM_LOG_DIR>/extra-logging/}, overridable via {@code
  * -DEXTRA_LOGGING_DIR=…}) and the mod's preferred size/rotation settings (20&nbsp;MB active file
- * with one rolled archive). JSON files use the bare {@code %msg%n} layout so each line is a
- * standalone JSON record; other extensions get the standard timestamped layout.
+ * with one rolled archive unless the caller asks for more). JSON files use the bare {@code %msg%n}
+ * layout so each line is a standalone JSON record; other extensions get the standard timestamped
+ * layout.
  */
 public final class ExtraLoggerFactory {
 
@@ -18,7 +19,7 @@ public final class ExtraLoggerFactory {
 
     private ExtraLoggerFactory() {}
 
-    public static Logger createLogger(String name, String extension) {
+    public static Logger createLogger(String name, String extension, int maxIndex) {
         String pattern = "json".equals(extension) ? "%msg%n" : null;
         return StormFileLoggerFactory.create(
                 "extra-logging." + name + "." + extension,
@@ -26,8 +27,12 @@ public final class ExtraLoggerFactory {
                 name,
                 extension,
                 20,
-                1,
+                maxIndex,
                 pattern);
+    }
+
+    public static Logger createLogger(String name, String extension) {
+        return createLogger(name, extension, 1);
     }
 
     public static Logger createLogger(String name) {

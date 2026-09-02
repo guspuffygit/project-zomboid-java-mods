@@ -5,7 +5,7 @@ import zombie.network.fields.hit.Player;
 
 public class VehicleEventHandler {
 
-    private static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("vehicles");
+    static final org.slf4j.Logger logger = ExtraLoggerFactory.createLogger("vehicles");
 
     public static void onPlayerHitVehicle(PlayerHitVehiclePacketEvent event) {
         try {
