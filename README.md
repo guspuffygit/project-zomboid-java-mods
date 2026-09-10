@@ -22,5 +22,5 @@ Linux:
 
 Windows:
 ```
-.\gradlew.bat deployMod
+./gradlew.bat deployMod
 ```
