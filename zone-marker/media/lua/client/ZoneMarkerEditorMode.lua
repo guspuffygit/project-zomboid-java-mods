@@ -268,11 +268,16 @@ function MultiplayerZoneEditorMode_ZoneMarker:refreshZoneList()
     local zones = catName and ZoneMarkerCache.zones[catName] or {}
     local zoneCount = zones and #zones or 0
 
-    if catName == self.lastZoneListCategory and zoneCount == self.lastZoneListCount then
+    if
+        catName == self.lastZoneListCategory
+        and zoneCount == self.lastZoneListCount
+        and self.lastZoneListVersion == ZoneMarkerCache.version
+    then
         return
     end
     self.lastZoneListCategory = catName
     self.lastZoneListCount = zoneCount
+    self.lastZoneListVersion = ZoneMarkerCache.version
 
     local prevRegion = nil
     if self.zoneList.selected > 0 and self.zoneList.selected <= #self.zoneList.items then
@@ -281,6 +286,7 @@ function MultiplayerZoneEditorMode_ZoneMarker:refreshZoneList()
     end
 
     self.zoneList:clear()
+    self.zoneList.selected = 0
     if zones then
         for i, zone in ipairs(zones) do
             local label = zone.region
@@ -304,9 +310,10 @@ end
 function MultiplayerZoneEditorMode_ZoneMarker:fillCategoryCombo()
     local categories = ZoneMarkerCache.categories
     local currentCount = self.categoryCombo:getOptionCount()
-    if currentCount == #categories then
+    if currentCount == #categories and self.lastCategoryVersion == ZoneMarkerCache.version then
         return
     end
+    self.lastCategoryVersion = ZoneMarkerCache.version
 
     local selectedName = nil
     if currentCount > 0 then

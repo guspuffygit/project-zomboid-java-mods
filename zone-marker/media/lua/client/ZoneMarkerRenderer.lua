@@ -10,6 +10,7 @@ require("ZoneMarkerClient")
 
 ---@type table<string, boolean>
 local filterState = {}
+local filterRevision = 0
 
 ---@class ZoneMarkerFilterOption
 ---@field getName fun(self: ZoneMarkerFilterOption): string
@@ -36,6 +37,7 @@ local function getOrCreateOption(categoryName)
     end
     function opt:setValue(v)
         filterState[categoryName] = v
+        filterRevision = filterRevision + 1
     end
     return opt
 end
@@ -95,6 +97,17 @@ end
 -- Zone rendering
 --
 
+-- A category rename can keep the option count unchanged. Invalidate the shared
+-- options UI regardless of whether AVCS or Zone Marker installed its wrapper first.
+local originalOptionsSync = WorldMapOptions.synchUI
+function WorldMapOptions:synchUI()
+    if self._zoneMarkerVersion ~= ZoneMarkerCache.version then
+        self._lastBoolCount = nil
+    end
+    originalOptionsSync(self)
+    self._zoneMarkerVersion = ZoneMarkerCache.version
+end
+
 ---@type number
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 
@@ -103,10 +116,9 @@ local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 ---@param worldX number
 ---@param worldY number
 ---@param name string
-local function renderZoneLabel(javaObject, api, worldX, worldY, name)
+local function renderZoneLabel(javaObject, api, worldX, worldY, name, textW)
     local sx = PZMath.floor(api:worldToUIX(worldX, worldY))
     local sy = PZMath.floor(api:worldToUIY(worldX, worldY))
-    local textW = getTextManager():MeasureStringX(UIFont.Small, name) + 16
     local lineH = FONT_HGT_SMALL
     local boxH = math.ceil(lineH * 1.25)
     -- background
@@ -121,7 +133,7 @@ end
 ---@param g number
 ---@param b number
 ---@param a number
-local function renderZone(mapUI, zone, r, g, b, a)
+local function renderZone(mapUI, zone, r, g, b, a, textW)
     local api = mapUI.mapAPI
     local javaObject = mapUI.javaObject
 
@@ -144,7 +156,7 @@ local function renderZone(mapUI, zone, r, g, b, a)
 
     local midX = (zone.xStart + zone.xEnd) / 2
     local midY = (zone.yStart + zone.yEnd) / 2
-    renderZoneLabel(javaObject, api, midX, midY, zone.region)
+    renderZoneLabel(javaObject, api, midX, midY, zone.region, textW)
 end
 
 --
@@ -152,18 +164,48 @@ end
 --
 
 local originalRender = ISWorldMap.render
+local entries, cachedVersion, cachedFilter, margin = {}, nil, nil, 0
+
+local function refreshEntries()
+    if cachedVersion == ZoneMarkerCache.version and cachedFilter == filterRevision then
+        return
+    end
+    entries, margin = {}, 0
+    cachedVersion, cachedFilter = ZoneMarkerCache.version, filterRevision
+    for _, cat in ipairs(ZoneMarkerCache.categories) do
+        if filterState[cat.name] ~= false then
+            for _, zone in ipairs(ZoneMarkerCache.zones[cat.name] or {}) do
+                local width = getTextManager():MeasureStringX(UIFont.Small, zone.region) + 16
+                entries[#entries + 1] = { zone = zone, cat = cat, width = width }
+                margin = math.max(margin, width / 2, FONT_HGT_SMALL * 2)
+            end
+        end
+    end
+end
 
 function ISWorldMap:render()
     originalRender(self)
 
-    for _, cat in ipairs(ZoneMarkerCache.categories) do
-        if filterState[cat.name] ~= false then
-            local zones = ZoneMarkerCache.zones[cat.name]
-            if zones then
-                for _, zone in ipairs(zones) do
-                    renderZone(self, zone, cat.r, cat.g, cat.b, cat.a)
-                end
-            end
+    refreshEntries()
+    -- Four corners keep the broad-phase bounds conservative on rotated maps.
+    local api, w, h = self.mapAPI, self:getWidth(), self:getHeight()
+    local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
+    for _, x in ipairs({ -margin, w + margin }) do
+        for _, y in ipairs({ -margin, h + margin }) do
+            local wx, wy = api:uiToWorldX(x, y), api:uiToWorldY(x, y)
+            minX, minY = math.min(minX, wx), math.min(minY, wy)
+            maxX, maxY = math.max(maxX, wx), math.max(maxY, wy)
+        end
+    end
+    for _, entry in ipairs(entries) do
+        local zone, cat = entry.zone, entry.cat
+        if
+            zone.xEnd >= minX
+            and zone.xStart <= maxX
+            and zone.yEnd >= minY
+            and zone.yStart <= maxY
+        then
+            renderZone(self, zone, cat.r, cat.g, cat.b, cat.a, entry.width)
         end
     end
 end
