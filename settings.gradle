@@ -15,3 +15,5 @@ include('survivor-skill-obelisk')
 include('guspuffy-atf-patches')
 include('proximity-inventory')
 include('atf-casino')
+
+include('universal-admin-core')

@@ -1,0 +1,43 @@
+modInfo {
+	name = 'Universal Admin Core'
+	description = 'A searchable server control center and streamlined player administration. Requires Storm; no ATF or economy dependency. Targets Project Zomboid 42.20.4.'
+	modVersion = '0.1.5'
+}
+
+// B42MP.jar can contain older classes with the same names as the installed game.
+// This module targets the actual projectzomboid.jar, not every jar in gameDir.
+configurations.compileOnly.dependencies.removeAll {
+	it instanceof FileCollectionDependency
+}
+configurations.testImplementation.dependencies.removeAll {
+	it instanceof FileCollectionDependency
+}
+def gameApi = files(layout.buildDirectory.file('zomboid-classpath/projectzomboid.jar')).builtBy('extractZomboidFiles')
+dependencies {
+	compileOnly gameApi
+	testImplementation gameApi
+}
+tasks.named('writeModInfo') {
+	doLast { outputs.files.singleFile.append('\nversionMin=42.20\n') }
+}
+
+// Assemble a reviewable local mod without publishing or changing a game profile.
+tasks.register('packageLocal', Zip) {
+	dependsOn jar, 'writeModInfo'
+	doFirst {
+		if (rootProject.findProperty('env') != 'prod') {
+			throw new GradleException('Use -Penv=prod for the standalone universal-admin-core-b42 package.')
+		}
+	}
+	archiveFileName = 'universal-admin-core.zip'
+	destinationDirectory = layout.buildDirectory.dir('distributions')
+	into('universal-admin-core-b42/42') {
+		from(tasks.named('jar'))
+		from(tasks.named('writeModInfo'))
+		from('media') { into 'media' }
+	}
+	into('universal-admin-core-b42/common') {
+		from('common')
+		from('README.md')
+	}
+}
