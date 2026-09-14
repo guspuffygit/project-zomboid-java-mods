@@ -1,0 +1,34 @@
+modInfo {
+	name = 'Admin Diagnostics'
+	description = 'Opt-in local incident recording for admin client performance, entity loading and UI failures. No admin overhaul required. Optional Storm client helper adds JVM memory and ping metrics.'
+	modVersion = '0.1.0'
+	requiresStorm = false
+}
+
+configurations.compileOnly.dependencies.removeAll {
+	it instanceof FileCollectionDependency
+}
+configurations.testImplementation.dependencies.removeAll {
+	it instanceof FileCollectionDependency
+}
+def gameApi = files(layout.buildDirectory.file('zomboid-classpath/projectzomboid.jar')).builtBy('extractZomboidFiles')
+dependencies {
+	compileOnly gameApi
+	testImplementation gameApi
+}
+
+tasks.register('packageLocal', Zip) {
+	dependsOn jar, 'writeModInfo'
+	doFirst {
+		if (rootProject.findProperty('env') != 'prod') throw new GradleException('Use -Penv=prod for the standalone package.')
+	}
+	archiveFileName = 'admin-diagnostics.zip'
+	destinationDirectory = layout.buildDirectory.dir('distributions')
+	into('admin-diagnostics-b42/42') {
+		from(tasks.named('jar'))
+		from(tasks.named('writeModInfo'))
+		from('media') { into 'media' }
+	}
+	into('admin-diagnostics-b42/common') { from('README.md') }
+	into('tools') { from('tools') }
+}
