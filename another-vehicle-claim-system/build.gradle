@@ -82,3 +82,17 @@ Tested and compatible with 42.20.0
 8/21/2026 - Storm servers: claimed-vehicle locations are re-synced from vehicles.db (and loaded vehicles) at server start and before every server save, so the managers and map no longer drift from where cars really are.
 8/21/2026 - Storm servers: admins get a Teleport button in both vehicle managers that brings the selected claimed vehicle to their own position (+2,+2 tiles), loading its area first if needed; admin role is enforced server-side.'''
 }
+
+// B42MP.jar can contain older classes with the same names as the installed game.
+// This module targets the actual projectzomboid.jar, not every jar in gameDir.
+configurations.compileOnly.dependencies.removeAll {
+	it instanceof FileCollectionDependency
+}
+configurations.testImplementation.dependencies.removeAll {
+	it instanceof FileCollectionDependency
+}
+def gameApi = files(layout.buildDirectory.file('zomboid-classpath/projectzomboid.jar')).builtBy('extractZomboidFiles')
+dependencies {
+	compileOnly gameApi
+	testImplementation gameApi
+}

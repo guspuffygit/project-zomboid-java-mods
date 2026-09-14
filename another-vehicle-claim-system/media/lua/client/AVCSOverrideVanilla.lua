@@ -206,6 +206,9 @@ function AVCS.addOptionToMenuOutsideVehicle(player, context, vehicle)
             toolTip.description = getText("Tooltip_AVCS_Unsupported")
             option.notAvailable = true
         end
+    elseif checkResult.reason == "syncing" then
+        option = context:addOption("Synchronizing vehicle claims...", nil, nil)
+        option.notAvailable = true
     elseif checkResult.permissions == true then
         option = context:addOption(
             getText("ContextMenu_AVCS_UnclaimVehicle"),

@@ -53,5 +53,13 @@
   "IGUI_AVCS_Admin_Teleport_targetNotLoaded": "Vehicle teleport failed: your area is not loaded on the server",
   "IGUI_AVCS_Admin_Teleport_occupied": "Vehicle teleport refused: another vehicle is on the target spot, step aside",
   "IGUI_AVCS_Admin_Teleport_timeout": "Vehicle teleport timed out: the vehicle's area did not load",
-  "IGUI_AVCS_Admin_Teleport_noStorm": "Vehicle teleport needs a Storm server"
+  "IGUI_AVCS_Admin_Teleport_noStorm": "Vehicle teleport needs a Storm server",
+  "IGUI_AVCS_Admin_Manager_btnUntow_Label": "Untow",
+  "IGUI_AVCS_Admin_Manager_btnUntow_Tooltip": "Detach vehicle from whatever it is towing / being towed by",
+  "IGUI_AVCS_Admin_Untow_Confirm": "Detach the tow link on %1 (owner: %2)?",
+  "IGUI_AVCS_Admin_Untow_untowed": "Vehicle untowed",
+  "IGUI_AVCS_Admin_Untow_notTowing": "Vehicle is not currently towing or being towed",
+  "IGUI_AVCS_Admin_Untow_notLoaded": "Vehicle untow failed: the vehicle is not currently loaded on the server",
+  "IGUI_AVCS_Admin_Untow_notAdmin": "Only admins can untow vehicles",
+  "IGUI_AVCS_Admin_Untow_badArgs": "Vehicle untow failed: invalid request"
 }

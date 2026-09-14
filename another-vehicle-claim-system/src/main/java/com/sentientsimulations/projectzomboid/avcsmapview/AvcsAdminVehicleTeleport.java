@@ -140,6 +140,7 @@ public final class AvcsAdminVehicleTeleport {
     public static void onZomboidGlobalsLoad(OnZomboidGlobalsLoadEvent event) {
         if (StormEnv.isStormServer() && LuaManager.env != null) {
             LuaManager.env.rawset(LUA_ENABLED_FLAG, Boolean.TRUE);
+            LOGGER.info("[AVCS] Teleport synchronization follow-up enabled.");
         }
     }
 
@@ -239,6 +240,11 @@ public final class AvcsAdminVehicleTeleport {
         Iterator<Job> it = PENDING.values().iterator();
         while (it.hasNext()) {
             Job job = it.next();
+            if (!GameServer.isPlayerConnected(job.admin)
+                    || !isAdminRole(job.admin.getAccessLevel())) {
+                it.remove();
+                continue;
+            }
             try {
                 map.loadOrKeepRelevent(
                         map.worldChunkToServerCellXY(job.sourceChunkX) - map.getMinX(),
@@ -265,6 +271,7 @@ public final class AvcsAdminVehicleTeleport {
             } catch (RuntimeException e) {
                 it.remove();
                 LOGGER.error("[AVCS] teleport of sqlId={} failed", job.sqlId, e);
+                reply(job.admin, job.claimKey, Reason.badArgs, null);
             }
         }
     }
@@ -277,10 +284,20 @@ public final class AvcsAdminVehicleTeleport {
             reason = move(vehicle, job.target);
         } catch (RuntimeException e) {
             LOGGER.error("[AVCS] teleport of sqlId={} failed", job.sqlId, e);
+            reply(job.admin, job.claimKey, Reason.badArgs, null);
             return;
         }
         if (reason == Reason.moved) {
             updateClaimLocation(job.claimKey, job.target);
+            // This is a discontinuity, not ordinary interpolated driving. Explicitly
+            // reset existing client physics copies, including a previous simulator.
+            KahluaTable warp = LuaManager.platform.newTable();
+            warp.rawset("vehicle", (double) vehicle.getId());
+            warp.rawset("claim", job.claimKey);
+            warp.rawset("x", (double) vehicle.getX());
+            warp.rawset("y", (double) vehicle.getY());
+            warp.rawset("physicsY", (double) vehicle.jniTransform.origin.y);
+            GameServer.sendServerCommand(MODULE, "vehicleWarp", warp);
             String line =
                     "["
                             + (System.currentTimeMillis() / 1000L)
@@ -328,6 +345,11 @@ public final class AvcsAdminVehicleTeleport {
 
         float nx = target.centerX();
         float ny = target.centerY();
+        vehicle.setNetPlayerAuthorization(BaseVehicle.Authorization.Server, -1);
+        vehicle.jniLinearVelocity.set(0f, 0f, 0f);
+        if (vehicle.interpolation != null) vehicle.interpolation.reset();
+        // VehicleInterpolationData.set reads this clock when serializing a server move.
+        WorldSimulation.instance.time = zombie.GameTime.getServerTimeMills();
         Transform transform = BaseVehicle.allocTransform();
         try {
             vehicle.getWorldTransform(transform);
