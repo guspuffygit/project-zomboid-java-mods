@@ -1,0 +1,139 @@
+--- a/mod-after_the_fall_core_b42/42.14/media/lua/client/ATF_SafetySystem/ATF_SafehouseGuard_Client.lua
++++ b/mod-after_the_fall_core_b42/42.14/media/lua/client/ATF_SafetySystem/ATF_SafehouseGuard_Client.lua
+@@ -20,6 +20,9 @@
+ ATF.SafehouseGuard = ATF.SafehouseGuard or {}
+ ATF.SafehouseGuard.pendingRelease = nil
+ 
++local function houseKey(sh)
++    return sh:getX() .. "," .. sh:getY() .. "," .. sh:getW() .. "," .. sh:getH()
++end
+ local original_sendSafehouseRelease = sendSafehouseRelease
+ 
+ sendSafehouseRelease = function(safehouse)
+@@ -35,6 +38,7 @@
+     ATF.SafehouseGuard.pendingRelease = safehouse
+ 
+     sendClientCommand(player, "ATF", "RequestRelease", {
++        id = houseKey(safehouse),
+         title = safehouse:getTitle(),
+         owner = safehouse:getOwner(),
+     })
+@@ -53,6 +57,7 @@
+     if command == "ReleaseApproved" then
+         if ATF.SafehouseGuard.pendingRelease then
+             local sh     = ATF.SafehouseGuard.pendingRelease
++            if args and args.id and args.id ~= houseKey(sh) then return end
+             local player = getPlayer()
+             -- SafehouseReleasePacket.isConsistent() enforces that the sending
+             -- connection must be the owner at the Java level — admins releasing
+@@ -60,7 +65,7 @@
+             -- instead, which calls SafeHouse.removeSafeHouse() directly on the
+             -- server and bypasses the Java anti-cheat.
+             if player and sh:getOwner() ~= player:getUsername() then
+-                sendClientCommand(player, "ATF", "ForceRelease", { title = sh:getTitle() })
++                sendClientCommand(player, "ATF", "ForceRelease", { title = sh:getTitle(), id = houseKey(sh) })
+             else
+                 original_sendSafehouseRelease(sh)
+             end
+@@ -91,57 +96,56 @@
+         end
+ 
+     elseif command == "SafehouseSync" then
+-        -- Server sent the authoritative safehouse list. Reconcile the local list
+-        -- to match exactly: remove stale entries and add missing ones.
+-        -- This runs both on connect and whenever the server detects any change,
+-        -- keeping the list accurate across the full session.
+-        local serverList = args and args.safehouses
+-        if not serverList then return end
+-
+-        print(string.format("[ATF Guard] SYNC RECEIVED: %d safehouse(s) from server.", #serverList))
+-
+-        -- Build a lookup of what the server considers canonical
+-        local serverTitles = {}
+-        for _, sh in ipairs(serverList) do
+-            serverTitles[sh.title] = sh
++        -- A complete v2 snapshot is keyed by bounds, like the native sync packet.
++        -- B42 getId() contains an unsynchronized local timestamp; titles are not IDs.
++        local serverList = args and (args.safehouses or {})
++        if not args or args.schema ~= 2 or type(serverList) ~= "table" then return end
++        local function key(x, y, w, h) return x .. "," .. y .. "," .. w .. "," .. h end
++        local canonical = {}
++        for _, data in ipairs(serverList) do
++            if type(data) ~= "table" or type(data.x) ~= "number" or type(data.y) ~= "number"
++                or type(data.w) ~= "number" or type(data.h) ~= "number" or data.w <= 0 or data.h <= 0
++                or type(data.owner) ~= "string" or type(data.title) ~= "string" then return end
++            for _, field in ipairs({ "x", "y", "w", "h", "lastVisited", "created", "hitPoints", "openTimer" }) do
++                local value = data[field]
++                if type(value) ~= "number" or value ~= value or math.abs(value) == math.huge then return end
++            end
++            if data.location ~= nil and type(data.location) ~= "string" then return end
++            for _, field in ipairs({ "players", "respawn" }) do
++                if data[field] ~= nil and type(data[field]) ~= "table" then return end
++                for _, name in pairs(data[field] or {}) do if type(name) ~= "string" then return end end
++            end
++            local id = key(data.x, data.y, data.w, data.h)
++            if data.id ~= id or canonical[id] then return end
++            canonical[id] = data
+         end
+-
+-        -- Remove safehouses the client has that the server no longer knows about
+-        local removed   = 0
+         local localList = SafeHouse.getSafehouseList()
++        local existing = {}
+         for i = localList:size() - 1, 0, -1 do
+-            local sh = localList:get(i)
+-            if not serverTitles[sh:getTitle()] then
+-                SafeHouse.removeSafeHouse(sh)
+-                removed = removed + 1
++            local house = localList:get(i)
++            local id = key(house:getX(), house:getY(), house:getW(), house:getH())
++            if canonical[id] then existing[id] = house else SafeHouse.removeSafeHouse(house) end
++        end
++        for id, data in pairs(canonical) do
++            local house = existing[id] or SafeHouse.addSafeHouse(data.x, data.y, data.w, data.h, data.owner)
++            if house then
++                house:setOwner(data.owner)
++                house:setTitle(data.title)
++                local members, respawn = house:getPlayers(), house:getPlayersRespawn()
++                members:clear()
++                for _, name in ipairs(data.players or {}) do members:add(name) end
++                respawn:clear()
++                for _, name in ipairs(data.respawn or {}) do respawn:add(name) end
++                house:setLastVisited(data.lastVisited)
++                house:setDatetimeCreated(data.created)
++                house:setLocation(data.location)
++                house:setHitPoints(data.hitPoints)
++                house:setOpenTimer(data.openTimer)
+             end
+         end
++        SafeHouse.updateSafehousePlayersConnected()
++        triggerEvent("OnSafehousesChanged")
+ 
+-        -- Add safehouses the client is missing (re-fetch list after removals)
+-        local added       = 0
+-        local updatedList = SafeHouse.getSafehouseList()
+-        local localTitles = {}
+-        for i = 0, updatedList:size() - 1 do
+-            localTitles[updatedList:get(i):getTitle()] = true
+-        end
+-
+-        for _, sh in ipairs(serverList) do
+-            if not localTitles[sh.title] then
+-                SafeHouse.addSafeHouse(sh.x, sh.y, sh.w, sh.h, sh.owner)
+-                -- addSafeHouse defaults the title to the owner name; fix if renamed.
+-                local newSh = SafeHouse.getSafehouseByOwner(sh.owner)
+-                if newSh and newSh:getTitle() ~= sh.title then
+-                    pcall(function() newSh:setTitle(sh.title) end)
+-                end
+-                added = added + 1
+-            end
+-        end
+-
+-        if added > 0 or removed > 0 then
+-            print(string.format("[ATF Guard] Safehouse sync: +%d added, -%d removed.", added, removed))
+-        else
+-            print("[ATF Guard] Safehouse sync: local list already matches server.")
+-        end
+     end
+ end)
+ 

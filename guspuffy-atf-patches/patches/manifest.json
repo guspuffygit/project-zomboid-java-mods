@@ -1,0 +1,32 @@
+[
+  {
+    "path": "mod-after_the_fall_core_b42/42.14/media/lua/server/ATF_SafetySystem/ATF_SafehouseGuard_Server.lua",
+    "before": "4ef976a665a9af213add2a03f0ef29f2e90fd871f6e0475a53e04914dbdcbadd",
+    "after": "6339aacf466404a2556f4dd98af57d04385e2da0f49dda67c0db6a29b58865aa",
+    "module": "atf-core"
+  },
+  {
+    "path": "mod-after_the_fall_core_b42/42.14/media/lua/client/ATF_SafetySystem/ATF_SafehouseGuard_Client.lua",
+    "before": "f56a0d80215e7013fc64fefde5598572be5b78b9b8f2d003027e520c5c295ca4",
+    "after": "5c5265af39577123c1a00d1733bf3b4abcaed87ff6e92535939f8d0265bb7898",
+    "module": "atf-core"
+  },
+  {
+    "path": "mod-LifestyleHobbies/common/media/lua/client/Properties/Objects/Handler.lua",
+    "before": "7784c5c61d278dfb5b1a49899e3ba777813f6cfd13bc013006de6385fd5efaaf",
+    "after": "810e635a7b059a87fd2a3db59de9248d83deafc2a650d9a3222816e0c9cbc71e",
+    "module": "lifestyle"
+  },
+  {
+    "path": "mod-errorMagnifier/42.15/media/lua/client/errorMagnifier_Main.lua",
+    "before": "e3c9b59b3b36804ab7180ca4f890df38e2f0672af25451547b65931a97be950d",
+    "after": "8f1f0fe3cd9d61953405cd8f47de1faf4278f44789e8631977b89881cd9952d2",
+    "module": "error-magnifier"
+  },
+  {
+    "path": "mod-TrueMusicRadio42/42.20/media/lua/client/TrueMusicRadio/TMRadio.lua",
+    "before": "2039ee926e32b59ed71d365ce0bd1e2e13541a45433a7721b6516e0724ed8312",
+    "after": "64e4f739f3357fd4a33205f95f5b0d761c0d1bd9f64e6f85f4f13bee47600029",
+    "module": "true-music-radio"
+  }
+]

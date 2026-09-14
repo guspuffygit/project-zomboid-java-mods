@@ -1,0 +1,77 @@
+--- a/mod-LifestyleHobbies/common/media/lua/client/Properties/Objects/Handler.lua
++++ b/mod-LifestyleHobbies/common/media/lua/client/Properties/Objects/Handler.lua
+@@ -57,6 +57,17 @@
+ 	return {"Jukebox","Disco Ball","GF Clock","StationWork","Sculpture Ice","Sculpture Lamp", "Disco Floor", "Hygienator", "FoodSynthesizer", "DrinkingBuddy"}
+ end
+ 
++local function pruneUnloaded(objList)
++    local cell = getCell()
++    for i = #objList, 1, -1 do
++        local object = objList[i]
++        local square = object and object:getSquare()
++        if not square or cell:getGridSquare(object:getX(), object:getY(), object:getZ()) ~= square then
++            table.remove(objList, i)
++        end
++    end
++end
++
+ local function checkList(object, objList)
+ 	if #objList == 0 then return false; end
+ 	local hasObj = false
+@@ -82,6 +93,7 @@
+ 		local thisPlayer = getSpecificPlayer(0)
+ 		if not thisPlayer then return; end
+ 		local objList = require("Properties/Objects/List")
++        pruneUnloaded(objList)
+ 		local t = getInteractiveObjsCNOrGN()
+ 		local hasJuke = false
+ 		for x = thisPlayer:getX()-8,thisPlayer:getX()+8 do
+@@ -125,11 +137,20 @@
+ 	local thisPlayer = getSpecificPlayer(0)
+ 	if not thisPlayer then return; end
+ 	local objList = require("Properties/Objects/List")
++        pruneUnloaded(objList)
+ 	local t = getInteractiveObjsCNOrGN()
+ 
+-	for x = thisPlayer:getX()-range,thisPlayer:getX()+range do
+-		for y = thisPlayer:getY()-range,thisPlayer:getY()+range do
+-			local square = getCell():getGridSquare(x,y,thisPlayer:getZ())
++    local centerX, centerY, level = math.floor(thisPlayer:getX()), math.floor(thisPlayer:getY()), math.floor(thisPlayer:getZ())
++    local budget = 0
++    for x = centerX-range,centerX+range do
++        for y = centerY-range,centerY+range do
++            if getSpecificPlayer(0) ~= thisPlayer or thisPlayer:isDead()
++                or math.floor(thisPlayer:getZ()) ~= level
++                or math.abs(thisPlayer:getX()-centerX) > range
++                or math.abs(thisPlayer:getY()-centerY) > range then return end
++            if budget >= 64 then coroutine.yield(); budget = 0 end
++            budget = budget + 1
++			local square = getCell():getGridSquare(x,y,level)
+ 			if square then
+ 				for i=0,square:getObjects():size()-1 do
+ 					local thisObject = square:getObjects():get(i)
+@@ -160,11 +181,23 @@
+ 	end
+ end
+ 
++local startupScan
++local function runStartupScan()
++    if not startupScan then Events.OnTick.Remove(runStartupScan); return end
++    local ok, err = coroutine.resume(startupScan)
++    if not ok or coroutine.status(startupScan) == "dead" then
++        startupScan = nil
++        Events.OnTick.Remove(runStartupScan)
++        if not ok then print("[Lifestyle startup scan] " .. tostring(err)) end
++    end
++end
++
+ local function LSOnScanObjStart()
+ 	LSInteractiveObjs.total = 30/GTLSCheck
+ 	if LSInteractiveObjs.event then return; end
+     Events.OnTick.Add(LSScanObjs)
+-	ScanAreaOnce(60)
++    startupScan = coroutine.create(function() ScanAreaOnce(60) end)
++    Events.OnTick.Add(runStartupScan)
+ 	LSInteractiveObjs.event = true
+ end
+ Events.OnGameStart.Add(LSOnScanObjStart)
