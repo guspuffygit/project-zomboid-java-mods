@@ -82,6 +82,14 @@ option SkillObelisk.CurseOnSledgehammer
     translation = SkillObelisk_CurseOnSledgehammer,
 }
 
+option SkillObelisk.ShowDeathReminder
+{
+    type = boolean,
+    default = true,
+    page = SkillObelisk,
+    translation = SkillObelisk_ShowDeathReminder,
+}
+
 option SkillObelisk.MapObeliskVisibility
 {
     type = enum,

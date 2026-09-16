@@ -1,9 +1,9 @@
 --
 -- SurvivorSkillObeliskDeathReminder.lua
 -- On the local player's death, pop a modal reminding them their perks can be
--- partially recovered at an obelisk. Suppressed when server-side skill recovery
--- is off (RecoverSkills=false or SkillRecoveryPercent=0) so the promise matches
--- what the server will actually restore.
+-- partially recovered at an obelisk. Suppressed when ShowDeathReminder is off,
+-- or when server-side skill recovery is off (RecoverSkills=false or
+-- SkillRecoveryPercent=0) so the promise matches what the server will restore.
 --
 
 require("ISUI/ISModalRichText")
@@ -52,6 +52,9 @@ local function onPlayerDeath(player)
         return
     end
     local sv = readSandbox()
+    if sv and sv.ShowDeathReminder == false then
+        return
+    end
     if sv and sv.RecoverSkills == false then
         return
     end
