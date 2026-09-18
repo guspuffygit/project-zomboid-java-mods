@@ -1,0 +1,63 @@
+--- a/mod-errorMagnifier/42.15/media/lua/client/errorMagnifier_Main.lua
++++ b/mod-errorMagnifier/42.15/media/lua/client/errorMagnifier_Main.lua
+@@ -240,8 +240,10 @@
+ 
+     local newErrors = {}
+ 
+-    for i = errorMagnifier.errorCount + 1, errors:size() do
+-        local str = errors:get(i - 1)
++    if errors:size() < errorMagnifier.errorCount then errorMagnifier.errorCount = 0 end
++    local processed = math.min(errors:size(), errorMagnifier.errorCount + 32)
++    for i = errorMagnifier.errorCount + 1, processed do
++        local str = tostring(errors:get(i - 1)):sub(1, 16384)
+         str = str:gsub("\t", "    ")
+         str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n", "")
+         str = str:gsub("%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\nSTACK TRACE\n%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-%-\n", "")
+@@ -332,7 +334,14 @@
+ 
+     for _, str in pairs(newErrors) do
+         if type(str) == "string" then
++            str = str:sub(1, 16384)
+             if not errorMagnifier.parsedErrors[str] then
++                if #errorMagnifier.parsedErrorsKeyed >= 256 then
++                    local oldest = table.remove(errorMagnifier.parsedErrorsKeyed, 1)
++                    errorMagnifier.parsedErrors[oldest] = nil
++                    errorMagnifier.errorTimestamps[oldest] = nil
++                    errorMagnifier.evictedErrors = (errorMagnifier.evictedErrors or 0) + 1
++                end
+                 table.insert(errorMagnifier.parsedErrorsKeyed, str)
+                 errorMagnifier.parsedErrors[str] = 0
+                 errorMagnifier.errorTimestamps[str] = errorMagnifier.getRealTimeStamp()
+@@ -341,11 +350,9 @@
+         end
+     end
+ 
+-    errorMagnifier.errorCount = getLuaDebuggerErrors():size()
+-
+-    if errorMagnifier.MainWindow.instance and errorMagnifier.MainWindow.instance:isVisible() and errorMagnifier.currentTab == "errors" then
+-        errorMagnifier.refreshErrorDisplay()
+-    end
++    errorMagnifier.errorCount = processed
++
++    errorMagnifier.displayRefreshPending = true
+ end
+ 
+ 
+@@ -1122,4 +1129,17 @@
+     end
+ end
+ 
++
++-- Refresh at most four times a second; final pending updates still run after parsing stops.
++local nextErrorDisplayRefresh = 0
++Events.OnTickEvenPaused.Add(function()
++    if not errorMagnifier.displayRefreshPending then return end
++    local now = getTimestampMs()
++    if now < nextErrorDisplayRefresh then return end
++    nextErrorDisplayRefresh = now + 250
++    errorMagnifier.displayRefreshPending = false
++    if errorMagnifier.MainWindow.instance and errorMagnifier.MainWindow.instance:isVisible()
++        and errorMagnifier.currentTab == "errors" then errorMagnifier.refreshErrorDisplay() end
++end)
++
+ return errorMagnifier

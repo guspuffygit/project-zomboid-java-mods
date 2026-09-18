@@ -1,0 +1,165 @@
+--- a/mod-after_the_fall_core_b42/42.14/media/lua/server/ATF_SafetySystem/ATF_SafehouseGuard_Server.lua
++++ b/mod-after_the_fall_core_b42/42.14/media/lua/server/ATF_SafetySystem/ATF_SafehouseGuard_Server.lua
+@@ -27,12 +27,31 @@
+ -- Internal helpers
+ -- ============================================================
+ 
++local function houseKey(sh)
++    return sh:getX() .. "," .. sh:getY() .. "," .. sh:getW() .. "," .. sh:getH()
++end
++local function findHouse(args)
++    if type(args) ~= "table" then return nil end
++    local found
++    local list = SafeHouse.getSafehouseList()
++    for i = 0, list:size() - 1 do
++        local sh = list:get(i)
++        if args.id and houseKey(sh) == args.id then return sh end
++        if not args.id and sh:getTitle() == args.title then
++            -- Old clients may use a title only when it uniquely identifies a house.
++            if found then return nil end
++            found = sh
++        end
++    end
++    return found
++end
++
+ local function buildSnapshot()
+     local snap = {}
+     local list = SafeHouse.getSafehouseList()
+     for i = 0, list:size() - 1 do
+         local sh = list:get(i)
+-        snap[sh:getTitle()] = { owner = sh:getOwner() }
++        snap[houseKey(sh)] = { owner = sh:getOwner(), title = sh:getTitle() }
+     end
+     return snap
+ end
+@@ -49,21 +68,41 @@
+ 
+ -- Build the serialisable safehouse table used by both on-demand and broadcast sync.
+ local function buildSafehousePayload()
+-    local list       = SafeHouse.getSafehouseList()
+-    local safehouses = {}
++    local list, safehouses = SafeHouse.getSafehouseList(), {}
++    local function copy(values)
++        local result = {}
++        for i = 0, values:size() - 1 do result[#result + 1] = values:get(i) end
++        table.sort(result)
++        return result
++    end
+     for i = 0, list:size() - 1 do
+         local sh = list:get(i)
+-        safehouses[i + 1] = {
+-            title = sh:getTitle(),
+-            owner = sh:getOwner(),
+-            x     = sh:getX(),
+-            y     = sh:getY(),
+-            w     = sh:getX2() - sh:getX(),
+-            h     = sh:getY2() - sh:getY(),
++        safehouses[#safehouses + 1] = {
++            id = sh:getX() .. "," .. sh:getY() .. "," .. sh:getW() .. "," .. sh:getH(),
++            title = sh:getTitle(), owner = sh:getOwner(),
++            x = sh:getX(), y = sh:getY(), w = sh:getW(), h = sh:getH(),
++            players = copy(sh:getPlayers()), respawn = copy(sh:getPlayersRespawn()),
++            lastVisited = sh:getLastVisited(), created = sh:getDatetimeCreated(),
++            location = sh:getLocation(), hitPoints = sh:getHitPoints(), openTimer = sh:getOpenTimer(),
+         }
+     end
++    table.sort(safehouses, function(a, b) return a.id < b.id end)
+     return safehouses
+ end
++
++local function sameData(a, b)
++    if type(a) ~= type(b) then return false end
++    if type(a) ~= "table" then return a == b end
++    -- Activity timers change constantly; native packets and on-demand snapshots
++    -- update those without forcing a full server-wide membership broadcast.
++    for k, v in pairs(a) do
++        if k ~= "lastVisited" and k ~= "openTimer" and not sameData(v, b[k]) then return false end
++    end
++    for k in pairs(b) do if a[k] == nil then return false end end
++    return true
++end
++local lastBroadcast
++
+ 
+ -- Push the current authoritative safehouse list to every connected client.
+ -- Called after any detected change so mid-session claims/releases stay in sync.
+@@ -72,8 +111,10 @@
+     local count   = players:size()
+     if count == 0 then return end
+     local safehouses = buildSafehousePayload()
++    if lastBroadcast and sameData(lastBroadcast, safehouses) then return end
++    lastBroadcast = safehouses
+     for i = 0, count - 1 do
+-        sendServerCommand(players:get(i), "ATF", "SafehouseSync", { safehouses = safehouses })
++        sendServerCommand(players:get(i), "ATF", "SafehouseSync", { schema = 2, safehouses = safehouses })
+     end
+     print(string.format("[ATF Guard] BROADCAST: %d safehouse(s) sent to %d player(s).",
+         #safehouses, count))
+@@ -189,7 +230,8 @@
+             ATF.SafehouseGuard.snapshot = buildSnapshot()
+         end
+ 
+-        local snapInfo = ATF.SafehouseGuard.snapshot[title]
++        local target = findHouse(args)
++        local snapInfo = target and { owner = target:getOwner() }
+         if not snapInfo then
+             print(string.format("[ATF Guard] RequestRelease from %s for unknown safehouse '%s' — denied.", username, title))
+             sendServerCommand(player, "ATF", "ReleaseDenied", { reason = "Safehouse not found." })
+@@ -200,10 +242,10 @@
+         local isAdmin = (player:getAccessLevel() ~= "")
+ 
+         if isOwner or isAdmin then
+-            ATF.SafehouseGuard.pendingReleases[title] = { username = username, timestamp = os.time() }
++            ATF.SafehouseGuard.pendingReleases[houseKey(target)] = { username = username, timestamp = os.time() }
+             print(string.format("[ATF Guard] Release intent recorded: '%s' by %s (%s)",
+                 title, username, isAdmin and "admin" or "owner"))
+-            sendServerCommand(player, "ATF", "ReleaseApproved", { title = title })
++            sendServerCommand(player, "ATF", "ReleaseApproved", { title = title, id = houseKey(target) })
+         else
+             print(string.format("[ATF Guard] DENIED: %s attempted to release '%s' (owner: %s) without permission.",
+                 username, title, snapInfo.owner))
+@@ -219,7 +261,7 @@
+     -- ----------------------------------------------------------
+     elseif command == "RequestSafehouseSync" then
+         local safehouses = buildSafehousePayload()
+-        sendServerCommand(player, "ATF", "SafehouseSync", { safehouses = safehouses })
++        sendServerCommand(player, "ATF", "SafehouseSync", { schema = 2, safehouses = safehouses })
+         print(string.format("[ATF Guard] Sent safehouse sync to %s (%d safehouses).",
+             player:getUsername(), #safehouses))
+ 
+@@ -267,6 +309,7 @@
+         end
+ 
+         sh:setTitle(title)
++        if ATFSafehouseNativeSync then ATFSafehouseNativeSync.sync(sh) end
+         print(string.format("[ATF Guard] AdminAssignSafehouse: '%s' → '%s' (by admin %s)", title, owner, username))
+ 
+         -- Initialise snapshot lazily then diff (which also broadcasts sync to all clients)
+@@ -297,16 +340,7 @@
+             return
+         end
+ 
+-        -- Find the safehouse by title
+-        local target = nil
+-        local list   = SafeHouse.getSafehouseList()
+-        for i = 0, list:size() - 1 do
+-            local sh = list:get(i)
+-            if sh:getTitle() == title then
+-                target = sh
+-                break
+-            end
+-        end
++        local target = findHouse(args)
+ 
+         if not target then
+             print(string.format("[ATF Guard] ForceRelease from %s: '%s' not found.", username, title))
+@@ -316,7 +350,7 @@
+         local owner = target:getOwner()
+ 
+         -- Register intent so the guard's diff doesn't flag this as suspicious
+-        ATF.SafehouseGuard.pendingReleases[title] = { username = username, timestamp = os.time() }
++        ATF.SafehouseGuard.pendingReleases[houseKey(target)] = { username = username, timestamp = os.time() }
+ 
+         SafeHouse.removeSafeHouse(target)
+         print(string.format("[ATF Guard] ForceRelease: '%s' (owner: %s) released by admin %s",

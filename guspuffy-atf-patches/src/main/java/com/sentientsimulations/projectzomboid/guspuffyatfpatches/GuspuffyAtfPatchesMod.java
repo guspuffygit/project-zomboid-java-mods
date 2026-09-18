@@ -23,6 +23,7 @@ public class GuspuffyAtfPatchesMod implements ZomboidMod {
         LOGGER.debug(
                 "[GuspuffyAtfPatches] Registering for {}", GuspuffyAtfPatchesMod.class.getName());
         StormEventDispatcher.registerEventHandler(VroLegacyTrunkSweepDisable.class);
+        StormEventDispatcher.registerEventHandler(ATFSafehouseNativeSync.class);
     }
 
     @Override

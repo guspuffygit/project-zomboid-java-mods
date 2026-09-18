@@ -1,0 +1,50 @@
+--- a/mod-TrueMusicRadio42/42.20/media/lua/client/TrueMusicRadio/TMRadio.lua
++++ b/mod-TrueMusicRadio42/42.20/media/lua/client/TrueMusicRadio/TMRadio.lua
+@@ -1431,6 +1431,7 @@
+ 
+ function TMRadio.adjustSounds()
+         p = getPlayer()
++        if not p then return end
+         X = p:getX()
+         Y = p:getY()
+         Z = p:getZ()
+@@ -1443,7 +1444,7 @@
+         	--attract zombies
+ 		if TMRRadiosAttractZombies then
+ 	        	for _,t in ipairs(TMRadio.soundCache) do
+-        	    		if TMRadio.isPlaying(t) and t.device ~= nil and t.device == t.deviceData:getParent() then
++        	    		if t and t.sound and t.deviceData and TMRadio.isPlaying(t) and t.device ~= nil and t.device == t.deviceData:getParent() then
+                 			local range = t.deviceData:getDeviceVolume() * t.sound.volumeModifier*2.5 * maxRange
+ 					if t.deviceData:isVehicleDevice() then
+ 						--print("call zombies to car")
+@@ -1545,7 +1546,11 @@
+ 
+ 	-- check status of soundcache for emitters leaving the distance check, reversed to pull broken bits out
+ 	for index = #TMRadio.soundCache, 1, -1 do 
+-		t = TMRadio.soundCache[index]  
++        t = TMRadio.soundCache[index]
++        if not t or not t.deviceData or not t.sound then
++            if t and t.sound then t.sound:setVolume(0); t.sound:stop() end
++            table.remove(TMRadio.soundCache, index)
++        else
+ 		if t.device ~= t.deviceData:getParent() then 
+                		t.device = t.deviceData:getParent() 
+ 		end
+@@ -1562,7 +1567,8 @@
+ 			t.sound:stop()
+ 			table.remove(TMRadio.soundCache, index)
+ 			--print("turned off due to lost device")
+-		elseif isClient() and t.device:getDeviceData():getParent():getSquare() == nil then
++		elseif isClient() and (not t.device:getDeviceData() or not t.device:getDeviceData():getParent()
++            or t.device:getDeviceData():getParent():getSquare() == nil) then
+ 			t.sound:setVolume(0)
+ 			t.muted = true
+     	        	TMRadio.updateVolume(t)
+@@ -1599,6 +1605,7 @@
+ 				end
+ 			end
+ 		end
++        end
+ 	end
+ 
+     	highestVolume = 0
