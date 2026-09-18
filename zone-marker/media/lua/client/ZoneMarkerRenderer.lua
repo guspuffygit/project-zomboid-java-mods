@@ -137,22 +137,27 @@ local function renderZone(mapUI, zone, r, g, b, a, textW)
     local api = mapUI.mapAPI
     local javaObject = mapUI.javaObject
 
-    local x1 = api:worldToUIX(zone.xStart, zone.yStart)
-    local y1 = api:worldToUIY(zone.xStart, zone.yStart)
-    local x2 = api:worldToUIX(zone.xEnd, zone.yEnd)
-    local y2 = api:worldToUIY(zone.xEnd, zone.yEnd)
+      -- Project all four world-space corners into the current map view.
+local x1 = api:worldToUIX(zone.xStart, zone.yStart)
+local y1 = api:worldToUIY(zone.xStart, zone.yStart)
 
-    javaObject:DrawTextureScaledColor(
-        nil,
-        PZMath.floor(x1),
-        PZMath.floor(y1),
-        x2 - x1,
-        y2 - y1,
-        r,
-        g,
-        b,
-        a
-    )
+local x2 = api:worldToUIX(zone.xEnd, zone.yStart)
+local y2 = api:worldToUIY(zone.xEnd, zone.yStart)
+
+local x3 = api:worldToUIX(zone.xEnd, zone.yEnd)
+local y3 = api:worldToUIY(zone.xEnd, zone.yEnd)
+
+local x4 = api:worldToUIX(zone.xStart, zone.yEnd)
+local y4 = api:worldToUIY(zone.xStart, zone.yEnd)
+
+javaObject:DrawPolygon(
+    nil,
+    x1, y1,
+    x2, y2,
+    x3, y3,
+    x4, y4,
+    r, g, b, a
+)
 
     local midX = (zone.xStart + zone.xEnd) / 2
     local midY = (zone.yStart + zone.yEnd) / 2
