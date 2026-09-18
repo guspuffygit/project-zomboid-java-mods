@@ -1,0 +1,12 @@
+{
+  "luaScriptArgs": {
+    "ResizeDrag.lua": [
+      "${gameDir}",
+      "${moduleDir}/media/lua/client/AdminCore/WindowSizing.lua"
+    ]
+  },
+  "luaArgs": [
+    "${gameDir}",
+    "${moduleDir}"
+  ]
+}

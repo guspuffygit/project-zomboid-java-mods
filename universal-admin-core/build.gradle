@@ -1,0 +1,17 @@
+modInfo {
+	name = 'Universal Admin Core'
+	description = 'Searchable administration, player tools and observation for Project Zomboid 42.20.4. Requires Storm.'
+	modVersion = '0.1.6'
+}
+
+tasks.named('luaTest') {
+	requiresGame = true
+	scriptArguments = ['ResizeDrag.lua': [
+			gameDirectory,
+			file('media/lua/client/AdminCore/WindowSizing.lua').absolutePath
+		]]
+	defaultArguments = [
+		gameDirectory,
+		projectDir.absolutePath
+	]
+}

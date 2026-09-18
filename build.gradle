@@ -487,8 +487,8 @@ subprojects { subproj ->
 			gson().indentWithSpaces(2)
 		}
 		format 'lua', {
-			target 'media/**/*.lua'
-			nativeCmd('stylua', styluaBinary.absolutePath, ['-'])
+			target 'media/**/*.lua', 'tests/**/*.lua', 'src/test/lua/**/*.lua'
+			nativeCmd('stylua', styluaBinary.absolutePath, ['--config-path', rootProject.file('stylua.toml').absolutePath, '-'])
 			trimTrailingWhitespace()
 			endWithNewline()
 		}
@@ -517,12 +517,12 @@ subprojects { subproj ->
 	dependencies {
 		implementation "com.sentientsimulations:project-zomboid-storm:${stormVersion}"
 
-        compileOnly fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
+        compileOnly fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: providers.gradleProperty('gameApiJar').getOrElse('projectzomboid.jar')).builtBy('extractZomboidFiles')
 
 		testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
 		testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.11.4'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-		testImplementation fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: '*.jar').builtBy('extractZomboidFiles')
+		testImplementation fileTree(dir: layout.buildDirectory.dir('zomboid-classpath'), include: providers.gradleProperty('gameApiJar').getOrElse('projectzomboid.jar')).builtBy('extractZomboidFiles')
 	}
 
 	test {
@@ -555,3 +555,5 @@ subprojects { subproj ->
 		}
 	}
 }
+
+apply from: 'gradle/lua-tests.gradle'
