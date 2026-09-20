@@ -1,0 +1,192 @@
+import groovy.xml.MarkupBuilder
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
+
+// Each script gets a fresh interpreter: fixtures must not leak globals between tests.
+abstract class LuaRegressionTask extends DefaultTask {
+	@Input String luaExecutable
+	@Input List<String> commandPrefix = []
+	@Input boolean verifyLuaVersion = true
+	@Input boolean requiresKahlua = false
+	@Input List<String> defaultArguments = []
+	@Input Map<String, List<String>> scriptArguments = [:]
+	@Input @Optional String selectedScript
+	@Input boolean requiresGame = false
+	@Input String gameDirectory = ''
+	@Internal File workingDirectory
+	@InputFiles @PathSensitive(PathSensitivity.RELATIVE)
+	abstract ConfigurableFileCollection getScripts()
+	@OutputDirectory abstract DirectoryProperty getReportDirectory()
+	@Inject abstract ExecOperations getExecOperations()
+
+	@TaskAction
+	void runScripts() {
+		def report = reportDirectory.get().asFile
+		report.mkdirs()
+		def results = []
+		def discovered = scripts.files.sort { it.absolutePath }
+		def selected = discovered.findAll {
+			!selectedScript || it.name == selectedScript ||
+			workingDirectory.toPath().relativize(it.toPath()).toString().replace('\\', '/') == selectedScript
+		}
+		// Replace receipts at the start, so an interrupted run cannot leave an old green summary.
+		new File(report, 'summary.txt').text = 'INCOMPLETE: Lua test run started.\n'
+		new File(report, 'TEST-lua.xml').text = '<testsuite name="lua" tests="1" errors="1"><testcase name="runner"><error message="Run incomplete"/></testcase></testsuite>\n'
+		if (selectedScript && selected.empty) {
+			throw new GradleException("No Lua test matched '${selectedScript}' in ${path}. Use a script filename including .lua.")
+		}
+		if (selected.empty) {
+			writeReports(report, results)
+			logger.lifecycle("${path}: no Lua tests discovered")
+			return
+		}
+		if (requiresGame && (!gameDirectory || !new File(gameDirectory, 'media/lua').isDirectory())) {
+			throw new GradleException('These Lua tests require the game files. Set -PgameDir=<installation> or gameDir in local.properties.')
+		}
+		if (requiresKahlua && !new File(gameDirectory, 'projectzomboid.jar').isFile()) {
+			throw new GradleException('Kahlua tests require projectzomboid.jar. Set -PgameDir or gameDir in local.properties.')
+		}
+		def executionPrefix = commandPrefix.empty ? [luaExecutable] : commandPrefix
+		if (verifyLuaVersion) {
+			def version = new ByteArrayOutputStream()
+			def versionScript = new File(report, '_check-version.lua')
+			versionScript.text = 'assert(_VERSION == "Lua 5.1", "Lua 5.1 required; got " .. _VERSION)\n'
+			try {
+				execOperations.exec {
+					commandLine(luaExecutable, versionScript.absolutePath)
+					standardOutput = version
+					errorOutput = version
+				}
+			} catch (Exception ex) {
+				throw new GradleException("Cannot run Lua 5.1 using '${luaExecutable}'. Set -PluaExecutable=<path> or LUA_EXECUTABLE. ${version.toString('UTF-8')}", ex)
+			}
+		}
+		selected.eachWithIndex { script, index ->
+			def executionDirectory = requiresKahlua ? new File(gameDirectory) : workingDirectory
+			def label = workingDirectory.toPath().relativize(script.toPath()).toString().replace('\\', '/')
+			def logFile = new File(report, String.format('%03d-%s.log', index + 1, script.name))
+			def arguments = scriptArguments.containsKey(label) ? scriptArguments[label] :
+					(scriptArguments.containsKey(script.name) ? scriptArguments[script.name] : defaultArguments)
+			int exitCode = -1
+			long started = System.nanoTime()
+			def output = new ByteArrayOutputStream()
+				try {
+					exitCode = execOperations.exec {
+						commandLine(executionPrefix + [script.absolutePath] + arguments)
+						workingDir(executionDirectory)
+						standardOutput = output
+						errorOutput = output
+						ignoreExitValue = true
+					}.exitValue
+				} catch (Exception ex) {
+					output.write(("Runner error: ${ex.message}\n").getBytes('UTF-8'))
+				}
+			logFile.bytes = output.toByteArray()
+			results << [name: label, code: exitCode, seconds: (System.nanoTime() - started) / 1e9, log: logFile.name]
+			logger.lifecycle("${exitCode == 0 ? 'PASS' : 'FAIL'} ${label} (log: ${logFile})")
+		}
+		writeReports(report, results)
+		int failures = results.count { it.code != 0 }
+		logger.lifecycle("${path}: ${results.size() - failures} passed, ${failures} failed. Reports: ${report}")
+		if (failures) {
+			throw new GradleException("${failures} Lua script(s) failed. See ${new File(report, 'summary.txt')}")
+		}
+	}
+
+	private void writeReports(File directory, List results) {
+		new File(directory, 'summary.txt').withWriter('UTF-8') { writer ->
+			writer.println("Lua scripts: ${results.size()}, passed: ${results.count { it.code == 0 }}, failed: ${results.count { it.code != 0 }}")
+			results.each {
+				writer.println("${it.code == 0 ? 'PASS' : 'FAIL'} ${it.name} | exit=${it.code} | ${it.log}")
+			}
+		}
+		new File(directory, 'TEST-lua.xml').withWriter('UTF-8') { writer ->
+			def xml = new MarkupBuilder(writer)
+			xml.testsuite(name: path, tests: results.size(), failures: results.count {
+				it.code != 0
+			}, errors: 0) {
+				results.each { result ->
+					testcase(name: result.name, classname: 'lua', time: result.seconds.toString()) {
+						if (result.code != 0) {
+							failure(message: "Exit ${result.code}; see ${result.log}")
+						}
+						'system-out'("Output: ${result.log}")
+					}
+				}
+			}
+		}
+	}
+}
+
+def localSettings = new Properties()
+def localFile = rootProject.file('local.properties')
+if (localFile.exists()) {
+	localFile.withInputStream { localSettings.load(it) }
+}
+def interpreter = providers.gradleProperty('luaExecutable')
+		.orElse(providers.environmentVariable('LUA_EXECUTABLE'))
+		.getOrElse(System.getProperty('os.name').toLowerCase().contains('windows') ? 'lua' : 'lua5.1')
+def game = providers.gradleProperty('gameDir').getOrElse(localSettings.getProperty('gameDir', ''))
+def aggregate = tasks.register('luaTest') {
+	group = 'verification'
+	description = 'Runs every submodule Lua regression suite without compiling Java or deploying mods.'
+}
+def nativeAggregate = tasks.register('luaKahluaTest') {
+	group = 'verification'
+	description = 'Runs Lua suites with the installed game Kahlua interpreter (opt-in).'
+}
+def javaCommand = providers.gradleProperty('luaJavaExecutable').getOrElse(
+		new File(System.getProperty('java.home'), 'bin/java' + (System.getProperty('os.name').toLowerCase().contains('windows') ? '.exe' : '')).absolutePath)
+def kahluaRunner = new File(buildscript.sourceFile.parentFile, 'lua/RunLuaKahlua.java')
+subprojects { module ->
+	def suite = tasks.register('luaTest', LuaRegressionTask) {
+		group = 'verification'
+		description = 'Runs Lua 5.1 regressions in isolated processes and writes per-script logs and JUnit XML.'
+		luaExecutable = interpreter
+		gameDirectory = game
+		workingDirectory = rootProject.projectDir
+		selectedScript = providers.gradleProperty('luaTest').orNull
+		scripts.from(fileTree('src/test/lua') {
+			include '**/*Test.lua'; exclude 'fixtures/**'
+		})
+		// Compatibility until existing PRs migrate; nested fixture directories are never executed.
+		scripts.from(fileTree('tests') { include '*.lua' })
+		reportDirectory = layout.buildDirectory.dir('reports/luaTest')
+		// Engine fixtures and external Lua dependencies are not fully modeled for caching yet.
+		outputs.upToDateWhen { false }
+	}
+	aggregate.configure { dependsOn suite }
+	tasks.matching {
+		it.name == 'test' || it.name == 'check'
+	}.configureEach {
+		dependsOn suite
+	}
+	def nativeSuite = tasks.register('luaKahluaTest', LuaRegressionTask) {
+		def original = suite.get()
+		group = 'verification'
+		description = 'Runs the configured Lua suite with the installed game Kahlua, in separate JVMs.'
+		luaExecutable = interpreter
+		verifyLuaVersion = false
+		requiresGame = true
+		requiresKahlua = true
+		gameDirectory = original.gameDirectory
+		workingDirectory = original.workingDirectory
+		defaultArguments = original.defaultArguments
+		scriptArguments = original.scriptArguments
+		selectedScript = original.selectedScript
+		scripts.from(original.scripts)
+		reportDirectory = layout.buildDirectory.dir('reports/luaKahluaTest')
+		def isolatedHome = layout.buildDirectory.dir('lua-kahlua-home').get().asFile
+		commandPrefix = [
+			javaCommand,
+			"-Duser.home=${isolatedHome}".toString(),
+			"-Dlua.test.root=${workingDirectory}".toString(),
+			'-cp',
+			new File(gameDirectory, 'projectzomboid.jar').absolutePath,
+			kahluaRunner.absolutePath
+		]
+		outputs.upToDateWhen { false }
+		doFirst { isolatedHome.mkdirs() }
+	}
+	nativeAggregate.configure { dependsOn nativeSuite }
+}

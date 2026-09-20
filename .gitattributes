@@ -1,0 +1,5 @@
+# Match formatter output on Windows and Unix.
+*.lua text eol=lf
+*.java text eol=lf
+*.gradle text eol=lf
+*.json text eol=lf

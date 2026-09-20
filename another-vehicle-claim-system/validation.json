@@ -1,0 +1,18 @@
+{
+  "luaScriptArgs": {
+    "ResizeDrag.lua": [
+      "${gameDir}",
+      "${moduleDir}/media/lua/client/UI/AVCSWindowSizing.lua"
+    ],
+    "ClaimLayout.lua": [
+      "${moduleDir}/media/lua/client/UI/AVCSUserManagerMain.lua",
+      "${moduleDir}/media/lua/client/UI/AVCSVehicleSizing.lua"
+    ],
+    "ClaimResize.lua": [
+      "${gameDir}",
+      "${moduleDir}/media/lua/client/UI/AVCSUserManagerMain.lua",
+      "${moduleDir}/media/lua/client/UI/AVCSVehicleSizing.lua",
+      "${moduleDir}/media/lua/client/UI/AVCSWindowSizing.lua"
+    ]
+  }
+}
