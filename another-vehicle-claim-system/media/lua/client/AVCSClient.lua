@@ -17,7 +17,7 @@ local requestFullSync = Sync.request
 function AVCS.updateClientClaimVehicle(arg)
     -- A desync has occurred, this shouldn't happen
     -- We will request full data from server
-    if type(arg) ~= "table" or not arg.VehicleID or not arg.OwnerPlayerID then
+    if type(arg) ~= "table" or not Sync.validId(arg.VehicleID) or not Sync.validClaim(arg) then
         return
     end
     if not Sync.deltaReady() then
@@ -36,11 +36,11 @@ function AVCS.updateClientClaimVehicle(arg)
     end
     AVCS.dbByVehicleSQLID[arg.VehicleID] = {
         OwnerPlayerID = arg.OwnerPlayerID,
-        ClaimDateTime = arg.ClaimDateTime,
+        ClaimDateTime = arg.ClaimDateTime or 0,
         CarModel = arg.CarModel,
-        LastLocationX = arg.LastLocationX,
-        LastLocationY = arg.LastLocationY,
-        LastLocationUpdateDateTime = arg.LastLocationUpdateDateTime,
+        LastLocationX = arg.LastLocationX or 0,
+        LastLocationY = arg.LastLocationY or 0,
+        LastLocationUpdateDateTime = arg.LastLocationUpdateDateTime or 0,
     }
 
     if not AVCS.dbByPlayerID[arg.OwnerPlayerID] then
@@ -52,6 +52,7 @@ function AVCS.updateClientClaimVehicle(arg)
         AVCS.dbByPlayerID[arg.OwnerPlayerID][arg.VehicleID] = true
         AVCS.dbByPlayerID[arg.OwnerPlayerID].LastKnownLogonTime = getTimestamp()
     end
+    Sync.clearUnavailable(arg.VehicleID)
     Sync.changed()
 end
 
@@ -70,6 +71,11 @@ function AVCS.updateClientUnclaimVehicle(arg)
     end
 
     if AVCS.dbByVehicleSQLID[arg.VehicleID] == nil then
+        if Sync.unavailable[arg.VehicleID] then
+            Sync.clearUnavailable(arg.VehicleID)
+            Sync.changed()
+            return
+        end
         requestFullSync()
         return
     end
@@ -81,6 +87,7 @@ function AVCS.updateClientUnclaimVehicle(arg)
         return
     end
     AVCS.dbByVehicleSQLID[arg.VehicleID] = nil
+    Sync.clearUnavailable(arg.VehicleID)
     owner[arg.VehicleID] = nil
     Sync.changed()
 end
@@ -152,6 +159,9 @@ function AVCS.updateClientLastLogon(arg)
 end
 
 function AVCS.updateClientSpecifyVehicleUserPermission(arg)
+    if type(arg) ~= "table" or Sync.isUnavailable(arg.VehicleID) then
+        return
+    end
     if not Sync.deltaReady() then
         return
     end
@@ -197,6 +207,9 @@ end
 
 -- Admin-only (server re-checks the role): move a claimed vehicle next to the admin
 function AVCS.requestAdminTeleportVehicle(vehicleID)
+    if Sync.isUnavailable(vehicleID) then
+        return
+    end
     sendClientCommand(getPlayer(), "AVCS", "adminTeleportVehicle", {
         VehicleID = vehicleID,
         OffsetX = AVCS.AdminTeleportOffset.x,
@@ -230,6 +243,9 @@ end
 
 -- Admin-only (server re-checks the role): break a claimed vehicle's tow constraint
 function AVCS.requestAdminUntowVehicle(vehicleID)
+    if Sync.isUnavailable(vehicleID) then
+        return
+    end
     sendClientCommand(getPlayer(), "AVCS", "adminUntowVehicle", {
         VehicleID = vehicleID,
     })

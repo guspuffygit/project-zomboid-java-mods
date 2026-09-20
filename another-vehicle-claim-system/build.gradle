@@ -3,20 +3,20 @@ modInfo {
 	workshopId = '3677939958'
 	workshopIdStage = '3694328666'
 	workshopIdProd = '3672982692'
-	description = '''[h1]Another Vehicle Claim System â€” Build 42[/h1]
+	description = '''[h1]Another Vehicle Claim System — Build 42[/h1]
 Lock down your ride on multiplayer servers. Another Vehicle Claim System (AVCS) lets survivors claim vehicles as their own, so nobody else can drive off, strip the parts, siphon the gas, or loot the trunk of a car that isn't theirs. This is the Build 42 port, maintained by Gus Puffy & NiteMan.
 
 [hr][/hr]
 [url=https://ko-fi.com/guspuffy][img]https://i.imgur.com/NVyFJeG.png[/img][/url]
 
 [h2]Sponsors[/h2]
-[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] â€” The #1 multiplayer server in the world
+[b][url=https://discord.gg/after-the-fall]After The Fall[/url][/b] — The #1 multiplayer server in the world
 [hr][/hr]
 
 [h1]Claiming a Vehicle[/h1]
 [list]
 [*]Right-click a vehicle and choose [b]Claim Vehicle[/b] to make it yours.
-[*]Claiming uses a craftable [b]Vehicle Ownership Title[/b] â€” built from paper, a pen, tape, glue, and paperclips. Requiring a title is optional, and it can be one-time-use or refunded when you unclaim.
+[*]Claiming uses a craftable [b]Vehicle Ownership Title[/b] — built from paper, a pen, tape, glue, and paperclips. Requiring a title is optional, and it can be one-time-use or refunded when you unclaim.
 [*]Hold up to a configurable number of claims at once (default 5; admins are unlimited).
 [*]Claim for yourself, your [b]Safehouse[/b], or your [b]Faction[/b] so the right people share access.
 [/list]
@@ -33,14 +33,14 @@ As the owner you decide exactly what everyone else may do with your vehicle. Eac
 [*]Attach or detach for towing
 [*]Inflate or deflate the tires
 [/list]
-Faction and safehouse members can be granted access as a group â€” each toggleable in the sandbox settings.
+Faction and safehouse members can be granted access as a group — each toggleable in the sandbox settings.
 
 [hr][/hr]
 
 [h1]Vehicle Managers[/h1]
 [list]
-[*][b]Claimed Vehicles Manager[/b] â€” browse your Personal, Safehouse, and Faction vehicles, see each car's owner, last known location, and expiry date, and unclaim or edit permissions from one window.
-[*][b]Admin Vehicles Manager[/b] â€” staff can search every claim on the server, jump to a claim's safehouse or faction, edit public permissions, or delete a claim outright.
+[*][b]Claimed Vehicles Manager[/b] — browse your Personal, Safehouse, and Faction vehicles, see each car's owner, last known location, and expiry date, and unclaim or edit permissions from one window.
+[*][b]Admin Vehicles Manager[/b] — staff can search every claim on the server, jump to a claim's safehouse or faction, edit public permissions, or delete a claim outright.
 [/list]
 
 [hr][/hr]
@@ -53,7 +53,7 @@ Claimed vehicles show up as colored markers with name labels on the world map (a
 [h1]Anti-Theft & Anti-Grief[/h1]
 [list]
 [*]Non-owners are blocked from driving, looting, part-stripping, siphoning, and towing claimed vehicles.
-[*]Claimed vehicles can't be towed â€” or used to tow â€” which shuts down theft-by-towing.
+[*]Claimed vehicles can't be towed — or used to tow — which shuts down theft-by-towing.
 [*]Optional server-side verification on claim and unclaim to resist hackers and desync.
 [*]Running a Storm server? AVCS adds an extra server-side guard that blocks unauthorized vehicle-removal commands, using the same owner / faction / safehouse rules.
 [/list]
@@ -104,3 +104,49 @@ tasks.named('luaTest') {
 		]
 	]
 }
+
+// Compilation accepts mojibake. Check the source and the exact generated release text too.
+def verifyAvcsEncoding = tasks.register('verifyAvcsEncoding') {
+	group = 'verification'
+	description = 'Reject malformed UTF-8 and corrupted punctuation in AVCS source/release metadata.'
+	dependsOn 'writeModInfo', 'generateWorkshopFile'
+	mustRunAfter 'writeWorkshopVdf'
+	def sourceText = files('build.gradle', fileTree('.') {
+		include '*.md'
+	}, fileTree('src') {
+		include '**/*.java'
+	}, fileTree('media') { include '**/*.lua', '**/*.txt', '**/*.json' },
+	fileTree('common') { include '**/*.lua', '**/*.txt', '**/*.json' },
+	fileTree('tests') { include '**/*.lua' })
+	def releaseText = files(layout.buildDirectory.file('mod.info'),
+			layout.buildDirectory.file('generated/workshop.txt'), layout.buildDirectory.file('workshop.vdf'))
+	inputs.files(sourceText, releaseText)
+	doLast {
+		def markers = [
+			'\u00e2\u20ac',
+			'\u00c3\u00a2',
+			'\ufffd'
+		]
+		(sourceText.files + releaseText.files).each { input ->
+			// VDF generation requires a publishing directory; ordinary builds need none.
+			if (input.name == 'workshop.vdf' && !input.exists()) return
+				if (!input.isFile()) throw new GradleException("Missing encoding input: ${input}")
+			def decoder = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+			String text
+			try {
+				text = decoder.decode(java.nio.ByteBuffer.wrap(input.bytes)).toString()
+			}
+			catch (java.nio.charset.CharacterCodingException e) {
+				throw new GradleException("Invalid UTF-8: ${input}", e)
+			}
+			if (markers.any {
+						text.contains(it)
+						}) throw new GradleException("Corrupted punctuation: ${input}")
+		}
+		logger.lifecycle('AVCS UTF-8 source and generated Workshop metadata verified (no publishing).')
+	}
+}
+tasks.named('check') { dependsOn verifyAvcsEncoding }
+tasks.named('assemble') { dependsOn verifyAvcsEncoding }
+tasks.named('deployMod') { dependsOn verifyAvcsEncoding }
+tasks.named('uploadWorkshop') { dependsOn verifyAvcsEncoding }

@@ -55,11 +55,12 @@ for i = 1, 1000 do
     S.request()
 end
 check(#requests == 1, "Repeated refresh signals coalesce")
-local oldVehicles, oldPlayers = { [8] = { OwnerPlayerID = "old" } }, { old = { [8] = true } }
+local oldVehicles, oldPlayers =
+    { [8] = { OwnerPlayerID = "old", CarModel = "Base.CarNormal" } }, { old = { [8] = true } }
 AVCS.dbByVehicleSQLID, AVCS.dbByPlayerID = oldVehicles, oldPlayers
 S.receiveSnapshot({ requestId = 0, vehicles = {}, players = {} })
 check(AVCS.dbByVehicleSQLID == oldVehicles, "Stale response ignored")
-S.receive("vehicle", { [1] = { OwnerPlayerID = "alice" } }, 1)
+S.receive("vehicle", { [1] = { OwnerPlayerID = "alice", CarModel = "Base.CarNormal" } }, 1)
 check(
     S.ready() and AVCS.dbByVehicleSQLID == oldVehicles,
     "Existing cache usable during half snapshot"
@@ -67,9 +68,13 @@ check(
 S.receive("player", {}, 1)
 check(S.ready() and AVCS.dbByPlayerID.alice[1], "Missing owner back-reference repaired from claims")
 check(not S.hook and not S.waiting, "Successful repair stops retries")
-AVCS.updateClientClaimVehicle({ VehicleID = 2, OwnerPlayerID = "bob" })
+AVCS.updateClientClaimVehicle({ VehicleID = 2, OwnerPlayerID = "bob", CarModel = "Base.CarNormal" })
 check(AVCS.dbByVehicleSQLID[2] and AVCS.dbByPlayerID.bob[2], "Claim creates owner index")
-AVCS.updateClientClaimVehicle({ VehicleID = 2, OwnerPlayerID = "alice" })
+AVCS.updateClientClaimVehicle({
+    VehicleID = 2,
+    OwnerPlayerID = "alice",
+    CarModel = "Base.CarNormal",
+})
 check(
     not AVCS.dbByPlayerID.bob or not AVCS.dbByPlayerID.bob[2],
     "Reclaim clears previous owner index"
@@ -97,7 +102,7 @@ S.hook()
 local first = S.requestId
 S.receiveSnapshot({
     requestId = first,
-    vehicles = { [4] = { OwnerPlayerID = "carol" } },
+    vehicles = { [4] = { OwnerPlayerID = "carol", CarModel = "Base.CarNormal" } },
     players = { wrong = {
         [4] = true,
     } },

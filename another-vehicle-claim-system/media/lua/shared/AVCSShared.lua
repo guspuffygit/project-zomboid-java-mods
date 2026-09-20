@@ -170,7 +170,14 @@ function AVCS.checkMaxClaim(playerObj)
     end
 end
 
+function AVCS.claimUnavailable(id)
+    return isClient() and AVCS.Sync and AVCS.Sync.isUnavailable(id) or false
+end
+
 function AVCS.getPublicPermission(vehicleObj, type)
+    if AVCS.claimUnavailable(AVCS.getVehicleID(vehicleObj)) then
+        return false
+    end
     if not AVCS.dbByVehicleSQLID then
         return true
     end
@@ -218,6 +225,15 @@ function AVCS.checkPermission(playerObj, vehicleObj)
     end
 
     -- Ownerless
+    if AVCS.claimUnavailable(vehicleSQL) then
+        local record = AVCS.dbByVehicleSQLID[vehicleSQL]
+        return {
+            permissions = false,
+            reason = "unavailable",
+            ownerid = record and record.OwnerPlayerID or getText("IGUI_AVCS_ClaimUnavailable"),
+            LastKnownLogonTime = 0,
+        }
+    end
     if AVCS.dbByVehicleSQLID[vehicleSQL] == nil then
         return true
     end
@@ -336,7 +352,11 @@ function AVCS.checkManagementPermission(playerObj, vehicleObj)
         return false
     end
 
-    if not vehicleSQL or not AVCS.dbByVehicleSQLID[vehicleSQL] then
+    if
+        not vehicleSQL
+        or AVCS.claimUnavailable(vehicleSQL)
+        or not AVCS.dbByVehicleSQLID[vehicleSQL]
+    then
         return false
     end
 

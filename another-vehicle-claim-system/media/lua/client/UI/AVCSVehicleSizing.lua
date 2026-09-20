@@ -192,7 +192,7 @@ local function install()
         class.createChildren = function(self)
             T.fit(self, self.width, self.height)
             original(self)
-            if AVCS.Sync and AVCS.Sync.failed then
+            if AVCS.Sync and (AVCS.Sync.failed or AVCS.Sync.degraded and AVCS.Sync.degraded()) then
                 AVCS.Sync.request(true)
             end
             if key == "VehiclePermissions" then

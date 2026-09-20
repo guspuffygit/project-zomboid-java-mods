@@ -60,6 +60,13 @@ function AVCS.UI.AdminManagerMain:listOnSelectionChange()
             or (not isClient() and not isServer())
         )
     then
+        local selected = self.listData.items[self.listData.selected]
+        if
+            not selected
+            or (AVCS.claimUnavailable and AVCS.claimUnavailable(selected.item.vehicleID))
+        then
+            return
+        end
         self.btnModifyPermissions:setEnable(true)
         self.btnDelete:setEnable(true)
         self.btnTeleport:setEnable(isClient())
@@ -283,6 +290,9 @@ function AVCS.UI.AdminManagerMain:initList()
                 )
                 if not carFullName then
                     carFullName = AVCS.dbByVehicleSQLID[ak].CarModel
+                end
+                if AVCS.claimUnavailable and AVCS.claimUnavailable(ak) then
+                    carFullName = getText("IGUI_AVCS_ClaimUnavailable") .. ": " .. carFullName
                 end
                 table.insert(tempTable, {
                     OwnerPlayerID = k,
@@ -585,6 +595,12 @@ function AVCS.UI.AdminManagerMain:createChildren()
 end
 
 function AVCS.UI.AdminManagerMain:btnOnClick(btn)
+    local selected = self.listData.items[self.listData.selected]
+    if
+        not selected or (AVCS.claimUnavailable and AVCS.claimUnavailable(selected.item.vehicleID))
+    then
+        return
+    end
     if
         btn.internal ~= "btnViewSafehouse"
         and btn.internal ~= "btnViewFaction"
@@ -717,6 +733,12 @@ function AVCS.UI.AdminManagerMain:updateVehicleLocation(vehicleID, x, y)
 end
 
 function AVCS.UI.AdminManagerMain:btnUnclaim_onConfirmClick(btn, _, _)
+    local selected = self.listData.items[self.listData.selected]
+    if
+        not selected or (AVCS.claimUnavailable and AVCS.claimUnavailable(selected.item.vehicleID))
+    then
+        return
+    end
     if btn.internal == "NO" then
         return
     end
@@ -820,6 +842,19 @@ end
 
 function AVCS.UI.AdminManagerMain:prerender()
     ISCollapsableWindow.prerender(self)
+    local sync = AVCS.Sync
+    if sync and self.avcsSnapshotRevision ~= sync.snapshotRevision then
+        self.avcsSnapshotRevision = sync.snapshotRevision
+        self.listData:clear()
+        self.varData = {}
+        self:initList()
+        self.onFilterChange(self.textFilterUsername)
+        self:listOnSelectionChange()
+    end
+    local warning = sync and sync.warning and sync.warning()
+    if warning then
+        self:drawText(warning, 12, self.height - 22, 1, 0.75, 0.25, 1, UIFont.Small)
+    end
 end
 
 function AVCS.UI.AdminManagerMain:render()

@@ -34,6 +34,10 @@ function AVCS.UI.UserPermissionPanel:btnCancel_onClick(btn)
 end
 
 function AVCS.UI.UserPermissionPanel:btnConfirm_onClick(btn)
+    if AVCS.claimUnavailable and AVCS.claimUnavailable(self.vehicleID) then
+        self.btnConfirm.tooltip = getText("IGUI_AVCS_ClaimUnavailable")
+        return
+    end
     if self.requestId or not getPlayer() then
         return
     end

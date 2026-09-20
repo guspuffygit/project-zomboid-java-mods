@@ -61,5 +61,7 @@
   "IGUI_AVCS_Admin_Untow_notTowing": "Vehicle is not currently towing or being towed",
   "IGUI_AVCS_Admin_Untow_notLoaded": "Vehicle untow failed: the vehicle is not currently loaded on the server",
   "IGUI_AVCS_Admin_Untow_notAdmin": "Only admins can untow vehicles",
-  "IGUI_AVCS_Admin_Untow_badArgs": "Vehicle untow failed: invalid request"
+  "IGUI_AVCS_Admin_Untow_badArgs": "Vehicle untow failed: invalid request",
+  "IGUI_AVCS_ClaimUnavailable": "Claim unavailable (server data needs repair)",
+  "IGUI_AVCS_SyncUnavailable": "Unavailable: %1; unknown IDs: %2. Repair server data, then reopen."
 }

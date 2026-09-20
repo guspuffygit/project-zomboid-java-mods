@@ -342,6 +342,9 @@ function AVCS.addFineOwnerOptionToVehicleMenu(playerObj, context, vehicle)
     if not vehicleSQLID then
         return
     end
+    if AVCS.claimUnavailable and AVCS.claimUnavailable(vehicleSQLID) then
+        return
+    end
     local record = AVCS.dbByVehicleSQLID[vehicleSQLID]
     if not record or not record.OwnerPlayerID then
         return

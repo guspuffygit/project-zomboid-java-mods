@@ -10,6 +10,19 @@ the owner display index is rebuilt from the claim records. Automatic retries sto
 after three attempts. Reopen a vehicle manager to retry after exhaustion. Server
 authorization remains authoritative. Older paired responses remain supported.
 
+A malformed claim no longer rejects the whole snapshot. Healthy claims refresh;
+identified damaged claims are marked unavailable and retain their last good display
+record when possible. Both managers show counts and request a refresh when reopened.
+If a damaged ID cannot be identified, omitted old claims and other unresolved
+imprinted IDs remain unavailable until the server data is repaired. This may also
+restrict an unclaimed imprinted vehicle; known healthy claims remain usable. A
+malformed snapshot envelope retains the old cache and uses the bounded retry path.
+
+Teleport movement and pending-job exceptions log their context and send the existing
+translated failure response to a connected initiating admin. Completed jobs are
+removed once. Position updates refresh their native server timestamp so a second
+teleport after driving is not discarded as an old interpolation sample.
+
 The refresh limiter uses expiring, bounded username entries, never IsoPlayer keys.
 Map caching/culling, admin untow, client index corrections and teleport cancellation
 on disconnect or role loss are retained. Teleport uses the existing native update
@@ -21,6 +34,9 @@ reopen, clamped to screen bounds. The native layout.ini persists it across sessi
 Set gameDir in local.properties. Run ./gradlew :another-vehicle-claim-system:test
 :another-vehicle-claim-system:luaKahluaTest :another-vehicle-claim-system:spotlessCheck.
 Use gradlew.bat on Windows. Install Lua 5.1 or supply -PluaExecutable.
+The assemble/check tasks run verifyAvcsEncoding on UTF-8 module text and generated
+Workshop metadata. Publishing also checks the generated VDF. This validation does
+not upload anything and ordinary builds do not need Steam publishing settings.
 
 Before merging, test owner/guest/faction/safehouse roles on two clients, public
 permission toggles, reconnect and missing-snapshot recovery, map updates, untow,
