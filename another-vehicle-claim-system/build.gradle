@@ -82,3 +82,71 @@ Tested and compatible with 42.20.0
 8/21/2026 - Storm servers: claimed-vehicle locations are re-synced from vehicles.db (and loaded vehicles) at server start and before every server save, so the managers and map no longer drift from where cars really are.
 8/21/2026 - Storm servers: admins get a Teleport button in both vehicle managers that brings the selected claimed vehicle to their own position (+2,+2 tiles), loading its area first if needed; admin role is enforced server-side.'''
 }
+
+
+tasks.named('luaTest') {
+	requiresGame = true
+	def ui = file('media/lua/client/UI').absolutePath
+	scriptArguments = [
+		'ResizeDrag.lua': [
+			gameDirectory,
+			"${ui}/AVCSWindowSizing.lua"
+		],
+		'ClaimLayout.lua': [
+			"${ui}/AVCSUserManagerMain.lua",
+			"${ui}/AVCSVehicleSizing.lua"
+		],
+		'ClaimResize.lua': [
+			gameDirectory,
+			"${ui}/AVCSUserManagerMain.lua",
+			"${ui}/AVCSVehicleSizing.lua",
+			"${ui}/AVCSWindowSizing.lua"
+		]
+	]
+}
+
+// Compilation accepts mojibake. Check the source and the exact generated release text too.
+def verifyAvcsEncoding = tasks.register('verifyAvcsEncoding') {
+	group = 'verification'
+	description = 'Reject malformed UTF-8 and corrupted punctuation in AVCS source/release metadata.'
+	dependsOn 'writeModInfo', 'generateWorkshopFile'
+	mustRunAfter 'writeWorkshopVdf'
+	def sourceText = files('build.gradle', fileTree('.') {
+		include '*.md'
+	}, fileTree('src') {
+		include '**/*.java'
+	}, fileTree('media') { include '**/*.lua', '**/*.txt', '**/*.json' },
+	fileTree('common') { include '**/*.lua', '**/*.txt', '**/*.json' },
+	fileTree('tests') { include '**/*.lua' })
+	def releaseText = files(layout.buildDirectory.file('mod.info'),
+			layout.buildDirectory.file('generated/workshop.txt'), layout.buildDirectory.file('workshop.vdf'))
+	inputs.files(sourceText, releaseText)
+	doLast {
+		def markers = [
+			'\u00e2\u20ac',
+			'\u00c3\u00a2',
+			'\ufffd'
+		]
+		(sourceText.files + releaseText.files).each { input ->
+			// VDF generation requires a publishing directory; ordinary builds need none.
+			if (input.name == 'workshop.vdf' && !input.exists()) return
+				if (!input.isFile()) throw new GradleException("Missing encoding input: ${input}")
+			def decoder = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+			String text
+			try {
+				text = decoder.decode(java.nio.ByteBuffer.wrap(input.bytes)).toString()
+			}
+			catch (java.nio.charset.CharacterCodingException e) {
+				throw new GradleException("Invalid UTF-8: ${input}", e)
+			}
+			if (markers.any {
+						text.contains(it)
+						}) throw new GradleException("Corrupted punctuation: ${input}")
+		}
+		logger.lifecycle('AVCS UTF-8 source and generated Workshop metadata verified (no publishing).')
+	}
+}
+tasks.named('check') { dependsOn verifyAvcsEncoding }
+tasks.named('assemble') { dependsOn verifyAvcsEncoding }
+tasks.named('deployMod') { dependsOn verifyAvcsEncoding }
+tasks.named('uploadWorkshop') { dependsOn verifyAvcsEncoding }

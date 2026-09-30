@@ -14,8 +14,28 @@ local function getVehicleDisplayName(name)
     return displayName
 end
 
+local cachedVehicles, cachedRevision, cachedPlayer, cachedLanguage, cacheUntil
+local function invalidateVehicles()
+    cachedVehicles = nil
+end
+Events.OnSafehousesChanged.Add(invalidateVehicles)
+Events.SyncFaction.Add(invalidateVehicles)
+
 local function getDetailedVehicleList()
+    local player = getPlayer()
+    local now = getTimestampMs()
+    local language = Translator.getLanguage()
+    if
+        cachedVehicles
+        and cachedRevision == AVCS.cacheRevision
+        and cachedPlayer == player
+        and cachedLanguage == language
+        and now < cacheUntil
+    then
+        return cachedVehicles
+    end
     local response = {}
+    local seen = {}
 
     if AVCS == nil or AVCS.dbByPlayerID == nil or AVCS.dbByVehicleSQLID == nil then
         return response
@@ -27,13 +47,17 @@ local function getDetailedVehicleList()
             for vehicleID, _ in pairs(playerVehicles) do
                 if vehicleID ~= "LastKnownLogonTime" then
                     local vehicleData = AVCS.dbByVehicleSQLID[vehicleID]
-                    if vehicleData then
+                    if vehicleData and not seen[vehicleID] then
+                        seen[vehicleID] = true
+                        local displayName = getVehicleDisplayName(vehicleData.CarModel)
                         table.insert(response, {
                             vehicleID = vehicleID,
                             ownerPlayerId = vehicleData.OwnerPlayerID,
                             claimDateTime = vehicleData.ClaimDateTime,
                             carModel = vehicleData.CarModel,
-                            displayName = getVehicleDisplayName(vehicleData.CarModel),
+                            displayName = displayName,
+                            labelWidth = getTextManager():MeasureStringX(UIFont.Small, displayName)
+                                + 16,
                             lastLocationX = vehicleData.LastLocationX,
                             lastLocationY = vehicleData.LastLocationY,
                             lastLocationUpdateTime = vehicleData.LastLocationUpdateDateTime,
@@ -45,7 +69,6 @@ local function getDetailedVehicleList()
         end
     end
 
-    local player = getPlayer()
     if player == nil then
         return response
     end
@@ -84,6 +107,8 @@ local function getDetailedVehicleList()
         end
     end
 
+    cachedVehicles, cachedRevision, cachedPlayer = response, AVCS.cacheRevision, player
+    cachedLanguage, cacheUntil = language, now + 2000
     return response
 end
 
@@ -157,16 +182,15 @@ end
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 
-local function renderVehicleLabel(javaObject, api, worldX, worldY, name)
-    local sx = PZMath.floor(api:worldToUIX(worldX, worldY))
-    local sy = PZMath.floor(api:worldToUIY(worldX, worldY))
-    local textW = getTextManager():MeasureStringX(UIFont.Small, name) + 16
+local function renderVehicleLabel(javaObject, sx, sy, vehicle)
+    sx, sy = PZMath.floor(sx), PZMath.floor(sy)
+    local textW = vehicle.labelWidth
     local lineH = FONT_HGT_SMALL
     local boxH = math.ceil(lineH * 1.25)
     -- background
     javaObject:DrawTextureScaledColor(nil, sx - textW / 2, sy + 4, textW, boxH, 0.5, 0.5, 0.5, 0.5)
     -- text
-    javaObject:DrawTextCentre(name, sx, sy + 4 + (boxH - lineH) / 2, 1, 1, 1, 1)
+    javaObject:DrawTextCentre(vehicle.displayName, sx, sy + 4 + (boxH - lineH) / 2, 1, 1, 1, 1)
 end
 
 local function renderVehiclePoint(mapUI, vehicle)
@@ -184,6 +208,16 @@ local function renderVehiclePoint(mapUI, vehicle)
     local y1 = api:worldToUIY(worldX, worldY)
     local x2 = api:worldToUIX(worldX + 1, worldY + 1)
     local y2 = api:worldToUIY(worldX + 1, worldY + 1)
+    local halfLabel = vehicle.labelWidth / 2
+    local labelBottom = y1 + 4 + math.ceil(FONT_HGT_SMALL * 1.25)
+    if
+        math.max(x1 + halfLabel, x2) < 0
+        or math.min(x1 - halfLabel, x2) > mapUI:getWidth()
+        or math.max(labelBottom, y2) < 0
+        or math.min(y1, y2) > mapUI:getHeight()
+    then
+        return
+    end
 
     local r, g, b, a = 0, 1, 0, 0.9
     if vehicle.carType == "faction" then
@@ -204,7 +238,7 @@ local function renderVehiclePoint(mapUI, vehicle)
         a
     )
 
-    renderVehicleLabel(javaObject, api, worldX, worldY, vehicle.displayName)
+    renderVehicleLabel(javaObject, x1, y1, vehicle)
 end
 
 --
