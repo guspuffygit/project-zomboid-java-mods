@@ -1,7 +1,10 @@
 modInfo {
 	name = 'Universal Admin Core'
-	description = 'Searchable administration, player tools and observation for Project Zomboid 42.20.4. Requires Storm.'
+	description = 'Searchable administration, player tools and observation for Project Zomboid 42.21.0. Requires Storm.'
 	modVersion = '0.1.6'
+	workshopId = '3811280587'
+	workshopIdStage = '3811291537'
+	workshopIdProd = '3811291377'
 }
 
 tasks.named('luaTest') {
