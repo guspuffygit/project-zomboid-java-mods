@@ -13,6 +13,7 @@ abstract class LuaRegressionTask extends DefaultTask {
 	@Input @Optional String selectedScript
 	@Input boolean requiresGame = false
 	@Input String gameDirectory = ''
+	@Input String kahluaJar = ''
 	@Internal File workingDirectory
 	@InputFiles @PathSensitive(PathSensitivity.RELATIVE)
 	abstract ConfigurableFileCollection getScripts()
@@ -43,7 +44,7 @@ abstract class LuaRegressionTask extends DefaultTask {
 		if (requiresGame && (!gameDirectory || !new File(gameDirectory, 'media/lua').isDirectory())) {
 			throw new GradleException('These Lua tests require the game files. Set -PgameDir=<installation> or gameDir in local.properties.')
 		}
-		if (requiresKahlua && !new File(gameDirectory, 'projectzomboid.jar').isFile()) {
+		if (requiresKahlua && !new File(kahluaJar).isFile()) {
 			throw new GradleException('Kahlua tests require projectzomboid.jar. Set -PgameDir or gameDir in local.properties.')
 		}
 		def executionPrefix = commandPrefix.empty ? [luaExecutable] : commandPrefix
@@ -127,6 +128,11 @@ def interpreter = providers.gradleProperty('luaExecutable')
 		.orElse(providers.environmentVariable('LUA_EXECUTABLE'))
 		.getOrElse(System.getProperty('os.name').toLowerCase().contains('windows') ? 'lua' : 'lua5.1')
 def game = providers.gradleProperty('gameDir').getOrElse(localSettings.getProperty('gameDir', ''))
+// Linux installs keep projectzomboid.jar in java/ and media/ one level up.
+def gameMedia = !game ? '' : ([
+	new File(game),
+	new File(game).parentFile
+].find { it && new File(it, 'media/lua').isDirectory() }?.absolutePath ?: game)
 def aggregate = tasks.register('luaTest') {
 	group = 'verification'
 	description = 'Runs every submodule Lua regression suite without compiling Java or deploying mods.'
@@ -143,7 +149,7 @@ subprojects { module ->
 		group = 'verification'
 		description = 'Runs Lua 5.1 regressions in isolated processes and writes per-script logs and JUnit XML.'
 		luaExecutable = interpreter
-		gameDirectory = game
+		gameDirectory = gameMedia
 		workingDirectory = rootProject.projectDir
 		selectedScript = providers.gradleProperty('luaTest').orNull
 		scripts.from(fileTree('src/test/lua') {
@@ -170,6 +176,7 @@ subprojects { module ->
 		requiresGame = true
 		requiresKahlua = true
 		gameDirectory = original.gameDirectory
+		kahluaJar = new File(game, 'projectzomboid.jar').absolutePath
 		workingDirectory = original.workingDirectory
 		defaultArguments = original.defaultArguments
 		scriptArguments = original.scriptArguments
@@ -182,7 +189,7 @@ subprojects { module ->
 			"-Duser.home=${isolatedHome}".toString(),
 			"-Dlua.test.root=${workingDirectory}".toString(),
 			'-cp',
-			new File(gameDirectory, 'projectzomboid.jar').absolutePath,
+			kahluaJar,
 			kahluaRunner.absolutePath
 		]
 		outputs.upToDateWhen { false }

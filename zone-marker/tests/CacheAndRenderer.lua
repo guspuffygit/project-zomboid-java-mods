@@ -102,6 +102,9 @@ local map = {
         end,
     },
     javaObject = {
+        DrawPolygon = function()
+            draws = draws + 1
+        end,
         DrawTextureScaledColor = function()
             draws = draws + 1
         end,
