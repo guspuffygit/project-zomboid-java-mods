@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "displayName": "ATF Combat Health",
+  "modId": "atf-combat-health-b42",
+  "version": "0.2.5-alpha",
+  "type": "lua",
+  "dependencies": [
+    "atf-mini-ui-core-b42"
+  ],
+  "stormDependency": null,
+  "gameCompatibility": "42.21.0",
+  "targets": [
+    "server",
+    "client"
+  ],
+  "testDirectories": [
+    "tests"
+  ],
+  "luaArgs": [
+    "${moduleDir}",
+    "${gameDir}"
+  ]
+}

@@ -1,0 +1,15 @@
+modInfo {
+	name = 'ATF Mini UI Core'
+	id = "atf-mini-ui-core-b42${rootProject.ext.envSuffix}"
+	modVersion = '0.1.2-alpha'
+	requiresStorm = false
+	description = 'Shared player mini window controls, dragging, focus fade and layout persistence for Project Zomboid 42.21.0.'
+}
+
+tasks.named('luaTest') {
+	requiresGame = true
+	defaultArguments = [
+		projectDir.absolutePath,
+		gameDirectory
+	]
+}

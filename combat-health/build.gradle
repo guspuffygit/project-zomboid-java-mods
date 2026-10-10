@@ -1,0 +1,24 @@
+modInfo {
+	name = 'ATF Combat Health'
+	id = "atf-combat-health-b42${rootProject.ext.envSuffix}"
+	modVersion = '0.2.5-alpha'
+	requiresStorm = false
+	requires = ['\\atf-mini-ui-core-b42']
+	description = 'Compact local-player HUD for health, recent XP and temperature. Toggle Mini HUD in the normal Health panel. Uses native treatment actions and optional respawn persistence.'
+}
+
+def lifestyleRoot = providers.gradleProperty('lifestyleModDir')
+		.orElse(providers.environmentVariable('LIFESTYLE_MOD_ROOT')).getOrElse('')
+
+tasks.named('luaTest') {
+	requiresGame = true
+	defaultArguments = [
+		projectDir.absolutePath,
+		gameDirectory
+	]
+	scriptArguments = ['Telemetry.lua': [
+			projectDir.absolutePath,
+			gameDirectory,
+			lifestyleRoot
+		]]
+}

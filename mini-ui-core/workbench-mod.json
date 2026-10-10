@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "displayName": "ATF Mini UI Core",
+  "modId": "atf-mini-ui-core-b42",
+  "version": "0.1.2-alpha",
+  "type": "lua",
+  "dependencies": [],
+  "stormDependency": null,
+  "gameCompatibility": "42.21.0",
+  "targets": [
+    "server",
+    "client"
+  ],
+  "testDirectories": [
+    "tests"
+  ],
+  "luaArgs": [
+    "${moduleDir}",
+    "${gameDir}"
+  ]
+}

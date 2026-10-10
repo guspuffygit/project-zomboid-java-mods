@@ -17,3 +17,5 @@ include('proximity-inventory')
 include('atf-casino')
 
 include('universal-admin-core')
+include('mini-ui-core')
+include('combat-health')
