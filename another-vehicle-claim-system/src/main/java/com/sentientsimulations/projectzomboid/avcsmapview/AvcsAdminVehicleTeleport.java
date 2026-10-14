@@ -13,8 +13,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 import se.krka.kahlua.vm.KahluaTable;
+import zombie.GameTime;
 import zombie.Lua.LuaManager;
 import zombie.characters.IsoPlayer;
 import zombie.characters.Role;
@@ -236,35 +242,55 @@ public final class AvcsAdminVehicleTeleport {
         }
         ServerMap map = ServerMap.instance;
         long now = System.currentTimeMillis();
-        Iterator<Job> it = PENDING.values().iterator();
+        tickPending(
+                PENDING,
+                job -> {
+                    if (!GameServer.isPlayerConnected(job.admin)
+                            || !isAdminRole(job.admin.getAccessLevel())) {
+                        return true;
+                    }
+                    map.loadOrKeepRelevent(
+                            map.worldChunkToServerCellXY(job.sourceChunkX) - map.getMinX(),
+                            map.worldChunkToServerCellXY(job.sourceChunkY) - map.getMinY());
+                    BaseVehicle vehicle = findLoaded(job.sqlId);
+                    if (vehicle != null) {
+                        if (AvcsClaimIdentity.matchesClaim(vehicle, job.claimKey)) {
+                            finish(job, vehicle);
+                        } else {
+                            logRecycled(job.adminName, job.sqlId, job.claimKey, vehicle);
+                            reply(job.admin, job.claimKey, Reason.recycledId, null);
+                        }
+                        return true;
+                    } else if (job.expired(now)) {
+                        LOGGER.warn(
+                                "[AVCS] teleport of sqlId={} for {} timed out waiting for chunk {},{}",
+                                job.sqlId,
+                                job.adminName,
+                                job.sourceChunkX,
+                                job.sourceChunkY);
+                        reply(job.admin, job.claimKey, Reason.timeout, null);
+                        return true;
+                    }
+                    return false;
+                },
+                AvcsAdminVehicleTeleport::failed);
+    }
+
+    static void tickPending(
+            Map<Integer, Job> pending,
+            Predicate<Job> step,
+            BiConsumer<Job, RuntimeException> failure) {
+        Iterator<Job> it = pending.values().iterator();
         while (it.hasNext()) {
             Job job = it.next();
+            boolean complete = true;
             try {
-                map.loadOrKeepRelevent(
-                        map.worldChunkToServerCellXY(job.sourceChunkX) - map.getMinX(),
-                        map.worldChunkToServerCellXY(job.sourceChunkY) - map.getMinY());
-                BaseVehicle vehicle = findLoaded(job.sqlId);
-                if (vehicle != null) {
-                    it.remove();
-                    if (AvcsClaimIdentity.matchesClaim(vehicle, job.claimKey)) {
-                        finish(job, vehicle);
-                    } else {
-                        logRecycled(job.adminName, job.sqlId, job.claimKey, vehicle);
-                        reply(job.admin, job.claimKey, Reason.recycledId, null);
-                    }
-                } else if (job.expired(now)) {
-                    it.remove();
-                    LOGGER.warn(
-                            "[AVCS] teleport of sqlId={} for {} timed out waiting for chunk {},{}",
-                            job.sqlId,
-                            job.adminName,
-                            job.sourceChunkX,
-                            job.sourceChunkY);
-                    reply(job.admin, job.claimKey, Reason.timeout, null);
-                }
-            } catch (RuntimeException e) {
-                it.remove();
-                LOGGER.error("[AVCS] teleport of sqlId={} failed", job.sqlId, e);
+                complete = step.test(job);
+            } catch (RuntimeException error) {
+                failure.accept(job, error);
+            } finally {
+                // Exactly one removal, even if completion or the failure reply throws.
+                if (complete) it.remove();
             }
         }
     }
@@ -272,37 +298,68 @@ public final class AvcsAdminVehicleTeleport {
     private static void finish(Job job, BaseVehicle vehicle) {
         float fromX = vehicle.getX();
         float fromY = vehicle.getY();
-        Reason reason;
+        complete(
+                job,
+                () -> move(vehicle, job.target),
+                reason -> {
+                    if (reason == Reason.moved) {
+                        updateClaimLocation(job.claimKey, job.target);
+                        String line =
+                                "["
+                                        + (System.currentTimeMillis() / 1000L)
+                                        + "] Admin teleported vehicle ["
+                                        + job.adminName
+                                        + "] ["
+                                        + vehicle.getScriptName()
+                                        + "] [sqlId "
+                                        + job.sqlId
+                                        + "] from ["
+                                        + (int) Math.floor(fromX)
+                                        + ","
+                                        + (int) Math.floor(fromY)
+                                        + "] to ["
+                                        + job.target.x()
+                                        + ","
+                                        + job.target.y()
+                                        + "]";
+                        LoggerManager.getLogger(LOG_NAME).write(line);
+                        LOGGER.info("[AVCS] {}", line);
+                    }
+                    reply(job.admin, job.claimKey, reason, job.target);
+                },
+                AvcsAdminVehicleTeleport::failed);
+    }
+
+    static void complete(
+            Job job,
+            Supplier<Reason> movement,
+            Consumer<Reason> result,
+            BiConsumer<Job, RuntimeException> failure) {
         try {
-            reason = move(vehicle, job.target);
-        } catch (RuntimeException e) {
-            LOGGER.error("[AVCS] teleport of sqlId={} failed", job.sqlId, e);
-            return;
+            result.accept(movement.get());
+        } catch (RuntimeException error) {
+            failure.accept(job, error);
         }
-        if (reason == Reason.moved) {
-            updateClaimLocation(job.claimKey, job.target);
-            String line =
-                    "["
-                            + (System.currentTimeMillis() / 1000L)
-                            + "] Admin teleported vehicle ["
-                            + job.adminName
-                            + "] ["
-                            + vehicle.getScriptName()
-                            + "] [sqlId "
-                            + job.sqlId
-                            + "] from ["
-                            + (int) Math.floor(fromX)
-                            + ","
-                            + (int) Math.floor(fromY)
-                            + "] to ["
-                            + job.target.x()
-                            + ","
-                            + job.target.y()
-                            + "]";
-            LoggerManager.getLogger(LOG_NAME).write(line);
-            LOGGER.info("[AVCS] {}", line);
+    }
+
+    private static void failed(Job job, RuntimeException error) {
+        LOGGER.error(
+                "[AVCS] teleport sqlId={} claim={} for {} to {},{} failed",
+                job.sqlId,
+                job.claimKey,
+                job.adminName,
+                job.target.x(),
+                job.target.y(),
+                error);
+        try {
+            reply(job.admin, job.claimKey, Reason.badArgs, null);
+        } catch (RuntimeException replyError) {
+            LOGGER.warn(
+                    "[AVCS] teleport failure reply could not reach {} for claim {}",
+                    job.adminName,
+                    job.claimKey,
+                    replyError);
         }
-        reply(job.admin, job.claimKey, reason, job.target);
     }
 
     // Loaded-vehicle move; the server runs no Bullet step so the transform write is the position
@@ -356,9 +413,17 @@ public final class AvcsAdminVehicleTeleport {
         }
         IsoChunk.addFromCheckedVehicles(vehicle);
         vehicle.polyDirty = true;
-        vehicle.updateFlags |= BaseVehicle.UpdateFlags.PositionOrientation;
+        queuePositionUpdate(vehicle);
         VehiclesDB2.instance.updateVehicle(vehicle);
         return Reason.moved;
+    }
+
+    static void queuePositionUpdate(BaseVehicle vehicle) {
+        // Dedicated servers can leave the physics world uncreated, so its clock stays at zero.
+        // Native VehicleInterpolationData.set uses this clock for outgoing position packets;
+        // clients can retain newer driving positions if the teleport carries an older timestamp.
+        WorldSimulation.instance.time = GameTime.getServerTimeMills();
+        vehicle.updateFlags |= BaseVehicle.UpdateFlags.PositionOrientation;
     }
 
     private static boolean hasOccupants(BaseVehicle vehicle) {
@@ -429,8 +494,17 @@ public final class AvcsAdminVehicleTeleport {
     }
 
     private static void reply(IsoPlayer admin, Object claimKey, Reason reason, Target target) {
-        KahluaTable table = resultTable(LuaManager.platform.newTable(), claimKey, reason, target);
-        GameServer.sendServerCommand(admin, MODULE, RESULT_COMMAND, table);
+        replyIfConnected(
+                () -> admin != null && GameServer.isPlayerConnected(admin),
+                () -> {
+                    KahluaTable table =
+                            resultTable(LuaManager.platform.newTable(), claimKey, reason, target);
+                    GameServer.sendServerCommand(admin, MODULE, RESULT_COMMAND, table);
+                });
+    }
+
+    static void replyIfConnected(BooleanSupplier connected, Runnable send) {
+        if (connected.getAsBoolean()) send.run();
     }
 
     static KahluaTable resultTable(

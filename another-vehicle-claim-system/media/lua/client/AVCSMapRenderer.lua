@@ -1,5 +1,8 @@
 require("ISUI/Maps/ISWorldMap")
 
+AVCS.MapRenderer = AVCS.MapRenderer or { filterEnabled = true }
+local state = AVCS.MapRenderer
+
 --
 -- getDetailedVehicleList - moved from jar-injected Lua to vanilla client Lua
 --
@@ -14,8 +17,34 @@ local function getVehicleDisplayName(name)
     return displayName
 end
 
+local cachedVehicles, cachedRevision, cachedPlayer, cachedLanguage, cacheUntil
+local function invalidateVehicles()
+    cachedVehicles = nil
+end
+state.invalidate = invalidateVehicles
+if not state.invalidateHook then
+    state.invalidateHook = function()
+        state.invalidate()
+    end
+    Events.OnSafehousesChanged.Add(state.invalidateHook)
+    Events.SyncFaction.Add(state.invalidateHook)
+end
+
 local function getDetailedVehicleList()
+    local player = getPlayer()
+    local now = getTimestampMs()
+    local language = Translator.getLanguage()
+    if
+        cachedVehicles
+        and cachedRevision == AVCS.cacheRevision
+        and cachedPlayer == player
+        and cachedLanguage == language
+        and now < cacheUntil
+    then
+        return cachedVehicles
+    end
     local response = {}
+    local seen = {}
 
     if AVCS == nil or AVCS.dbByPlayerID == nil or AVCS.dbByVehicleSQLID == nil then
         return response
@@ -27,13 +56,17 @@ local function getDetailedVehicleList()
             for vehicleID, _ in pairs(playerVehicles) do
                 if vehicleID ~= "LastKnownLogonTime" then
                     local vehicleData = AVCS.dbByVehicleSQLID[vehicleID]
-                    if vehicleData then
+                    if vehicleData and not seen[vehicleID] then
+                        seen[vehicleID] = true
+                        local displayName = getVehicleDisplayName(vehicleData.CarModel)
                         table.insert(response, {
                             vehicleID = vehicleID,
                             ownerPlayerId = vehicleData.OwnerPlayerID,
                             claimDateTime = vehicleData.ClaimDateTime,
                             carModel = vehicleData.CarModel,
-                            displayName = getVehicleDisplayName(vehicleData.CarModel),
+                            displayName = displayName,
+                            labelWidth = getTextManager():MeasureStringX(UIFont.Small, displayName)
+                                + 16,
                             lastLocationX = vehicleData.LastLocationX,
                             lastLocationY = vehicleData.LastLocationY,
                             lastLocationUpdateTime = vehicleData.LastLocationUpdateDateTime,
@@ -45,7 +78,6 @@ local function getDetailedVehicleList()
         end
     end
 
-    local player = getPlayer()
     if player == nil then
         return response
     end
@@ -84,6 +116,8 @@ local function getDetailedVehicleList()
         end
     end
 
+    cachedVehicles, cachedRevision, cachedPlayer = response, AVCS.cacheRevision, player
+    cachedLanguage, cacheUntil = language, now + 2000
     return response
 end
 
@@ -91,9 +125,8 @@ end
 -- Filter option for map UI
 --
 
-local avcsFilterEnabled = true
-
-local avcsFilterOption = {}
+state.filterOption = state.filterOption or {}
+local avcsFilterOption = state.filterOption
 function avcsFilterOption:getName()
     return "Claimed Vehicles"
 end
@@ -101,17 +134,28 @@ function avcsFilterOption:getType()
     return "boolean"
 end
 function avcsFilterOption:getValue()
-    return avcsFilterEnabled
+    return state.filterEnabled
 end
 function avcsFilterOption:setValue(v)
-    avcsFilterEnabled = v
+    state.filterEnabled = v
 end
 
 WorldMapOptions_visibleOptionsHooks = WorldMapOptions_visibleOptionsHooks or {}
 
-table.insert(WorldMapOptions_visibleOptionsHooks, function(result)
-    table.insert(result, avcsFilterOption)
-end)
+state.optionsHook = state.optionsHook
+    or function(result)
+        table.insert(result, state.filterOption)
+    end
+local registered = false
+for _, hook in ipairs(WorldMapOptions_visibleOptionsHooks) do
+    if hook == state.optionsHook then
+        registered = true
+        break
+    end
+end
+if not registered then
+    table.insert(WorldMapOptions_visibleOptionsHooks, state.optionsHook)
+end
 
 -- Monkey-patch getVisibleOptions/synchUI to iterate the shared hooks table.
 -- Multiple mods add hooks to the same table; only the first mod to load does the patch.
@@ -157,16 +201,15 @@ end
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 
-local function renderVehicleLabel(javaObject, api, worldX, worldY, name)
-    local sx = PZMath.floor(api:worldToUIX(worldX, worldY))
-    local sy = PZMath.floor(api:worldToUIY(worldX, worldY))
-    local textW = getTextManager():MeasureStringX(UIFont.Small, name) + 16
+local function renderVehicleLabel(javaObject, sx, sy, vehicle)
+    sx, sy = PZMath.floor(sx), PZMath.floor(sy)
+    local textW = vehicle.labelWidth
     local lineH = FONT_HGT_SMALL
     local boxH = math.ceil(lineH * 1.25)
     -- background
     javaObject:DrawTextureScaledColor(nil, sx - textW / 2, sy + 4, textW, boxH, 0.5, 0.5, 0.5, 0.5)
     -- text
-    javaObject:DrawTextCentre(name, sx, sy + 4 + (boxH - lineH) / 2, 1, 1, 1, 1)
+    javaObject:DrawTextCentre(vehicle.displayName, sx, sy + 4 + (boxH - lineH) / 2, 1, 1, 1, 1)
 end
 
 local function renderVehiclePoint(mapUI, vehicle)
@@ -184,6 +227,16 @@ local function renderVehiclePoint(mapUI, vehicle)
     local y1 = api:worldToUIY(worldX, worldY)
     local x2 = api:worldToUIX(worldX + 1, worldY + 1)
     local y2 = api:worldToUIY(worldX + 1, worldY + 1)
+    local halfLabel = vehicle.labelWidth / 2
+    local labelBottom = y1 + 4 + math.ceil(FONT_HGT_SMALL * 1.25)
+    if
+        math.max(x1 + halfLabel, x2) < 0
+        or math.min(x1 - halfLabel, x2) > mapUI:getWidth()
+        or math.max(labelBottom, y2) < 0
+        or math.min(y1, y2) > mapUI:getHeight()
+    then
+        return
+    end
 
     local r, g, b, a = 0, 1, 0, 0.9
     if vehicle.carType == "faction" then
@@ -204,24 +257,29 @@ local function renderVehiclePoint(mapUI, vehicle)
         a
     )
 
-    renderVehicleLabel(javaObject, api, worldX, worldY, vehicle.displayName)
+    renderVehicleLabel(javaObject, x1, y1, vehicle)
 end
 
 --
 -- Patch ISWorldMap:render()
 --
 
-local originalRender = ISWorldMap.render
-
-function ISWorldMap:render()
-    originalRender(self)
-
-    if not avcsFilterEnabled then
+state.render = function(mapUI)
+    if not state.filterEnabled then
         return
     end
-
     local vehicles = getDetailedVehicleList()
     for _, vehicle in ipairs(vehicles) do
-        renderVehiclePoint(self, vehicle)
+        renderVehiclePoint(mapUI, vehicle)
     end
+end
+
+-- Keep one wrapper and update its delegate on reload, preserving other mods' wrappers.
+if not state.renderWrapper then
+    local originalRender = ISWorldMap.render
+    state.renderWrapper = function(self)
+        originalRender(self)
+        state.render(self)
+    end
+    ISWorldMap.render = state.renderWrapper
 end

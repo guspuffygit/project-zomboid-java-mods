@@ -119,12 +119,12 @@ function AVCS.getVehicleID(vehicleObj)
                 if not isClient() and isServer() then
                     vehicleObj:getModData().SQLID = tempPart:getModData().SQLID
                     tempPart:getModData().SQLID = nil
+                    vehicleObj:transmitPartModData(tempPart)
                     -- Vehicle ModData does not update immediately thus we need to force this for same cell players
-                    sendServerCommand(
-                        "AVCS",
-                        "registerClientVehicleSQLID",
-                        { vehicleObj:getId(), vehicleObj:getModData().SQLID }
-                    )
+                    sendServerCommand("AVCS", "registerClientVehicleSQLID", {
+                        vehicleObj:getId(),
+                        vehicleObj:getModData().SQLID,
+                    })
                     return vehicleObj:getModData().SQLID
                 else
                     local tempID = tempPart:getModData().SQLID
@@ -170,7 +170,14 @@ function AVCS.checkMaxClaim(playerObj)
     end
 end
 
+function AVCS.claimUnavailable(id)
+    return isClient() and AVCS.Sync and AVCS.Sync.isUnavailable(id) or false
+end
+
 function AVCS.getPublicPermission(vehicleObj, type)
+    if AVCS.claimUnavailable(AVCS.getVehicleID(vehicleObj)) then
+        return false
+    end
     if not AVCS.dbByVehicleSQLID then
         return true
     end
@@ -201,7 +208,7 @@ table / array = owned and permission
 --]]
 
 function AVCS.checkPermission(playerObj, vehicleObj)
-    if not AVCS.dbByVehicleSQLID or not AVCS.dbByPlayerID then
+    if not AVCS.dbByVehicleSQLID then
         return true
     end
 
@@ -218,6 +225,15 @@ function AVCS.checkPermission(playerObj, vehicleObj)
     end
 
     -- Ownerless
+    if AVCS.claimUnavailable(vehicleSQL) then
+        local record = AVCS.dbByVehicleSQLID[vehicleSQL]
+        return {
+            permissions = false,
+            reason = "unavailable",
+            ownerid = record and record.OwnerPlayerID or getText("IGUI_AVCS_ClaimUnavailable"),
+            LastKnownLogonTime = 0,
+        }
+    end
     if AVCS.dbByVehicleSQLID[vehicleSQL] == nil then
         return true
     end
@@ -229,7 +245,11 @@ function AVCS.checkPermission(playerObj, vehicleObj)
             permissions = true,
             reason = "admin",
             ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
-            LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
+            LastKnownLogonTime = (
+                AVCS.dbByPlayerID
+                    and AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID]
+                or {}
+            ).LastKnownLogonTime or 0,
         }
         return details
     end
@@ -240,7 +260,9 @@ function AVCS.checkPermission(playerObj, vehicleObj)
             permissions = true,
             reason = "owner",
             ownerid = playerObj:getUsername(),
-            LastKnownLogonTime = AVCS.dbByPlayerID[playerObj:getUsername()].LastKnownLogonTime,
+            LastKnownLogonTime = (
+                AVCS.dbByPlayerID and AVCS.dbByPlayerID[playerObj:getUsername()] or {}
+            ).LastKnownLogonTime or 0,
         }
         return details
     end
@@ -254,7 +276,11 @@ function AVCS.checkPermission(playerObj, vehicleObj)
                     permissions = true,
                     reason = "faction-owner",
                     ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
-                    LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
+                    LastKnownLogonTime = (
+                        AVCS.dbByPlayerID
+                            and AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID]
+                        or {}
+                    ).LastKnownLogonTime or 0,
                 }
                 return details
             end
@@ -266,7 +292,11 @@ function AVCS.checkPermission(playerObj, vehicleObj)
                         permissions = true,
                         reason = "faction-member",
                         ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
-                        LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
+                        LastKnownLogonTime = (
+                            AVCS.dbByPlayerID
+                                and AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID]
+                            or {}
+                        ).LastKnownLogonTime or 0,
                     }
                     return details
                 end
@@ -285,7 +315,11 @@ function AVCS.checkPermission(playerObj, vehicleObj)
                         permissions = true,
                         reason = "safehouse-member",
                         ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
-                        LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
+                        LastKnownLogonTime = (
+                            AVCS.dbByPlayerID
+                                and AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID]
+                            or {}
+                        ).LastKnownLogonTime or 0,
                     }
                     return details
                 end
@@ -298,9 +332,40 @@ function AVCS.checkPermission(playerObj, vehicleObj)
         permissions = false,
         reason = "denied",
         ownerid = AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID,
-        LastKnownLogonTime = AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID].LastKnownLogonTime,
+        LastKnownLogonTime = (
+            AVCS.dbByPlayerID
+                and AVCS.dbByPlayerID[AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID]
+            or {}
+        ).LastKnownLogonTime or 0,
     }
     return details
+end
+
+-- Management actions are limited to the vehicle owner and admins.
+function AVCS.checkManagementPermission(playerObj, vehicleObj)
+    if not playerObj or vehicleObj == nil or not AVCS.dbByVehicleSQLID then
+        return false
+    end
+
+    local vehicleSQL = vehicleObj
+    if type(vehicleObj) ~= "number" then
+        return false
+    end
+
+    if
+        not vehicleSQL
+        or AVCS.claimUnavailable(vehicleSQL)
+        or not AVCS.dbByVehicleSQLID[vehicleSQL]
+    then
+        return false
+    end
+
+    local level = string.lower(playerObj:getAccessLevel() or "none")
+    if level == "admin" then
+        return true
+    end
+
+    return AVCS.dbByVehicleSQLID[vehicleSQL].OwnerPlayerID == playerObj:getUsername()
 end
 
 -- Which rule in checkPermission granted (or refused) access, for the audit log

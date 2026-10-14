@@ -51,10 +51,16 @@ function AVCS.UI.UserManagerMain:setVehiclePreview(vehicleID)
                 AVCS.dbByVehicleSQLID[vehicleID].LastLocationUpdateDateTime
             )
         )
-        self.btnModify:setEnable(true)
-        self.btnUnclaim:setEnable(true)
+        local canManage = AVCS.checkManagementPermission(getPlayer(), vehicleID)
+        self.btnModify:setEnable(canManage)
+        self.btnUnclaim:setEnable(canManage)
         if self.btnTeleport then
-            self.btnTeleport:setEnable(true)
+            self.btnTeleport:setEnable(
+                not (AVCS.claimUnavailable and AVCS.claimUnavailable(vehicleID))
+            )
+        end
+        if AVCS.claimUnavailable and AVCS.claimUnavailable(vehicleID) then
+            self.lblVehicleOwnerInfo:setName(getText("IGUI_AVCS_ClaimUnavailable"))
         end
     end
 end
@@ -123,6 +129,10 @@ function AVCS.UI.UserManagerMain:updateVehicleLocation(vehicleID, x, y)
 end
 
 function AVCS.UI.UserManagerMain:btnUnclaim_onConfirmClick(btn, _, _)
+    local selected = self.listVehicles.items[self.listVehicles.selected]
+    if not selected or (AVCS.claimUnavailable and AVCS.claimUnavailable(selected.item)) then
+        return
+    end
     if btn.internal == "NO" then
         return
     end
@@ -143,6 +153,13 @@ function AVCS.UI.UserManagerMain:btnUnclaim_onConfirmClick(btn, _, _)
 end
 
 function AVCS.UI.UserManagerMain:btnModify_onClick(btn)
+    local selected = self.listVehicles.items[self.listVehicles.selected]
+    if not selected or (AVCS.claimUnavailable and AVCS.claimUnavailable(selected.item)) then
+        return
+    end
+    if not AVCS.dbByVehicleSQLID or not AVCS.dbByVehicleSQLID[selected.item] then
+        return
+    end
     if btn.internal ~= "btnModify" then
         return
     end
@@ -778,6 +795,15 @@ end
 
 function AVCS.UI.UserManagerMain:prerender()
     ISCollapsableWindow.prerender(self)
+    local sync = AVCS.Sync
+    if sync and self.avcsSnapshotRevision ~= sync.snapshotRevision then
+        self.avcsSnapshotRevision = sync.snapshotRevision
+        self:updateListVehicles()
+    end
+    local warning = sync and sync.warning and sync.warning()
+    if warning then
+        self:drawText(warning, 12, self.height - 22, 1, 0.75, 0.25, 1, UIFont.Small)
+    end
 end
 
 function AVCS.UI.UserManagerMain:render()

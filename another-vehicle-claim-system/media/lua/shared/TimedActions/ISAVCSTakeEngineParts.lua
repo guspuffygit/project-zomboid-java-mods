@@ -11,13 +11,40 @@ local function hasPermission(character, vehicle)
 end
 
 function ISAVCSTakeEngineParts:isValid()
-    if not self.part or not self.vehicle then
+    if not self.character or self.character:isDead() or not self.part or not self.vehicle then
         return false
     end
-    if not hasPermission(self.character, self.vehicle) then
+    if
+        self.vehicle:isRemovedFromWorld()
+        or self.part ~= self.vehicle:getPartById("Engine")
+        or self.part:getVehicle() ~= self.vehicle
+    then
         return false
     end
-    return true
+    if
+        self.part:getCondition() <= 10
+        or self.character:getPerkLevel(Perks.Mechanics)
+            < self.vehicle:getScript():getEngineRepairLevel()
+    then
+        return false
+    end
+    if
+        not self.item
+        or not self.item:hasTag(ItemTag.WRENCH)
+        or self.item:isBroken()
+        or not self.character:getInventory():containsRecursive(self.item)
+    then
+        return false
+    end
+    if
+        not self.character:getSquare()
+        or not self.vehicle:getSquare()
+        or self.character:getSquare():getZ() ~= self.vehicle:getSquare():getZ()
+        or not self.vehicle:isInArea(self.part:getArea(), self.character)
+    then
+        return false
+    end
+    return hasPermission(self.character, self.vehicle)
 end
 
 function ISAVCSTakeEngineParts:update()
@@ -58,10 +85,8 @@ function ISAVCSTakeEngineParts:complete()
     if not isServer() then
         return true
     end
-    if not self.vehicle or not self.part then
-        return false
-    end
-    if not hasPermission(self.character, self.vehicle) then
+    -- The server must recheck the tool and target before granting items or damaging the engine.
+    if not self:isValid() then
         return false
     end
 

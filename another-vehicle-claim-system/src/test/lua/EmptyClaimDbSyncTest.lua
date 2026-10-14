@@ -25,6 +25,14 @@ local player = {
         return "none"
     end,
 }
+getTimestampMs = function()
+    return 1000
+end
+require = function(name)
+    assert(name == "AVCSSync")
+    return dofile("another-vehicle-claim-system/media/lua/client/AVCSSync.lua")
+end
+
 getPlayer = function()
     return player
 end
@@ -109,7 +117,11 @@ check(
     "Unclaimed vehicle containers open on a server with no claims"
 )
 
-callbacks.OnServerCommand("AVCS", "fullSyncVehicleDB", { [42] = { OwnerPlayerID = "owner" } })
+callbacks.OnServerCommand(
+    "AVCS",
+    "fullSyncVehicleDB",
+    { [42] = { OwnerPlayerID = "owner", CarModel = "Base.CarNormal" } }
+)
 callbacks.OnServerCommand("AVCS", "fullSyncPlayerDB", { owner = { [42] = true } })
 vehicle.getModData = function()
     return { SQLID = 42 }

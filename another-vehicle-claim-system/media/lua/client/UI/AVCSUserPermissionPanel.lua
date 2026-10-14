@@ -1,4 +1,6 @@
 local pad = 10
+local nextRequest = 0
+local pendingPanels = {}
 
 AVCS.UI.UserPermissionPanel = ISPanel:derive("AVCS.UI.UserPermissionPanel")
 
@@ -7,11 +9,24 @@ function AVCS.UI.UserPermissionPanel:initialise()
 end
 
 function AVCS.UI.UserPermissionPanel:close()
+    if self.requestId then
+        pendingPanels[self.requestId] = nil
+    end
     ISPanel.close(self)
 end
 
 function AVCS.UI.UserPermissionPanel:prerender()
     ISPanel.prerender(self)
+    if self.requestId and getTimestampMs() - self.requestTime >= 10000 then
+        pendingPanels[self.requestId] = nil
+        self.requestId = nil
+        self.btnConfirm:setEnable(true)
+        self.btnConfirm:setTitle("Retry")
+        self.btnConfirm.tooltip = "No server confirmation received. Retry or reopen to check."
+        for _, box in ipairs(self.chkBox) do
+            box.enable = true
+        end
+    end
 end
 
 function AVCS.UI.UserPermissionPanel:btnCancel_onClick(btn)
@@ -19,33 +34,54 @@ function AVCS.UI.UserPermissionPanel:btnCancel_onClick(btn)
 end
 
 function AVCS.UI.UserPermissionPanel:btnConfirm_onClick(btn)
-    if AVCS.dbByVehicleSQLID[self.vehicleID] then
-        local temp = {}
-        local count = 0
-        for i = 1, #self.lblSet do
-            local test
-            temp[self.chkBox[i].internal] = self.chkBox[i]:isSelected(1)
+    if AVCS.claimUnavailable and AVCS.claimUnavailable(self.vehicleID) then
+        self.btnConfirm.tooltip = getText("IGUI_AVCS_ClaimUnavailable")
+        return
+    end
+    if self.requestId or not getPlayer() then
+        return
+    end
+    if AVCS.Sync and not AVCS.Sync.ready() then
+        self.btnConfirm.tooltip = "Claim data is synchronizing. Try again shortly."
+        return
+    end
+    -- Send the complete desired state. Comparing to an old cache loses rapid
+    -- off/on/off edits while a previous request is still travelling to the server.
+    nextRequest = nextRequest + 1
+    self.requestId, self.requestTime = nextRequest, getTimestampMs()
+    pendingPanels[nextRequest] = self
+    local temp = { VehicleID = self.vehicleID, requestId = nextRequest }
+    for _, box in ipairs(self.chkBox) do
+        temp[box.internal] = box:isSelected(1)
+        box.enable = false
+    end
+    self.btnConfirm:setEnable(false)
+    self.btnConfirm:setTitle("Saving")
+    sendClientCommand(getPlayer(), "AVCS", "updateSpecifyVehicleUserPermission", temp)
+end
 
-            -- Counting for changes. Empty table will returns as nil, we need boolean
-            if AVCS.dbByVehicleSQLID[self.vehicleID][self.chkBox[i].internal] then
-                test = true
-            else
-                test = false
-            end
-            if test ~= self.chkBox[i]:isSelected(1) then
-                count = count + 1
-            end
-        end
-
-        -- Only send command if there's changes, prevent malicious spamming
-        if count > 0 then
-            temp.VehicleID = self.vehicleID
-            sendClientCommand(getPlayer(), "AVCS", "updateSpecifyVehicleUserPermission", temp)
+Events.OnServerCommand.Add(function(module, command, args)
+    if module ~= "AVCS" or command ~= "permissionResult" or not args then
+        return
+    end
+    local panel = pendingPanels[args.requestId]
+    if not panel or panel.vehicleID ~= args.VehicleID then
+        return
+    end
+    pendingPanels[args.requestId] = nil
+    panel.requestId = nil
+    if args.ok then
+        panel:close()
+    else
+        panel.btnConfirm:setEnable(true)
+        panel.btnConfirm:setTitle("Retry")
+        panel.btnConfirm.tooltip =
+            "Server rejected the change. Check ownership and reopen this panel."
+        for _, box in ipairs(panel.chkBox) do
+            box.enable = true
         end
     end
-
-    self.close(self)
-end
+end)
 
 function AVCS.UI.UserPermissionPanel:addSets(text, name)
     local lblpadleft = pad + 10
