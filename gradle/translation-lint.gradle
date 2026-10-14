@@ -1,0 +1,72 @@
+import groovy.json.JsonSlurper
+import java.util.regex.Pattern
+
+// Replays zombie.core.Translator: formatFixer at load, then String.formatted at getText. A value
+// that throws there falls back to a rewrite that mangles %1 into "%1$s$s" in non-dev clients.
+abstract class TranslationLintTask extends DefaultTask {
+	private static final Pattern FORMAT_TOKEN = Pattern.compile('%%|%([1-9])')
+	private static final Object[] ARGS = (1..9).collect { 'x' } as Object[]
+
+	@InputFiles @PathSensitive(PathSensitivity.RELATIVE)
+	abstract ConfigurableFileCollection getTranslations()
+
+	@OutputFile
+	abstract RegularFileProperty getReport()
+
+	static String formatFixer(String value) {
+		FORMAT_TOKEN.matcher(value).replaceAll { it.group(1) == null ? '%%' : '%' + it.group(1) + '\\$s' }
+	}
+
+	@TaskAction
+	void lint() {
+		def problems = []
+		translations.files.sort { it.absolutePath }.each { file ->
+			def text = file.getText('UTF-8').replace('﻿', '')
+			def lines = text.readLines()
+			def entries
+			try {
+				entries = new JsonSlurper().parseText(text)
+			} catch (Exception e) {
+				problems << "${file}: invalid JSON: ${e.message}"
+				return
+			}
+			entries.each { key, value ->
+				if (!(value instanceof String)) {
+					return
+				}
+				try {
+					formatFixer(value).formatted(ARGS)
+				} catch (IllegalFormatException e) {
+					def line = lines.findIndexOf { it.contains("\"${key}\"") } + 1
+					problems << "${file}:${line}: ${key} = \"${value}\" (${e.class.simpleName}: ${e.message}). Write a literal percent sign as %%."
+				}
+			}
+		}
+		def out = report.get().asFile
+		out.parentFile.mkdirs()
+		out.text = problems.join('\n') + '\n'
+		if (problems) {
+			throw new GradleException("Translation strings that break Translator.getText:\n" + problems.join('\n'))
+		}
+	}
+}
+
+def aggregate = tasks.register('lintTranslations') {
+	group = 'verification'
+	description = 'Checks every submodule translation string against Translator.getText formatting.'
+}
+
+subprojects { module ->
+	def lint = tasks.register('lintTranslations', TranslationLintTask) {
+		group = 'verification'
+		description = 'Fails on translation strings that Translator.getText cannot format.'
+		translations.from(fileTree(module.projectDir) {
+			include 'media/lua/shared/Translate/**/*.json', 'common/media/lua/shared/Translate/**/*.json'
+		})
+		report = layout.buildDirectory.file('reports/lintTranslations.txt')
+	}
+	aggregate.configure { dependsOn lint }
+	tasks.matching { it.name == 'check' || it.name == 'deployMod' }.configureEach {
+		dependsOn lint
+	}
+}

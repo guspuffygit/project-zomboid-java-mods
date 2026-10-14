@@ -564,3 +564,4 @@ subprojects { subproj ->
 }
 
 apply from: 'gradle/lua-tests.gradle'
+apply from: 'gradle/translation-lint.gradle'
