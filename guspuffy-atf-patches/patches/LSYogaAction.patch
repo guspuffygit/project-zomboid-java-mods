@@ -1,0 +1,99 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSYogaAction.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSYogaAction.lua
+@@ -367,6 +367,7 @@
+ end
+ 
+ function LSYogaAction:reduceXP() -- penalty for stopping earlier, can't reduce level / penalty is based on how many poses were done vs pose limit / penalty is not applied if no xp was granted / reduces xp and zen
++	if LSSync.isClientOnly() then return; end
+ 	if self.skillLevel >= 10 or self.gainedXP == 0 then return; end
+ 	local amount = 20
+ 	if self.poseCount >= self.poseLimit then amount = amount*math.max(1,self.skillLevel); -- 0-20,1-20,2-40,3-60,4-80,5-100,6-120,7-140,8-160,9-180
+@@ -383,10 +384,11 @@
+ 	local xp = math.ceil(val/div)*multiTable[perkName]
+ 	xp = LSUtil.truncateToTwoDecimals(xp)
+ 	--character:getXp():AddXP(Perks[perkName], xp)
+-	sendClientCommand(character, "LS", "AddXP", {perkName, xp})
++	LSUtil.giveXP(character, perkName, xp)
+ end
+ 
+ function LSYogaAction:grantXP() -- pose base xp multiplied by the sum of total bonus (skill+variables) + ceil result of zen level/2 (1,2)
++	if LSSync.isClientOnly() then sendClientCommand(self.character,"LS","ATF_YogaPose",{self.currentAction}); return; end
+ 	if self.skillLevel >= 10 and self.character:getPerkLevel(Perks.Fitness) >= 10 and self.character:getPerkLevel(Perks.Nimble) >= 10 then return; end
+ 	local totalXP = self.bonus
+ 	if self.playerData.LSMoodles["Zen"] and self.playerData.LSMoodles["Zen"].Level > 0 then totalXP = totalXP+math.ceil(self.playerData.LSMoodles["Zen"].Level/2); end
+@@ -418,6 +420,7 @@
+ end
+ 
+ function LSYogaAction:grantBonusXP() -- random number between a third and the total sum of xp from all the poses performed (bonus included), limited by level
++	if LSSync.isClientOnly() then return; end
+ 	if self.gainedXP == 0 or (self.skillLevel >= 10 and self.character:getPerkLevel(Perks.Fitness) >= 10 and self.character:getPerkLevel(Perks.Nimble) >= 10) then return; end
+ 	local bonusXP = math.ceil(ZombRand(self.gainedXP/3, self.gainedXP+1))
+ 	local limit = getLevelLimit(self.skillLevel)
+@@ -445,6 +448,7 @@
+ end
+ 
+ function LSYogaAction:perform()
++	if LSSync.isClientOnly() then self.skillLevel=HiddenSkills.getLevel(self.character,"Yoga"); end
+ 	--stopSound(self.character, self.sound)
+ 
+ 	--doMoodChange(self.character)
+@@ -535,4 +539,57 @@
+ 	o.XPmultipliers = {Yoga = SandboxVars.Yoga.YogaXPMultiplier or 1, Fitness = SandboxVars.Yoga.FitnessXPMultiplier or 1, Nimble = SandboxVars.Yoga.NimbleXPMultiplier or 1} -- yoga, fitness, nimble
+ 	o.exerciseMetabolics = getYogaMetabolicTarget(character:getPerkLevel(Perks.Fitness))
+ 	return o;
+-end
+\ No newline at end of file
++end
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    validate=function(self) return not self.character:isSitOnGround() and (not SandboxVars.Yoga.RequiresMat or getYogaMat(self.character)) end,
++    initialize=function(self,state)
++        self.skillLevel=ATFRewards.getHiddenLevel(self.character,"Yoga")
++        local values=ATFRewards.yogaValues(self.skillLevel)
++        self.baseFailChance,self.efficiency,self.poseLimit=values[2],values[3],values[4]
++        self.actionTable=getActionTable(self.skillLevel,{})
++        self.bonus=getTotalEfficiency(self.efficiency,{(SandboxVars.Yoga.AidObjects and getYogaMat(self.character)) and 1 or 0,0})
++        self.gainedXP,self.poseCount=0,0
++        if self.playerData.LSMoodles.WasTaughtSkill.Value>=0.2 and self.playerData.WasTaughtLast=="Yoga" then self.XPmultipliers.Yoga=self.XPmultipliers.Yoga+3 end
++        state.nextPose=state.started+330
++        state.parent=false
++    end,
++    pose=function(self,state,name)
++        if type(name)~="string" or state.pendingPose then return false end
++        local allowed=false
++        for _,value in ipairs(self.actionTable) do if value==name then allowed=true; break; end end
++        if not allowed or name==state.lastPose or (state.parent and state.parent~=name) or (self.poseCount>=self.poseLimit and not state.parent) then return false end
++        local vars=getInteractionArgs(name)
++        if not vars then return false end
++        local now=ATFRewards.clock()
++        if now<state.nextPose then
++            if state.nextPose-now>30 then return false end
++            state.pendingPose=name
++            return true
++        end
++        self.animVars=vars
++        state.lastPose=name
++        state.parent=self.animVars.parent
++        self.poseCount=self.poseCount+1
++        state.nextPose=state.started+(self.poseCount+1)*330
++        ATFRewards.award(self.character,ATFRewards.calculate(self,function(action) action:grantXP() end))
++        self.skillLevel=ATFRewards.getHiddenLevel(self.character,"Yoga")
++        return true
++    end,
++    completion=function(self) self:grantBonusXP() end,
++    completionGrace=30,
++    minimum=function(self,state) return self.poseCount>0 and (state.nextPose-state.started+220) or math.huge end,
++    cancel=function(self) self:reduceXP() end,
++}
++function LSYogaAction:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function LSYogaAction:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = LSYogaAction.complete
++function LSYogaAction:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end

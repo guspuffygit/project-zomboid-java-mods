@@ -1,0 +1,11 @@
+--- a/mod-LifestyleHobbies/common/media/lua/client/Hygiene/ToiletContextMenu.lua
++++ b/mod-LifestyleHobbies/common/media/lua/client/Hygiene/ToiletContextMenu.lua
+@@ -234,7 +234,7 @@
+ 	-- clean and unclog cleaning items
+ 	local clogged = movData.isClogged and movData.isClogged >= 0
+ 	local cleaningItems
+-	if isDirty or clogged then
++	if isDirty or clogged or canRefill then
+ 		cleaningItems = {}
+ 		local it = character:getInventory():getItems()
+ 		for j = 0, it:size()-1 do

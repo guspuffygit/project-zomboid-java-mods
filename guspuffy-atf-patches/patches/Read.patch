@@ -1,0 +1,32 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/hooks/Read.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/hooks/Read.lua
+@@ -27,15 +27,21 @@
+ 		local state = headgear:getVisual():getTextureChoice() or 0 -- 0 off 1 on 2 bad 3 overdrive 4 overdrive lvl2 5 overdrive lvl3
+ 		if state == 2 then
+ 			time = time*4
+-		elseif state ~= 0 then
+-			local readBonus = 1
+-			if state == 1 then
+-				local data = headgear:getModData()
+-				local invData = data and data['invData']
+-				if invData and invData['fastRead'] then readBonus=0.5; end
++		elseif neuralBonus[state] then
++			local data = headgear:getModData()
++			local movableData = type(data) == "table" and data.movableData
++			local invData
++			if type(movableData) == "table" then invData = movableData.inventionData; end
++			-- Current inventions live under movableData. Retain older item data
++			-- only when that field is absent, never over malformed current data.
++			if invData == nil and type(data) == "table" then invData = data.invData; end
++			local efficiency = type(invData) == "table" and invData['efficiencyMult']
++			local readEfficiency = type(efficiency) == "table" and efficiency[2]
++			if type(readEfficiency) == "number" and readEfficiency > 0 and readEfficiency < math.huge then
++				local readBonus = (state == 1 and invData['fastRead']) and 0.5 or 1
++				local mult = math.max(0.1,math.min(1, neuralBonus[state]/readEfficiency))
++				time = (time*readBonus)*mult
+ 			end
+-			local mult = math.max(0.1,math.min(1, neuralBonus[state]/invData['efficiencyMult'][2]))
+-			time = (time*readBonus)*mult
+ 		end
+ 	else -- dunce effect
+ 		local charData = self.character:getModData()

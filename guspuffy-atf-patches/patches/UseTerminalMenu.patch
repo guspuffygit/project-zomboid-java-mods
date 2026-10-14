@@ -1,0 +1,98 @@
+--- a/mod-TrueMusicRadio42/42.20/media/lua/client/TrueMusicRadio/UseTerminalMenu.lua
++++ b/mod-TrueMusicRadio42/42.20/media/lua/client/TrueMusicRadio/UseTerminalMenu.lua
+@@ -1,4 +1,4 @@
+-require "TMRadio"
++require "TrueMusicRadio/TMRadio"
+ 
+ UseTerminalMenu = {}
+ 
+@@ -440,6 +440,46 @@
+ 	end
+ 
+ 	return false
++end
++
++local pendingEjections = {}
++local ejectCallback
++local function sendTerminalRequest(player, terminal, command, extra)
++    local square = terminal:getSquare()
++    if not square then return end
++    local current = player:getCurrentSquare()
++    if current and current:getZ() == square:getZ()
++        and (current == square or current:isAdjacentTo(square)) then
++        extra.x, extra.y, extra.z = square:getX(), square:getY(), square:getZ()
++        extra.index = terminal:getObjectIndex()
++        sendClientCommand(player, "TMRadio", command, extra)
++        return
++    end
++    -- walkToFront queued the walk; issue only once it actually reaches the terminal.
++    pendingEjections[player] = { terminal = terminal, command = command, extra = extra,
++        deadline = getTimestampMs() + 10000 }
++    if not ejectCallback then
++        ejectCallback = function(actor)
++            for pendingActor, pending in pairs(pendingEjections) do
++                local target = pending.terminal:getSquare()
++                local here = pendingActor:getCurrentSquare()
++                if pendingActor:isDead() or not target or getTimestampMs() >= pending.deadline then
++                    pendingEjections[pendingActor] = nil
++                elseif actor == pendingActor and here and here:getZ() == target:getZ()
++                    and (here == target or here:isAdjacentTo(target)) then
++                    pendingEjections[pendingActor] = nil
++                    sendTerminalRequest(pendingActor, pending.terminal, pending.command, pending.extra)
++                end
++            end
++            local hasPending = false
++            for _ in pairs(pendingEjections) do hasPending = true; break end
++            if not hasPending then
++                Events.OnPlayerUpdate.Remove(ejectCallback)
++                ejectCallback = nil
++            end
++        end
++        Events.OnPlayerUpdate.Add(ejectCallback)
++    end
+ end
+ 
+ UseTerminalMenu.onUseTerminal = function(worldobjects, player, terminal, MyChoice, music)
+@@ -681,21 +721,28 @@
+ 	elseif MyChoice == "SetTerminalMTV" then
+ 		terminal:getModData()['StationControl'] = SandboxVars.TrueMusicRadio.TMRMTV
+ 		terminal:transmitModData()
+-	elseif MyChoice == "ReloadCapacity" then
+-		terminal:getModData()['LoadedCapacity'] = 111
+-		terminal:transmitModData()
+-	elseif MyChoice == "EmptyCapacity" then
+-		terminal:getModData()['LoadedCapacity'] = 0
+-		terminal:transmitModData()
++	elseif MyChoice == "ReloadCapacity" or MyChoice == "EmptyCapacity" then
++        if isClient() then
++            sendTerminalRequest(player, terminal, "ResetEjectStock", {
++                capacity = MyChoice == "ReloadCapacity" and 111 or 0,
++            })
++        else
++            terminal:getModData().LoadedCapacity = MyChoice == "ReloadCapacity" and 111 or 0
++            terminal:transmitModData()
++        end
+ 	elseif MyChoice == "Eject" then
+-		terminal:getModData()['LoadedCapacity'] = terminal:getModData()['LoadedCapacity'] - 1
+-		terminal:transmitModData()
+-		square:playSound("TCBoombox_stop")
+-		if isClient() then
+-			sendClientCommand("TMRadio", "EjectMedia", {media = music})
+-		else
+-			player:getInventory():AddItem(music)
+-		end
++        if isClient() then
++            sendTerminalRequest(player, terminal, "EjectMedia", {
++                media = music,
++                capacity = terminal:getModData().LoadedCapacity,
++                revision = terminal:getModData().ATFEjectionRevision or 0,
++            })
++        else
++            terminal:getModData().LoadedCapacity = terminal:getModData().LoadedCapacity - 1
++            terminal:transmitModData()
++            player:getInventory():AddItem(music)
++            square:playSound("TCBoombox_stop")
++        end
+ 	elseif MyChoice == "Blacklist" then
+ 		local found = false
+ 		if TMRadio.Blacklist ~= nil and #TMRadio.Blacklist > 0 then

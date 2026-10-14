@@ -1,0 +1,48 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/PlayInstrumentTraining.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/PlayInstrumentTraining.lua
+@@ -99,7 +99,7 @@
+ 		--print("PlayInstrumentTraining - adjustStats function - level is: "..tostring(level).." and varResult is: "..tostring(varResult));
+ 		local xpChange = math.max(math.floor(varResult*level),0.25)
+ 		--character:getXp():AddXP(Perks.Music, xpChange)
+-		sendClientCommand(character, "LS", "AddXP", {"Music", xpChange})
++		LSUtil.giveXP(character, "Music", xpChange)
+ 	end
+ 
+ 	--INVISIBLE
+@@ -651,7 +651,7 @@
+ 	o.instrumentSounds = false
+ 	o.AnimToplay = 0
+ 	o.gameSound = 0
+-	o.musicOriginalVolume = tonumber(getSoundManager():getMusicVolume())
++	o.musicOriginalVolume = (not isServer() and tonumber(getSoundManager():getMusicVolume())) or 0
+ 	o.actionCount = 0
+ 	o.actionTotal = 60--300
+ 	o.AvailableInstrumentTracks = {}
+@@ -678,4 +678,25 @@
+ 	o.baseLearnChance = level+trait
+ 	o.doMetabolics = isMetabolicsEnabled(SandboxVars.Music.Metabolics or 1)
+     return o;
+-end
+\ No newline at end of file
++end
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    interval=60,
++    validate=function(self) return ATFRewards.instrument(self) end,
++    initialize=function(self) self.playerLevel=self.character:getPerkLevel(Perks.Music) end,
++    periodic=function(self) adjustStats(self.character,self.playerLevel) end,
++    completion=function(self) adjustStats(self.character,self.playerLevel) end,
++    minimum=function() return 60 end,
++}
++function PlayInstrumentTraining:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function PlayInstrumentTraining:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = PlayInstrumentTraining.complete
++function PlayInstrumentTraining:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end

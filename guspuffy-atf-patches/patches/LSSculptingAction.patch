@@ -1,0 +1,36 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSSculptingAction.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSSculptingAction.lua
+@@ -57,7 +57,7 @@
+ 	
+ 	local xpChange = (ZombRand(xp[1],xp[2]))/10
+ 	if (xpChange > 0) and (PlayerArtLevel < 10) then
+-		sendClientCommand(character, "LS", "AddXP", {"Art", xpChange})
++		LSUtil.giveXP(character, "Art", xpChange)
+ 		--character:getXp():AddXP(Perks.Art, xpChange)
+ 	end
+ end
+@@ -383,3 +383,24 @@
+ 	o.oldUseDelta = false
+ 	return o;
+ end
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    interval=15,
++    validate=function(self) return ATFRewards.near(self.character,self.station) and ATFRewards.artwork(self.station,"sculpture") and ATFRewards.workItems(self.character,self.workItems,self.station:getModData().style) end,
++    initialize=function(self,state) self.artwork=self.station:getModData().sculpture; state.duration=self.station:getModData().progress end,
++    periodic=function(self) adjustStats(self.character,self.artwork,{0,4}) end,
++    completion=function(self) adjustStats(self.character,self.artwork,{50,150}) end,
++    minimum=function(self,state) return math.max(1,state.duration or 1)*0.24 end,
++}
++function LSSculptingAction:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function LSSculptingAction:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = LSSculptingAction.complete
++function LSSculptingAction:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end

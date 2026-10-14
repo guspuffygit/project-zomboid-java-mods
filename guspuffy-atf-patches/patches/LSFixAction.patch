@@ -1,0 +1,63 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSFixAction.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSFixAction.lua
+@@ -43,17 +43,24 @@
+ function LSFixAction:perform()
+ 	self.character:stopOrTriggerSound(self.sound)
+ 
+-	if self.data['isBroken'] then self.data['isBroken'] = false; end
+-	self.data['repairList'] = false
+-	LSUtil.doInvCooldown(self.obj, self.data)
+-	LSSync.transmit(self.obj)
+-	LSUtil.giveXP(self.character, "Maintenance", 5, nil)
++	if not LSSync.isClientOnly() then
++		if self.data['isBroken'] then self.data['isBroken'] = false; end
++		self.data['repairList'] = false
++		LSUtil.doInvCooldown(self.obj, self.data)
++		LSSync.transmit(self.obj)
++		LSUtil.giveXP(self.character, "Maintenance", 5, nil)
++	end
+ 
+ 	ISBaseTimedAction.perform(self)
+ end
+ 
+ function LSFixAction:complete()
+-	LSUtil.consumeItemsOnChar(self.character, self.itemList)
++	if not LSUtil.consumeItemsOnChar(self.character, self.itemList) then return false; end
++	self.data=self.obj:getModData().movableData.inventionData
++	self.data.isBroken=false
++	self.data.repairList=false
++	LSUtil.doInvCooldown(self.obj,self.data)
++	LSSync.transmit(self.obj)
+ 	return true
+ end
+ 
+@@ -79,3 +86,29 @@
+     o.caloriesModifier = 4;
+ 	return o;
+ end
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    validate=function(self)
++        local data=self.obj and self.obj:getModData().movableData
++        local invention=data and data.inventionData
++        return ATFRewards.near(self.character,self.obj) and invention and invention.isBroken and type(invention.repairList)=="table" and ATFRewards.hasRequirements(self.character,invention.repairList) and ATFRewards.hasTool(self.character,"Screwdriver")
++    end,
++    initialize=function(self,state)
++        self.itemList=self.obj:getModData().movableData.inventionData.repairList
++        state.duration=200/(math.max(1,self.character:getPerkLevel(Perks.Maintenance))/10)
++    end,
++    completion=function(self) LSUtil.giveXP(self.character,"Maintenance",5) end,
++    minimum=function(self,state) return state.duration*0.24 end,
++}
++function LSFixAction:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function LSFixAction:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = LSFixAction.complete
++function LSFixAction:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end

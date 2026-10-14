@@ -1,0 +1,61 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSMeditateAction.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSMeditateAction.lua
+@@ -270,7 +270,7 @@
+ 
+ 	LSUtil.addPainBodyPart(character, "Neck", neckPainChange, false)
+ 	--character:getXp():AddXP(Perks.Meditation, xpChange)
+-	sendClientCommand(character, "LS", "AddXP", {"Meditation", xpChange})
++	LSUtil.giveXP(character, "Meditation", xpChange)
+ 	--sendAddXp(character, Perks.Meditation, xpChange, false);
+ 
+ 	--HALOTEXT
+@@ -426,4 +426,47 @@
+ 	o.haloTxts = {{name="XP",value=false,neg=false},{name="Stress",value=false,neg=false},{name="Boredom",value=false,neg=true},{name="Pain_BadPosture",value=false,neg=true}}
+ 	o.caloriesModifier = 1
+     return o;
+-end
+\ No newline at end of file
++end
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    interval=100,
++    validate=function(self) return not self.character:isAiming() and not self.charData.IsMeditationDisturbed end,
++    initialize=function(self,state)
++        self.meditationFocus=0
++        self.charData.IsMeditating=true
++        self.skillLevel=self.character:getPerkLevel(Perks.Meditation)
++        self.mindfulState=self.charData.LSMoodles.MindfulState.Value
++        state.mindfulCount=0
++        ATFRewards.syncData(self.character)
++    end,
++    advance=function(self,state,delta)
++        if self.skillLevel>2 and self.mindfulState<0.6 then
++            state.mindfulCount=state.mindfulCount+delta
++            local level=getNewMindfulnessState(self.skillLevel,self.mindfulState,state.mindfulCount,500)
++            if level then
++                self.charData.LSMoodles.MindfulState.Value=level
++                self.charData.MindfulnessMinutes=false
++                self.charData.MindfulnessLast=level
++                self.mindfulState=level
++                state.mindfulCount=0
++                ATFRewards.syncData(self.character)
++            end
++        end
++    end,
++    periodic=function(self) self.meditationFocus=self.meditationFocus+0.5; adjustStats(self.character,self.meditationFocus) end,
++    completion=function(self) adjustStats(self.character,self.meditationFocus) end,
++    minimum=function() return 100 end,
++    ended=function(self) self.charData.IsMeditating=false; ATFRewards.syncData(self.character) end,
++}
++function LSMeditateAction:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function LSMeditateAction:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = LSMeditateAction.complete
++function LSMeditateAction:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end

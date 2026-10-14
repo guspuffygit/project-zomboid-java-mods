@@ -1,0 +1,47 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/PlayDJBoothAction.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/PlayDJBoothAction.lua
+@@ -197,7 +197,7 @@
+ 		xpChange = 0
+ 	end
+ 	--character:getXp():AddXP(Perks.Music, xpChange)
+-	sendClientCommand(character, "LS", "AddXP", {"Music", xpChange})
++	LSUtil.giveXP(character, "Music", xpChange)
+ 	--HALOTEXT
+ --[[
+ 	if boredomChange >= 10 then
+@@ -764,7 +764,7 @@
+ 	o.stressReduction = stressReduction
+ 	o.actionType = actionType
+ 	o.isFail = isFail
+-	o.musicOriginalVolume = tonumber(getSoundManager():getMusicVolume())
++	o.musicOriginalVolume = (not isServer() and tonumber(getSoundManager():getMusicVolume())) or 0
+ 	o.pastAnim = 0
+ 	o.AnimToplay = "Bob_PlayDJDefault"
+ 	o.AnimDelayStart = 0
+@@ -789,4 +789,25 @@
+     return o;
+ end
+ 
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    interval=120,
++    validate=function(self) return ATFRewards.near(self.character,self.DJBooth) and ATFRewards.objectName(self.DJBooth,"Booth") end,
++    periodic=function(self) adjustStats(self.character) end,
++    completion=function(self) adjustStats(self.character) end,
++    minimum=function() return 120 end,
++}
++function PlayDJBoothAction:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function PlayDJBoothAction:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = PlayDJBoothAction.complete
++function PlayDJBoothAction:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end
++
+ return PlayDJBoothAction;
+\ No newline at end of file

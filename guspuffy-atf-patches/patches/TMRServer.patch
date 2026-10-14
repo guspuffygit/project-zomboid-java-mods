@@ -1,0 +1,122 @@
+--- a/mod-TrueMusicRadio42/42.20/media/lua/server/TrueMusicRadio/TMRServer.lua
++++ b/mod-TrueMusicRadio42/42.20/media/lua/server/TrueMusicRadio/TMRServer.lua
+@@ -588,13 +588,112 @@
+ 	end
+ end
+ 
+-TMRadioServer.EjectMedia = function(player, args) 
+-	--print("TMRadio Server: Ejecting Media from Terminal")
+-	if args then
+-		local item = instanceItem(args.media)
+-		player:getInventory():AddItem(item);
+-		sendAddItemToContainer(player:getInventory(), item);
+-	end
++local function ejectInteger(value, minimum, maximum)
++    return type(value) == "number" and value == value and value >= minimum
++        and value <= maximum and value == math.floor(value)
++end
++
++local function ejectTerminal(player, args, forReset)
++    if not player or player:isDead() or type(args) ~= "table" then return end
++    local connected = false
++    local players = getOnlinePlayers()
++    for i = 0, players:size() - 1 do
++        if players:get(i) == player then connected = true; break end
++    end
++    if not connected or not ejectInteger(args.x, 0, 1000000)
++        or not ejectInteger(args.y, 0, 1000000) or not ejectInteger(args.z, -32, 31)
++        or not ejectInteger(args.index, 0, 65535) then return end
++    local current = player:getCurrentSquare()
++    local square = getCell():getGridSquare(args.x, args.y, args.z)
++    if not current or not square or current:getZ() ~= square:getZ()
++        or (current ~= square and (not current:isAdjacentTo(square)
++            or current:isBlockedTo(square) or current:isWindowTo(square)))
++        or not SafeHouse.isSafehouseAllowInteract(square, player) then return end
++    local objects = square:getObjects()
++    if args.index >= objects:size() then return end
++    local terminal = objects:get(args.index)
++    local sprite = terminal and terminal:getSprite()
++    local properties = sprite and sprite:getProperties()
++    if not terminal or terminal:getSquare() ~= square or not properties
++        or properties:get("CustomName") ~= "Terminal"
++        or properties:get("GroupName") ~= "Security" or not terminal:getContainer()
++        or terminal:getContainer():getType() ~= "securityterminal" then return end
++    if not forReset then
++        local options = SandboxVars.TrueMusicRadio
++        local data = terminal:getModData()
++        local station = data.StationControl
++        if not options or not options.TMRTerminalEjectsMusic or not station or station == 0
++            or not (station == options.TMRChannel1 or station == options.TMRChannel2
++                or station == options.TMRChannel3 or station == options.TMRChannel4
++                or station == options.TMRChannel5 or (options.ActivateTMRMTV and station == options.TMRMTV))
++            or not ((SandboxVars.AllowExteriorGenerator and square:haveElectricity())
++                or (SandboxVars.ElecShutModifier > -1
++                    and GameTime:getInstance():getNightsSurvived() < SandboxVars.ElecShutModifier
++                    and not square:isOutside())) then return end
++    end
++    local key = args.x .. ":" .. args.y .. ":" .. args.z .. ":" .. sprite:getName()
++    return terminal, key
++end
++
++local function ejectStock(terminal, key, forReset)
++    -- Private server persistence; object modData is only a display mirror.
++    local ledger = ModData.getOrCreate("ATF_TMR_EjectionStock")
++    local stock = ledger[key]
++    if not stock then
++        local capacity = forReset and 0 or terminal:getModData().LoadedCapacity
++        if not ejectInteger(capacity, 0, 111) then return end
++        stock = { capacity = capacity, revision = 0 }
++        ledger[key] = stock
++    end
++    if not ejectInteger(stock.capacity, 0, 111)
++        or not ejectInteger(stock.revision, 0, 9007199254740990) then return end
++    return stock
++end
++
++local function publishEjectStock(terminal, stock)
++    local data = terminal:getModData()
++    data.LoadedCapacity = stock.capacity
++    data.ATFEjectionRevision = stock.revision
++    terminal:transmitModData()
++end
++
++TMRadioServer.ResetEjectStock = function(player, args)
++    local role = player and player.getRole and player:getRole()
++    if not role or not role.hasCapability or not Capability or not Capability.AddItem
++        or not role:hasCapability(Capability.AddItem) or type(args) ~= "table"
++        or (args.capacity ~= 0 and args.capacity ~= 111) then return end
++    local terminal, key = ejectTerminal(player, args, true)
++    if not terminal then return end
++    local stock = ejectStock(terminal, key, true)
++    if not stock then return end
++    stock.capacity, stock.revision = args.capacity, stock.revision + 1
++    publishEjectStock(terminal, stock)
++end
++
++TMRadioServer.EjectMedia = function(player, args)
++    local terminal, key = ejectTerminal(player, args)
++    if not terminal or type(args.media) ~= "string" or #args.media > 240
++        or args.media:sub(1, 10) ~= "Tsarcraft." or not GlobalMusic
++        or GlobalMusic[args.media:sub(11)] == nil then return end
++    local stock = ejectStock(terminal, key)
++    if not stock then return end
++    if stock.capacity < 1 or args.capacity ~= stock.capacity or args.revision ~= stock.revision then
++        publishEjectStock(terminal, stock)
++        return
++    end
++    local item = instanceItem(args.media)
++    local inventory = player:getInventory()
++    if not item or item:getFullType() ~= args.media or not inventory:hasRoomFor(player, item) then return end
++    -- Reserve before the grant; an ambiguous exception must not unlock a replay.
++    stock.capacity, stock.revision = stock.capacity - 1, stock.revision + 1
++    pcall(function() inventory:AddItem(item) end)
++    if not inventory:contains(item) then
++        stock.capacity, stock.revision = stock.capacity + 1, stock.revision - 1
++        return
++    end
++    publishEjectStock(terminal, stock)
++    sendAddItemToContainer(inventory, item)
++    terminal:getSquare():playSound("TCBoombox_stop")
+ end
+ 
+ TMRadioServer.SetStat = function(player, args) 

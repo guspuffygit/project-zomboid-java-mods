@@ -5,6 +5,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.FBORenderCutawaysRecreateLevelGuardPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkBackupBlamPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkSetMinMaxLevelGuardPatch;
+import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.LifestyleActionProvenancePatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.VehiclePartStatsOverloadPatch;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
@@ -23,6 +24,8 @@ public class GuspuffyAtfPatchesMod implements ZomboidMod {
         LOGGER.debug(
                 "[GuspuffyAtfPatches] Registering for {}", GuspuffyAtfPatchesMod.class.getName());
         StormEventDispatcher.registerEventHandler(VroLegacyTrunkSweepDisable.class);
+        StormEventDispatcher.registerEventHandler(ATFSafehouseNativeSync.class);
+        StormEventDispatcher.registerEventHandler(ATFLifestyleNativeAction.class);
     }
 
     @Override
@@ -36,6 +39,9 @@ public class GuspuffyAtfPatchesMod implements ZomboidMod {
         transformers.add(new IsoChunkBackupBlamPatch());
         // Both JVMs: VRO's broken no-arg call runs server-side in MP but client-side in SP/host.
         transformers.add(new VehiclePartStatsOverloadPatch());
+        if (StormEnv.isStormServer()) {
+            transformers.add(new LifestyleActionProvenancePatch());
+        }
         // Client-only: the FBO cutaway render path never runs on the dedicated server.
         if (!StormEnv.isStormServer()) {
             transformers.add(new FBORenderCutawaysRecreateLevelGuardPatch());

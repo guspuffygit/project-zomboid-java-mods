@@ -1,0 +1,116 @@
+--- a/mod-LifestyleHobbies/common/media/lua/server/LSservercommands.lua
++++ b/mod-LifestyleHobbies/common/media/lua/server/LSservercommands.lua
+@@ -56,20 +56,13 @@
+ end
+ ]]--
+ LS_Commands["SyncItemData_FromPlayer"] = function(player, arg)
+-	local playerInv = player:getInventory()
+-	local item = LSSync.getItemServer(arg[1], playerInv)
+-	if not item then -- might be inside backpack
+-		local items = playerInv:getItems()
+-		for n=0,items:size()-1 do
+-			local bag = items:get(n)
+-			local bagContainer = bad and bag:getContainer()
+-			if bagContainer then
+-				item = LSSync.getItemServer(arg[1], bagContainer)
+-				if item then break; end
+-			end
+-		end
+-	end
+-	if item then LSSync.transmitItemMovData(item, player, nil, arg[2], arg[3], arg[4]); else LSUtil.debugPrint("SERVER COMMAND SyncItemData_FromPlayer - NO ITEM FOUND"); end
++    if not player or type(arg) ~= "table" then return; end
++    local playerInv = player:getInventory()
++    if not playerInv then return; end
++    -- getItemServer already uses native getFirstEvalRecurse. Resolve the current
++    -- identity in this sender's inventory, including nested inventory containers.
++    local item = LSSync.getItemServer(arg[1], playerInv)
++    if item then LSSync.transmitItemMovData(item, player, nil, arg[2], arg[3], arg[4]); else LSUtil.debugPrint("SERVER COMMAND SyncItemData_FromPlayer - NO ITEM FOUND"); end
+ end
+ 
+ LS_Commands["SyncItemData_FromObj"] = function(_, arg)
+@@ -186,10 +179,8 @@
+ end
+ 
+ LS_Commands["AddGeneralHealth"] = function(player, arg)
+-	local value = arg[1]
+-	local bodyDamage = player:getBodyDamage()
+-	if not bodyDamage then return; end
+-	bodyDamage:AddGeneralHealth(value)
++    -- Mindfulness and Terminator healing is computed by the server passive helper.
++    -- A client-computed amount is never a health grant.
+ end
+ 
+ LS_Commands["addPainBodyPart"] = function(player, arg)
+@@ -241,24 +232,39 @@
+ 	sendPlayerStat(player, CharacterStat[upMood])
+ end
+ 
++LS_Commands["ATF_AdminXP"] = function(player, arg)
++    local policy = ATFPatches_LifestyleSyncPolicy
++    -- Preserve the provider's staff-only 500 XP diagnostic controls.
++    local perkName, xp = arg[1], arg[2]
++    if policy and policy.hasCapability(player, "AddXP") then
++        local approved = {Art=true, Cleaning=true, Dancing=true, Meditation=true, Music=true}
++        if approved[perkName] and Perks[perkName] and type(xp) == "number" and xp == xp
++            and xp > 0 and xp <= 10000 then
++            addXp(player, Perks[perkName], xp)
++            SyncXp(player)
++        end
++        return;
++    end
++end
++
+ LS_Commands["AddXP"] = function(player, arg)
+-	local perkName = arg[1]
+-	local xp = arg[2]
+-	if not Perks[perkName] then return; end
+-	addXp(player, Perks[perkName], xp)
+-	SyncXp(player)
++    local rewards = ATFPatches_LifestyleRewards
++    if rewards then rewards.settle(player); end
+ end
+ 
+ LS_Commands["AddXPBatch"] = function(player, arg)
+-	LSUtil.giveXPBatch(player, arg)
++    local rewards = ATFPatches_LifestyleRewards
++    if rewards then rewards.settle(player); end
++end
++
++LS_Commands["ATF_YogaPose"] = function(player, arg)
++    local rewards = ATFPatches_LifestyleRewards
++    if rewards then rewards.pose(player, arg[1]); end
+ end
+ 
+ LS_Commands["SavePlayerData"] = function(player, arg)
+-	local data = arg[1]
+-	local playerData = player:getModData()
+-	for k, v in pairs(data) do
+-		playerData[k] = v
+-	end
++    local policy = ATFPatches_LifestyleSyncPolicy
++    if policy then policy.savePlayerData(player, arg); end
+ end
+ 
+ LS_Commands["ChangeMaxWeight"] = function(player, arg)
+@@ -1882,12 +1888,20 @@
+ 
+ LS_Commands.OnClientCommand = function(module, command, playerObj, args)
+ 
+-    if module == 'LS' and LS_Commands[command] then
++    if module ~= 'LS' then return; end
++    local policy = ATFPatches_LifestyleSyncPolicy
++    if not policy or not policy.allowCommand(playerObj, command, args) then return; end
++    if LS_Commands[command] then
+         LS_Commands[command](playerObj, args)
+     end
+ end
+ 
+ if isServer() or (not isServer() and not isClient()) then Events.OnClientCommand.Add(LS_Commands.OnClientCommand); end
++
++-- The optional module stays passive when these paired server routes are absent.
++local atfRewards = ATFPatches_LifestyleRewards
++if atfRewards and atfRewards.enableServerRoutes then atfRewards.enableServerRoutes(); end
++
+ --Events.OnClientCommand.Add(LS_Commands.OnClientCommand)
+ 
+ LS_Commands["UpdateAmbt"] = function(_, args)

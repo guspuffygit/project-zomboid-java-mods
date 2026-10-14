@@ -1,0 +1,11 @@
+--- a/mod-LifestyleHobbies/common/media/lua/client/Inventions/NeuralHat.lua
++++ b/mod-LifestyleHobbies/common/media/lua/client/Inventions/NeuralHat.lua
+@@ -232,6 +232,8 @@
+ end
+ 
+ LS_NeuralHat.check = function(character, charData)
++	-- Multiplayer XP is derived by the server passive reward helper.
++	if isClient() then return; end
+ 	local neuralItem = LS_NeuralHat.getCompleteInfo(character)
+ 	if charData.LSMoodles["Dunce"].Value > 0 or (neuralItem.state and neuralItem.state == 2) then
+ 		charData.LSMoodles["NeuralHat"].Value = 0

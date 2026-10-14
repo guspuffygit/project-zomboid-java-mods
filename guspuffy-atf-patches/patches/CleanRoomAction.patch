@@ -1,0 +1,42 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/CleanRoomAction.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/CleanRoomAction.lua
+@@ -78,7 +78,7 @@
+ 	if skillLevel < 10 then
+ 		xpChange = xpChange*skillLevel
+ 		--character:getXp():AddXP(Perks.Cleaning, xpChange)
+-		sendClientCommand(character, "LS", "AddXP", {"Cleaning", xpChange})
++		LSUtil.giveXP(character, "Cleaning", xpChange)
+ 	end
+ 
+ end
+@@ -371,4 +371,28 @@
+ 	return o;
+ end
+ 
+---return CleanRoomAction
+\ No newline at end of file
++--return CleanRoomAction
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    validate=function(self)
++        if not ATFRewards.near(self.character,self.square) or not ATFRewards.owns(self.character,self.tool) then return false end
++        local blood,dirt=getSquareDirt(self.square,self.character:getClothingItem_Hands())
++        if self.isHeavy then return blood and self.tool:getType()=="Mop" and ATFRewards.owns(self.character,self.bleach) end
++        return dirt and (self.tool:getType()=="Broom" or self.tool:getType()=="Broom_Twig")
++    end,
++    initialize=function(self,state) state.duration=ATFRewards.cleaningTime(self.character,"Floor",self.isHeavy and self.bleach) end,
++    completion=function(self) adjustStats(self.character,self.isHeavy) end,
++    minimum=function(self,state) return state.duration*0.24 end,
++}
++function CleanRoomAction:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function CleanRoomAction:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = CleanRoomAction.complete
++function CleanRoomAction:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end

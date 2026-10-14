@@ -1,0 +1,18 @@
+--- a/mod-LifestyleHobbies/common/media/lua/client/ISMeditation/Mindfulness.lua
++++ b/mod-LifestyleHobbies/common/media/lua/client/ISMeditation/Mindfulness.lua
+@@ -94,6 +94,7 @@
+ end
+ 
+ local function doMindfulnessHealing(thisPlayer, HealPercentage)
++	if isClient() then return; end -- server-owned health award
+ 	LSUtil.addGeneralHealth(thisPlayer, HealPercentage, false)
+ end
+ 
+@@ -106,6 +107,7 @@
+ end
+ 
+ local function doMindfulnessDuration(thisPlayer, MindfulDuration)
++	if isClient() then return; end -- server-owned earned state and decay
+ 	if not thisPlayer:hasTimedActions() then thisPlayer:getModData().IsMeditating = false; end
+ 	if not thisPlayer:getModData().MindfulnessMinutes then thisPlayer:getModData().MindfulnessMinutes = MindfulDuration; return; end
+ 	if thisPlayer:getModData().MindfulnessMinutes <= 0 then

@@ -1,0 +1,7 @@
+--- a/mod-after_the_fall_core_b42/42.14/media/lua/client/ATF_SafetySystem/ATF_AutomaticSafehouseSafety.lua
++++ b/mod-after_the_fall_core_b42/42.14/media/lua/client/ATF_SafetySystem/ATF_AutomaticSafehouseSafety.lua
+@@ -1,4 +1,3 @@
+-require "ISUI/ISSafetyUI"
+ 
+ -- Defensive init: this file loads before ATF_LocationHUD.lua (A < L), so we
+ -- create the providers table here if it doesn't exist yet.

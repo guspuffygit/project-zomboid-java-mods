@@ -1,0 +1,28 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSCheckYourselfAP.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSCheckYourselfAP.lua
+@@ -441,10 +441,10 @@
+ 		end
+ 	end
+ 	-- if we're attaching our hair we need to set the non attached model, or if we untie, we reset our model
+-	if newHairStyle:isAttachedHair() and not self.character:getHumanVisual():getNonAttachedHair() then
++	if newHairStyle and newHairStyle:isAttachedHair() and not self.character:getHumanVisual():getNonAttachedHair() then
+ 		self.character:getHumanVisual():setNonAttachedHair(self.character:getHumanVisual():getHairModel());
+ 	end
+-	if self.character:getHumanVisual():getNonAttachedHair() and not newHairStyle:isAttachedHair() then
++	if newHairStyle and self.character:getHumanVisual():getNonAttachedHair() and not newHairStyle:isAttachedHair() then
+ 		self.character:getHumanVisual():setNonAttachedHair(nil);
+ 	end
+ 
+@@ -491,10 +491,10 @@
+ 
+ 
+ 	-- if we're attaching our hair we need to set the non attached model, or if we untie, we reset our model
+-	if newHairStyle:isAttachedHair() and not self.character:getHumanVisual():getNonAttachedHair() then
++	if newHairStyle and newHairStyle:isAttachedHair() and not self.character:getHumanVisual():getNonAttachedHair() then
+ 		self.character:getHumanVisual():setNonAttachedHair(self.character:getHumanVisual():getHairModel());
+ 	end
+-	if self.character:getHumanVisual():getNonAttachedHair() and not newHairStyle:isAttachedHair() then
++	if newHairStyle and self.character:getHumanVisual():getNonAttachedHair() and not newHairStyle:isAttachedHair() then
+ 		self.character:getHumanVisual():setNonAttachedHair(nil);
+ 	end
+ 	self.character:resetModel();

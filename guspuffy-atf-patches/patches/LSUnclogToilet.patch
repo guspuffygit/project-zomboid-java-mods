@@ -1,0 +1,46 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSUnclogToilet.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSUnclogToilet.lua
+@@ -19,9 +19,9 @@
+ 	xpChange = xpChange*skillLevel
+ 
+ 	--character:getXp():AddXP(Perks.Cleaning, xpChange)
+-	sendClientCommand(character, "LS", "AddXP", {"Cleaning", xpChange})
++	LSUtil.giveXP(character, "Cleaning", xpChange)
+ 	
+-	HaloTextHelper.addTextWithArrow(character, getText("IGUI_HaloNote_XP"), true, 170, 255, 150)
++	if not isServer() then HaloTextHelper.addTextWithArrow(character, getText("IGUI_HaloNote_XP"), true, 170, 255, 150); end
+ 
+ end
+ 
+@@ -163,4 +163,30 @@
+ 	return o;
+ end
+ 
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    validate=function(self)
++        local data=self.toiletObject and self.toiletObject:getModData().movableData
++        return ATFRewards.near(self.character,self.toiletObject) and data and type(data.isClogged)=="number" and data.isClogged>=0 and ATFRewards.owns(self.character,self.plungerItem) and self.plungerItem:getType()=="Plunger" and not self.plungerItem:isBroken()
++    end,
++    initialize=function(self,state)
++        local remaining=self.toiletObject:getModData().movableData.isClogged
++        state.duration=remaining>0 and remaining or ATFRewards.cleaningTime(self.character,"Unclog")
++    end,
++    completion=function(self) AddCleaningXP(self.character) end,
++    minimum=function(self,state) return state.duration*0.24 end,
++}
++function LSUnclogToilet:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function LSUnclogToilet:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = LSUnclogToilet.complete
++function LSUnclogToilet:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end
++
+ return LSUnclogToilet
+\ No newline at end of file

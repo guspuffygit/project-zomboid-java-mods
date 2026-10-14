@@ -1,0 +1,11 @@
+--- a/mod-LifestyleHobbies/common/media/lua/client/ISAmbt/LSTerminator.lua
++++ b/mod-LifestyleHobbies/common/media/lua/client/ISAmbt/LSTerminator.lua
+@@ -87,6 +87,8 @@
+ end
+ 
+ LSAmbtMng.LSTerminator = function(player, ambt)
++	-- The server counts native kills and applies health/endurance bonuses.
++	if isClient() then return; end
+ 	if ambt.completed then -- ambition was completed
+ 		--if ambt.isActive then LSAmbtActiveComplete(player, ambt); end --has active bonuses
+ 		--LSAmbtPassiveComplete() --has passive bonuses

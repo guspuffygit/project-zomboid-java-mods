@@ -1,0 +1,42 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/LSUtil.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/LSUtil.lua
+@@ -10,6 +10,7 @@
+ --------------------------------------------------------------------------------------------------
+ 
+ LSUtil = {}
++local ATFRewards = require "ATFPatches_LifestyleRewards"
+ LSUtil.rdm_inst = newrandom() -- LSUtil.rdm_inst:random(n) returns 1 - n / :random()*n returns 0 - n / :random(n1,n2) returns n1 - n2
+ 
+ local function getLitterChanceRoll(sandboxOption)
+@@ -991,6 +992,7 @@
+ end
+ 
+ function LSUtil.addPainBodyPart(character, bP, value, halo)
++	if ATFRewards.isCapturing(character) then return; end
+ 	if not character or not character.getBodyDamage or not BodyPartType[bP] or value <= 0 then return; end
+ 	local bodyDamage = character:getBodyDamage()
+ 	if not bodyDamage then return; end
+@@ -1026,6 +1028,7 @@
+ end
+ 
+ function LSUtil.changeCharacterMood(character, mood, value, halo, isSet, isBad)
++	if ATFRewards.isCapturing(character) then return; end
+ 	if not character or not character.getStats then return; end
+ 	local stats = character:getStats()
+ 	if not stats then return; end
+@@ -1066,6 +1069,7 @@
+ end
+ 
+ function LSUtil.changeCharacterMoodGroup(character, moodList)
++	if ATFRewards.isCapturing(character) then return; end
+ 	if not character or not character.getStats then return; end
+ 	local stats = character:getStats()
+ 	if not stats then return; end
+@@ -1094,6 +1098,7 @@
+ end
+ 
+ function LSUtil.giveXP(character, skill, amount, isCustom)
++	if not isCustom and ATFRewards.recordXP(character, skill, amount) then return; end
+ 	if isCustom then return; end -- do non perk system stuff here
+ 	if not Perks[skill] or character:getPerkLevel(Perks[skill]) >= 10 then return; end
+ 	if LSSync.isClientOnly() then sendClientCommand(character, "LS", "AddXP", {skill, amount}); return; end

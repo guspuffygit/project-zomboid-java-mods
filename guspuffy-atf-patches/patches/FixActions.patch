@@ -1,0 +1,20 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/hooks/FixActions.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/hooks/FixActions.lua
+@@ -90,7 +90,7 @@
+ 					if not repairItem:getModData().JRrepair then repairItem:getModData().JRrepair = 0; end
+ 					--if not self.character:getModData().JRrepair then self.character:getModData().JRrepair = 0; end
+ 					repairItem:getModData().JRrepair = math.floor(repairItem:getModData().JRrepair+1)
+-					if math.floor((JRrepair+1))%2 == 0 then -- true only if it's an even number, else is false
++					if repairItem:getModData().JRrepair%2 == 0 then -- true only if it's an even number, else is false
+ 						if not repairNum then repairNum = 1; end
+ 						local repairTotal = math.floor(repairNum-1)
+ 						--print("ISHandcraftAction:performRecipe() repair total is "..repairTotal)
+@@ -144,7 +144,7 @@
+ 			--if not self.character:getModData().JRrepair then self.character:getModData().JRrepair = 0; end
+ 			self.item:getModData().JRrepair = math.floor(self.item:getModData().JRrepair+1)
+ 			--if self.vehiclePart then self.character:getModData().JRrepair = math.floor(self.character:getModData().JRrepair+1); end
+-			if math.floor((JRrepair+1))%2 == 0 then -- true only if it's an even number, else is false
++			if self.item:getModData().JRrepair%2 == 0 then -- true only if it's an even number, else is false
+ 				if not repairNum then repairNum = 1; end
+ 				local repairTotal = math.floor(repairNum-1)
+ 				--print("ISFixVehiclePartAction:complete() repair total is "..repairTotal)

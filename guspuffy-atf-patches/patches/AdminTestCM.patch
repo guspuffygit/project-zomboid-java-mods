@@ -1,0 +1,11 @@
+--- a/mod-LifestyleHobbies/common/media/lua/client/Properties/Player/AdminTestCM.lua
++++ b/mod-LifestyleHobbies/common/media/lua/client/Properties/Player/AdminTestCM.lua
+@@ -533,7 +533,7 @@
+ 
+ local function onAddXP(worldobjects, character, args)
+ 	if not Perks[args[1]] or character:getPerkLevel(Perks[args[1]]) >= 10 then return; end
+-	sendClientCommand(character, "LS", "AddXP", args)
++	sendClientCommand(character, "LS", "ATF_AdminXP", args)
+ 	HaloTextHelper.addGoodText(character, getText("IGUI_HaloNote_XP"))
+ end
+ 

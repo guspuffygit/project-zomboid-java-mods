@@ -1,0 +1,45 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSCleanObject.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/LSCleanObject.lua
+@@ -109,6 +109,7 @@
+ end
+ 
+ function LSCleanObject:adjustXP()
++	if ATFPatches_LifestyleRewards.serverRoutesEnabled() and not ATFPatches_LifestyleRewards.isCapturing(self.character) then ATFPatches_LifestyleRewards.settle(self.character); return; end
+ 	if self.xpGain == 0 then return; end
+ 	LSUtil.giveXP(self.character, "Cleaning", self.xpGain)
+ end
+@@ -290,7 +291,7 @@
+ 	self.__index = self
+ 	o.character = character
+ 	o.obj = obj
+-	o.syncData = syncData
++	o.syncData = (isServer() and (obj:getModData().movableData or {})) or syncData
+ 	o.obj:getModData().movableData = o.syncData
+ 	o.lastDL = tostring(o.syncData['dirtyLevel'])
+ 	o.connectedObj = connectedObj
+@@ -321,4 +322,24 @@
+ 	return o;
+ end
+ 
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    interval=20,
++    validate=function(self) return ATFRewards.near(self.character,self.obj) and ATFRewards.owns(self.character,self.sponge) and ATFRewards.owns(self.character,self.detergent) and not self.sponge:isBroken() and LSUtil.itemHasFluid(self.detergent,"CleaningLiquid",false,true) end,
++    initialize=function(self) self.cleaningLevel=self.character:getPerkLevel(Perks.Cleaning); self.xpGain=self:calcXP() end,
++    periodic=function(self) self:adjustXP() end,
++}
++function LSCleanObject:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function LSCleanObject:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = LSCleanObject.complete
++function LSCleanObject:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end
++
+ return LSCleanObject
+\ No newline at end of file

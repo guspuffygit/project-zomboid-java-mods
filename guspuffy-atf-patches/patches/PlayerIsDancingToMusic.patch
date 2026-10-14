@@ -1,0 +1,50 @@
+--- a/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/PlayerIsDancingToMusic.lua
++++ b/mod-LifestyleHobbies/common/media/lua/shared/TimedActions/PlayerIsDancingToMusic.lua
+@@ -157,16 +157,17 @@
+ 		xpChange = 0
+ 	else
+ 		--character:getXp():AddXP(Perks.Dancing, xpChange)
+-		sendClientCommand(character, "LS", "AddXP", {"Dancing", xpChange})
++		LSUtil.giveXP(character, "Dancing", xpChange)
+ 	end
+ 	if character:getPerkLevel(Perks.Fitness) == 10 then
+ 
+ 	else
+ 		--character:getXp():AddXP(Perks.Fitness, xpChange)
+-		sendClientCommand(character, "LS", "AddXP", {"Fitness", xpChange})
+-	end
+-
+-
++		LSUtil.giveXP(character, "Fitness", xpChange)
++	end
++
++
++	if isServer() then return; end
+ 	--STIFFNESS
+ 	
+ 	if characterData.DidFitnessActivity ~= nil and characterData.FitnessActivityMuscles ~= nil then
+@@ -879,4 +880,22 @@
+ 	o.canTalk = true
+ 	o.endAction = 0
+     return o;
+-end
+\ No newline at end of file
++end
++
++-- Native server callbacks establish and close this action's reward context.
++local ATFRewards = require "ATFPatches_LifestyleRewards"
++local atfDefinition = {
++    interval=120,
++    validate=function(self) return not self.character:isAiming() end,
++    periodic=function(self) adjustStats(self.character) end,
++}
++function PlayerIsDancingToMusic:serverStart()
++    ATFRewards.start(self, atfDefinition)
++end
++function PlayerIsDancingToMusic:serverStop()
++    ATFRewards.finish(self, false)
++end
++local atfOriginalComplete = PlayerIsDancingToMusic.complete
++function PlayerIsDancingToMusic:complete()
++    return ATFRewards.complete(self, atfOriginalComplete)
++end
