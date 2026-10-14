@@ -1,3 +1,4 @@
-Universal Admin Core 0.1.6
-Project Zomboid 42.20.4 with compatible Storm.
+Universal Admin Core 0.2.9-alpha
+Project Zomboid 42.21.0 with compatible Storm.
+Safehouse respawn selection requires this version on server and clients.
 See README.md for behavior, extension contract and validation limits.

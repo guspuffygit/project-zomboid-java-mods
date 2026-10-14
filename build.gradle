@@ -282,7 +282,7 @@ subprojects { subproj ->
 	tasks.register('extractZomboidFiles', Copy) {
 		from getLocalProperty('gameDir')
 		into layout.buildDirectory.dir('zomboid-classpath')
-		include '**/*.class', '*.jar'
+		include 'projectzomboid.jar'
 	}
 
 	tasks.register('writeModInfo') {
@@ -292,6 +292,8 @@ subprojects { subproj ->
 		inputs.property("name", info.name)
 		inputs.property("id", info.id.orElse("${subproj.name}-b42${getEnvSuffix()}"))
 		inputs.property("description", info.description.orElse(""))
+		inputs.property("modVersion", info.modVersion.orElse("1.0"))
+		inputs.property("poster", info.poster.orElse("poster.png"))
 		inputs.property("pack", info.pack.orElse(""))
 		inputs.property("tiledef", info.tiledef.orElse(""))
 		inputs.property("requires", info.requires.orElse([]))

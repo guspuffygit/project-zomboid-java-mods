@@ -1,7 +1,21 @@
 # Universal Admin Core
 
-Project Zomboid 42.20.4 administration module. Requires compatible Storm on server
+Project Zomboid 42.21.0 administration module. Requires compatible Storm on server
 and client. This module does not require the ATF Economy module.
+
+## Safehouse respawn selection
+
+UAC 0.2.9-alpha adds eligible owned/member safehouses to the existing character
+creation location screen. Enable `SafehouseAllowRespawn` and install matching UAC
+on server and clients. The permanent Safehouse UI checkbox is hidden when the
+server confirms support. Each selection applies to that character creation only.
+
+The server rechecks membership and the claim before creating and joining the
+character. Normal and custom locations keep their existing providers. The vanilla
+flow was tested locally; the live server's custom map selector was unavailable.
+See [respawn details](docs/SAFEHOUSE-RESPAWN.md).
+This update fixes missing safehouse choices immediately after a confirmed death.
+Failed requests keep normal spawn locations available.
 
 The Admin Panel provides searchable categories and native actions. The User List
 provides selected-player administration, membership tools and observation. Ordinary
@@ -33,8 +47,8 @@ Use the repository deployMod task for packaging; never publish a test build to W
 
 ## Integration limits
 
-The repository declares Storm 42.20.4_2.10.0; the local test runtime uses
-42.20.4_2.10.2-SNAPSHOT. Installed-runtime validation must not be presented as an unmodified build.
+The repository declares Storm 42.21.0_2.12.0. Use a compatible installed runtime
+for native validation.
 UI hooks depend on the supported vanilla Lua layout and camera method signatures.
 Fixtures and bytecode weaving checks do not replace an in-game two-client session.
 Verify observe start/stop/error recovery, role revocation, membership updates, resize

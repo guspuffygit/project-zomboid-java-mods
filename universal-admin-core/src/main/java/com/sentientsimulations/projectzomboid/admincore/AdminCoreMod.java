@@ -21,12 +21,24 @@ public final class AdminCoreMod implements ZomboidMod {
 
     @Override
     public List<StormClassTransformer> getClassTransformers() {
-        return StormEnv.isStormServer() ? List.of() : List.of(new AdminCoreObservePatch());
+        return StormEnv.isStormServer()
+                ? List.of(
+                        new AdminCoreRespawnPatch("zombie.network.GameServer"),
+                        new AdminCoreRespawnPatch(
+                                "zombie.network.packets.character.CreatePlayerPacket"))
+                : List.of(
+                        new AdminCoreRespawnPatch("zombie.network.PacketTypes$PacketType"),
+                        new AdminCoreRespawnPatch("zombie.network.GameClient"),
+                        new AdminCoreRespawnPatch("zombie.iso.IsoWorld"),
+                        new AdminCoreObservePatch());
     }
 
     @SubscribeEvent
     public static void expose(OnZomboidGlobalsLoadEvent event) {
         if (!StormEnv.isStormServer()) {
+            LuaManager.exposer.setExposed(AdminCoreRespawnBridge.class);
+            LuaManager.exposer.exposeLikeJavaRecursively(
+                    AdminCoreRespawnBridge.class, LuaManager.env);
             LuaManager.exposer.setExposed(AdminCoreObserveCamera.class);
             LuaManager.exposer.exposeLikeJavaRecursively(
                     AdminCoreObserveCamera.class, LuaManager.env);

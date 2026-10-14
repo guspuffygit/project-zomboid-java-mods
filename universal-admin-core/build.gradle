@@ -1,7 +1,7 @@
 modInfo {
 	name = 'Universal Admin Core'
 	description = 'Searchable administration, player tools and observation for Project Zomboid 42.21.0. Requires Storm.'
-	modVersion = '0.1.6'
+	modVersion = '0.2.9-alpha'
 	workshopId = '3811280587'
 	workshopIdStage = '3811291537'
 	workshopIdProd = '3811291377'
