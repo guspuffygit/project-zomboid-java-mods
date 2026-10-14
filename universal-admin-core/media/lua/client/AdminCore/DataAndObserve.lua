@@ -2,7 +2,7 @@ require("AdminCore/WindowSizing")
 local T = AdminCore
 T.stats = T.stats or {}
 T.statsQueue = {}
-local lastSend, lastHeartbeat = 0, 0
+local lastSend = 0
 local requested, cacheCount = {}, 0
 function T.requestStats()
     T.statsRefreshRequested = true
@@ -41,39 +41,6 @@ function T.visibleStatNames(now)
     T.statsRefreshRequested = false
     return names
 end
-local function clearObserve()
-    T.observing = nil
-    lastHeartbeat = 0
-    if AdminCoreObserveCamera then
-        AdminCoreObserveCamera.stop()
-    end
-    if T.observePanel then
-        T.observePanel:removeFromUIManager()
-        T.observePanel = nil
-    end
-end
-function T.stopObserve()
-    sendClientCommand("UniversalAdminCore", "observeStop", {})
-    clearObserve()
-end
-local function observePanel(name)
-    if T.observePanel then
-        T.observePanel:removeFromUIManager()
-    end
-    local panel = ISPanel:new(12, 60, 430, 85)
-    panel:initialise()
-    panel.moveWithMouse = true
-    local button =
-        ISButton:new(10, 40, 410, 30, "Stop observing / return (Esc)", nil, T.stopObserve)
-    button:initialise()
-    panel:addChild(button)
-    panel.prerender = function(self)
-        ISPanel.prerender(self)
-        self:drawText("Following: " .. name, 10, 8, 1, 1, 1, 1, UIFont.Small)
-    end
-    panel:addToUIManager()
-    T.observePanel = panel
-end
 local function onServer(mod, command, args)
     if mod ~= "UniversalAdminCore" or not args then
         return
@@ -91,17 +58,6 @@ local function onServer(mod, command, args)
         end
     elseif command == "result" then
         T.message(args.message or "No response message.")
-    elseif command == "observeStarted" then
-        T.observing = args.username
-        lastHeartbeat = 0
-        observePanel(args.username)
-    elseif command == "observeStopped" then
-        -- Acknowledgements must not send a second stop: when switching targets
-        -- that echo could terminate the new server session.
-        clearObserve()
-        if args.reason then
-            T.message(args.reason)
-        end
     end
 end
 local function statsTick()
@@ -128,37 +84,13 @@ local function statsTick()
         end
     end
 end
-local function observeTick()
-    if not T.observing then
-        return
-    end
-    local now = getTimestampMs()
-    if not getPlayer() or getPlayer():isDead() then
-        T.stopObserve()
-        return
-    end
-    if now - lastHeartbeat >= 2000 then
-        lastHeartbeat = now
-        sendClientCommand("UniversalAdminCore", "observeHeartbeat", {})
-    end
-    if AdminCoreObserveCamera then
-        AdminCoreObserveCamera.follow(T.observing)
-    end
-end
 Events.OnServerCommand.Add(onServer)
--- Keep camera/heartbeat renewal independent of player-list rendering and stats.
-Events.OnTick.Add(observeTick)
 Events.OnTick.Add(statsTick)
-Events.OnKeyPressed.Add(function(key)
-    if key == Keyboard.KEY_ESCAPE and T.observing then
-        T.stopObserve()
-    end
-end)
 Events.OnDisconnect.Add(function()
-    clearObserve()
     T.stats = {}
     T.statsQueue = {}
     requested = {}
     cacheCount = 0
     T.statsRefreshRequested = false
 end)
+require("AdminCore/ObserverClient")

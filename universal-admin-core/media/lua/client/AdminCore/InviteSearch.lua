@@ -1,4 +1,5 @@
 require("AdminCore/OfflinePlayers")
+require("AdminCore/ListSearch")
 require("ISUI/ISTextEntryBox")
 require("ISUI/ISLabel")
 

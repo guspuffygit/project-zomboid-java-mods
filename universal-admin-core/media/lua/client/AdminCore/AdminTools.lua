@@ -263,24 +263,11 @@ function ISUsersList:doContextMenu(item, x, y)
             AdminCoreObserveCamera
             and item:isOnline()
             and item:getUsername() ~= getPlayer():getUsername()
-            and T.allowed(Capability.TeleportToPlayer)
+            and T.operationsAllowed
+            and T.operationsAllowed("ADMIN_SPECTATOR")
         then
-            investigation:addOption("Observe / follow player (experimental)...", nil, function()
-                T.confirm(
-                    "Follow "
-                        .. item:getUsername()
-                        .. "? Your invisible admin will move near them to load their area. Stop returns you to the starting position. Enable god mode and noclip first.",
-                    function()
-                        if T.cancelZoneSelection then
-                            T.cancelZoneSelection()
-                        end
-                        sendClientCommand(
-                            "UniversalAdminCore",
-                            "observeStart",
-                            { username = item:getUsername() }
-                        )
-                    end
-                )
+            investigation:addOption("Observe player...", nil, function()
+                T.openObserverPanel(item:getUsername())
             end)
         end
     end

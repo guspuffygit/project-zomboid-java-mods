@@ -2,6 +2,12 @@
 local game = assert(arg[1], "Game directory required")
 require = function() end
 local sw, sh, mx, my = 1600, 1000, 0, 0
+getMouseX = function()
+    return mx
+end
+getMouseY = function()
+    return my
+end
 getCore = function()
     return {
         getScreenWidth = function()
@@ -144,6 +150,19 @@ for _, existing in ipairs({ false, true }) do
     check(panel.close == closeButton, "Do not replace a named Close button with a function")
     flush(panel)
     local grip = panel.resizeWidget
+    check(
+        not panel.uacSizeButton and not panel.uacDragHeader,
+        "No size dialog or invisible header overlay"
+    )
+    local drawn
+    getTexture = function(path)
+        return path
+    end
+    grip.drawTextureScaled = function(_, texture)
+        drawn = texture
+    end
+    grip:render()
+    check(drawn == "media/ui/ResizeIcon.png", "Corner displays the Inventory resize icon")
     begin(panel, grip)
     for _, delta in ipairs({ { 30, 20 }, { 40, 35 }, { -60, -45 }, { 80, 50 } }) do
         local width, height = panel.width + delta[1], panel.height + delta[2]
@@ -171,6 +190,22 @@ for _, existing in ipairs({ false, true }) do
     end
     grip:onMouseUpOutside(0, 0)
     check(not grip.capture and not grip.resizing, "Mouse release ends resize outside the window")
+    -- The old regression suite called only the child's handlers. Exercise the
+    -- parent event route reported in-game: a corner press must never move it.
+    local width, height, x, y = panel.width, panel.height, panel.x, panel.y
+    mx, my = x + width - 3, y + height - 3
+    panel.moving = true
+    check(panel:onMouseDown(width - 3, height - 3) == true, "Parent consumes corner press")
+    mx, my = mx - 50, my - 35
+    panel:onMouseMoveOutside(-50, -35)
+    flush(panel)
+    check(
+        panel.width == width - 50 and panel.height == height - 35,
+        "Parent route changes dimensions"
+    )
+    check(panel.x == x and panel.y == y and not panel.moving, "Corner never starts window movement")
+    panel:onMouseUpOutside(0, 0)
+    check(not panel.capture and not panel.uacResizeDrag, "Parent capture ends outside window")
     if panel.resizeWidget2 then
         grip = panel.resizeWidget2
         local width, height = panel.width, panel.height

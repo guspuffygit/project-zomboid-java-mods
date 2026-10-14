@@ -2,19 +2,19 @@ if not isServer() then
     return
 end
 
+require("AdminCore/ObserverServer")
+require("AdminCore/NoiseServer")
+
 AdminCoreServer = AdminCoreServer or {}
 local S = AdminCoreServer
 local module = "UniversalAdminCore"
-local limits, observing, lastTick = {}, {}, 0
+local limits, lastTick = {}, 0
 local commands = {
     stats = true,
     createSafehouse = true,
     addMember = true,
     transferOwner = true,
     transferOnly = true,
-    observeStart = true,
-    observeStop = true,
-    observeHeartbeat = true,
 }
 local function store()
     return ModData.getOrCreate("UniversalAdminCore.Playtime.v1")
@@ -27,24 +27,6 @@ local function reply(player, command, args)
 end
 local function result(player, text)
     reply(player, "result", { message = text })
-end
-local function stop(player, name, reason)
-    local session = observing[name]
-    if not session then
-        return
-    end
-    observing[name] = nil
-    local record = store()[name]
-    if record then
-        record.returnPosition = nil
-    end
-    if player and AdminCoreBridge then
-        AdminCoreBridge.returnFromObserve(player, session.x, session.y, session.z)
-    end
-    if player then
-        reply(player, "observeStopped", { reason = reason or "Observation stopped." })
-    end
-    print("[Universal Admin Core] Observation stopped for " .. name)
 end
 
 function S.onCommand(mod, command, player, args)
@@ -63,23 +45,10 @@ function S.onCommand(mod, command, player, args)
         )
     end
     local name, now = player:getUsername(), getTimestampMs()
-    if command == "observeStop" then
-        stop(player, name)
-        return
-    end
-    if command == "observeHeartbeat" then
-        if observing[name] then
-            observing[name].heartbeat = now
-        end
-        return
-    end
-    -- B42 omits empty command tables on the wire. Stop/heartbeat above need no
-    -- payload; all other commands still require a table before accessing fields.
     if type(args) ~= "table" then
         return
     end
     local cap = command == "stats" and Capability.ReadUserLog
-        or command == "observeStart" and Capability.TeleportToPlayer
         or command == "createSafehouse" and Capability.CanSetupSafehouses
         or args.kind == "safehouse" and Capability.CanSetupSafehouses
         or args.kind == "faction" and Capability.FactionCheat
@@ -184,43 +153,6 @@ function S.onCommand(mod, command, player, args)
         if response then
             result(player, response == "OK" and "Membership updated by the server." or response)
         end
-    elseif command == "observeStart" then
-        if type(args.username) ~= "string" or #args.username > 128 then
-            return
-        end
-        if not AdminCoreBridge.canObserve(player) then
-            return result(
-                player,
-                "Enable invisibility, god mode and noclip in Admin Powers, and exit your vehicle before observing."
-            )
-        end
-        if args.username == name then
-            return result(player, "Select another online player.")
-        end
-        if observing[name] then
-            stop(player, name)
-        end
-        local session = {
-            x = player:getX(),
-            y = player:getY(),
-            z = player:getZ(),
-            target = args.username,
-            heartbeat = now,
-            actor = player,
-        }
-        if not AdminCoreBridge.follow(player, args.username) then
-            return result(player, "Target is not available to observe.")
-        end
-        observing[name] = session
-        local data = store()
-        local record = data[name]
-        if not record then
-            record = { seconds = 0, since = getTimestamp() }
-            data[name] = record
-        end
-        record.returnPosition = { x = session.x, y = session.y, z = session.z }
-        reply(player, "observeStarted", { username = args.username })
-        print("[Universal Admin Core] " .. name .. " observing " .. args.username)
     end
 end
 
@@ -251,25 +183,6 @@ function S.tick()
     for name in pairs(limits) do
         if not connected[name] then
             limits[name] = nil
-        end
-    end
-    for name, session in pairs(observing) do
-        local actor = connected[name]
-        if not actor then
-            -- Preserve the return location through a disconnect/server save, restore on next join.
-            data[name].returnPosition = { x = session.x, y = session.y, z = session.z }
-            observing[name] = nil
-        elseif now - session.heartbeat > 10000 then
-            stop(actor, name, "Observation ended: client heartbeat timed out.")
-        elseif not AdminCoreBridge or not AdminCoreBridge.follow(actor, session.target) then
-            stop(actor, name, "Observation ended: target, connection or admin powers changed.")
-        end
-    end
-    for name, player in pairs(connected) do
-        local pos = data[name].returnPosition
-        if pos and not observing[name] and AdminCoreBridge then
-            AdminCoreBridge.returnFromObserve(player, pos.x, pos.y, pos.z)
-            data[name].returnPosition = nil
         end
     end
 end

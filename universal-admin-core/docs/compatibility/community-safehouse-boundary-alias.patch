@@ -1,0 +1,31 @@
+diff --git a/community/src/main/java/atf/community/CommunityWorld.java b/community/src/main/java/atf/community/CommunityWorld.java
+--- a/community/src/main/java/atf/community/CommunityWorld.java
++++ b/community/src/main/java/atf/community/CommunityWorld.java
+@@ -10,8 +10,10 @@
+ import java.util.*;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
++import se.krka.kahlua.vm.KahluaTable;
+ import zombie.characters.Faction;
+ import zombie.iso.areas.SafeHouse;
++import zombie.world.moddata.GlobalModData;
+ 
+ /** Read-only native world adapter. No safehouse, no-kill-zone or faction mutation APIs are used. */
+ public final class CommunityWorld {
+@@ -352,7 +354,15 @@
+   }
+ 
+   public static String safehouseIdentity(int x, int y, long created) {
+-    return x + ":" + y + ":" + created;
++    String key = x + ":" + y + ":" + created;
++    // UAC boundary edits retain the original Community property/tax identity. This is
++    // optional persisted game data, not a compile-time or runtime dependency on UAC.
++    KahluaTable data = GlobalModData.instance.get("UniversalAdminCore.SafehouseBoundaries.v1");
++    if (data != null
++        && data.rawget("aliases") instanceof KahluaTable aliases
++        && aliases.rawget(key) instanceof String original
++        && original.matches("-?\\d+:-?\\d+:" + created)) return original;
++    return key;
+   }
+ 
+   public void validateZone(Bounds bounds) {

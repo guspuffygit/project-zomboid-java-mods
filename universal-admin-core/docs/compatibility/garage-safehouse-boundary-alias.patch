@@ -1,0 +1,29 @@
+diff --git a/src/main/java/atf/garage/GarageSafehouses.java b/src/main/java/atf/garage/GarageSafehouses.java
+--- a/src/main/java/atf/garage/GarageSafehouses.java
++++ b/src/main/java/atf/garage/GarageSafehouses.java
+@@ -1,13 +1,24 @@
+ package atf.garage;
+ 
+ import java.util.*;
++import se.krka.kahlua.vm.KahluaTable;
+ import zombie.iso.areas.SafeHouse;
++import zombie.world.moddata.GlobalModData;
+ 
+ /** Server-owned membership and persistent safehouse sponsorship; kiosk users may be visitors. */
+ final class GarageSafehouses {
+     record Home(int x,int y,int width,int height,long created,String owner,List<String> members) {
+         boolean member(String user){return Objects.equals(owner,user)||members.contains(user);}
+-        String key(){return x+":"+y+":"+created;}
++        String key(){
++            String key=x+":"+y+":"+created;
++            // Optional UAC boundary edit aliases preserve the original sponsorship key.
++            // Actual membership and distance still use this live rectangle, below.
++            KahluaTable data=GlobalModData.instance.get("UniversalAdminCore.SafehouseBoundaries.v1");
++            if(data!=null&&data.rawget("aliases") instanceof KahluaTable aliases
++                    &&aliases.rawget(key) instanceof String original
++                    &&original.matches("-?\\d+:-?\\d+:"+created))return original;
++            return key;
++        }
+         double distance(int px,int py){
+             return Math.hypot(Math.max(Math.max(x-px,0),px-(x+width-1)),
+                 Math.max(Math.max(y-py,0),py-(y+height-1)));

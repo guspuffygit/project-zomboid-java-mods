@@ -3,8 +3,6 @@ package com.sentientsimulations.projectzomboid.admincore;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.WeakHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.krka.kahlua.integration.annotations.LuaMethod;
@@ -23,9 +21,16 @@ import zombie.network.packets.INetworkPacket;
 /** Server-only adapter. Authorization is repeated here, not delegated to UI visibility. */
 public final class AdminCoreBridge {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminCoreBridge.class);
-    private static final Map<IsoPlayer, ObserveMove> observeMoves = new WeakHashMap<>();
 
     private AdminCoreBridge() {}
+
+    /** Replicate the actor's current state; this method never enables a power. */
+    @LuaMethod
+    public static void syncPowers(IsoPlayer actor) {
+        if (GameServer.server && actor != null && GameServer.isPlayerConnected(actor)) {
+            GameServer.sendPlayerExtraInfo(actor, null);
+        }
+    }
 
     private static boolean allowed(IsoPlayer actor, Capability cap) {
         return GameServer.server
@@ -233,59 +238,5 @@ public final class AdminCoreBridge {
                         + " for "
                         + owner);
         return "OK";
-    }
-
-    @LuaMethod
-    public static boolean canObserve(IsoPlayer actor) {
-        return allowed(actor, Capability.TeleportToCoordinates)
-                && allowed(actor, Capability.TeleportToPlayer)
-                && allowed(actor, Capability.ToggleInvisibleHimself)
-                && allowed(actor, Capability.ToggleGodModHimself)
-                && actor.isInvisible()
-                && actor.isGodMod()
-                && actor.isNoClip()
-                && actor.getVehicle() == null;
-    }
-
-    @LuaMethod
-    public static boolean follow(IsoPlayer actor, String username) {
-        if (!canObserve(actor)) {
-            observeMoves.remove(actor);
-            return false;
-        }
-        IsoPlayer target = GameServer.getPlayerByUserName(username);
-        if (target == null
-                || target == actor
-                || !GameServer.isPlayerConnected(target)
-                || target.isDead()) {
-            observeMoves.remove(actor);
-            return false;
-        }
-        long now = System.nanoTime();
-        ObserveMove previous = observeMoves.get(actor);
-        if (previous != null && previous.waiting(actor.getX(), actor.getY(), actor.getZ(), now))
-            return true;
-        observeMoves.remove(actor);
-        double dx = target.getX() - actor.getX(), dy = target.getY() - actor.getY();
-        if (dx * dx + dy * dy > 64 || (int) actor.getZ() != (int) target.getZ()) {
-            GameServer.sendTeleport(actor, target.getX() + 2, target.getY() + 2, target.getZ());
-            observeMoves.put(
-                    actor,
-                    new ObserveMove(target.getX() + 2, target.getY() + 2, target.getZ(), now));
-        }
-        return true;
-    }
-
-    @LuaMethod
-    public static void returnFromObserve(IsoPlayer actor, double x, double y, double z) {
-        observeMoves.remove(actor);
-        // Coordinates originate exclusively from the server's observation-session record.
-        if (GameServer.server
-                && actor != null
-                && GameServer.isPlayerConnected(actor)
-                && Double.isFinite(x)
-                && Double.isFinite(y)
-                && Double.isFinite(z))
-            GameServer.sendTeleport(actor, (float) x, (float) y, (float) z);
     }
 }

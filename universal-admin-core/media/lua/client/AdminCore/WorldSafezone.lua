@@ -10,6 +10,20 @@ AdminCoreWorldSafezone = ISPanel:derive("AdminCoreWorldSafezone")
 function T.zoneBounds(x1, y1, x2, y2)
     return math.min(x1, x2), math.min(y1, y2), math.abs(x1 - x2) + 1, math.abs(y1 - y2) + 1
 end
+function T.safehousePlacement(x, y, w, h)
+    if w < 2 or h < 2 or w > 200 or h > 200 then
+        return false
+    end
+    -- Native bounds are [x, x+w), matching the server's overlap rejection.
+    -- Inspect rectangles rather than allocating grid squares for every tile.
+    local overlap = SafeHouse.getSafehouseOverlapping(x, y, x + w, y + h)
+    if overlap then
+        return false, overlap
+    end
+    -- The three-tile border is an informational warning, not a minimum gap.
+    local nearby = SafeHouse.getSafehouseOverlapping(x - 3, y - 3, x + w + 3, y + h + 3)
+    return true, nil, nearby
+end
 function AdminCoreWorldSafezone:releaseMouse()
     if self.heldWorldMenu then
         ISWorldObjectContextMenu.disableWorldMenu = self.previousWorldMenu
@@ -34,6 +48,10 @@ function AdminCoreWorldSafezone:resetSelection()
     self.y1 = nil
     self.x2 = nil
     self.y2 = nil
+    if self.ok then
+        self.ok:setEnable(false)
+        self.ok.tooltip = nil
+    end
 end
 function AdminCoreWorldSafezone:createChildren()
     local fh = getTextManager():getFontHeight(UIFont.Small)
@@ -71,9 +89,14 @@ function AdminCoreWorldSafezone:createChildren()
             return
         end
         local x, y, w, h = T.zoneBounds(p.x1, p.y1, p.x2, p.y2)
+        local owner = luautils.trim(p.ownerEntry:getInternalText())
+        local title = luautils.trim(p.titleEntry:getInternalText())
+        if not T.safehousePlacement(x, y, w, h) or owner == "" or title == "" then
+            return
+        end
         sendClientCommand("UniversalAdminCore", "createSafehouse", {
-            owner = luautils.trim(p.ownerEntry:getInternalText()),
-            title = luautils.trim(p.titleEntry:getInternalText()),
+            owner = owner,
+            title = title,
             x = x,
             y = y,
             w = w,
@@ -143,6 +166,10 @@ function AdminCoreWorldSafezone:prerender()
     self:drawText("Owner:", 12, y + 4, 1, 1, 1, 1, UIFont.Small)
     y = y + self.rowH + 8
     local valid = false
+    local status = self.drawing and "Select the two corners by dragging."
+        or "Selection locked. Walk without changing its size."
+    local sr, sg, sb = 0.7, 0.9, 1
+    self.ok.tooltip = nil
     local lines = {
         "Hold left mouse and drag in the world.",
         "Release to lock the rectangle; then Add Zone.",
@@ -150,7 +177,24 @@ function AdminCoreWorldSafezone:prerender()
     }
     if self.x1 then
         local x, yy, w, h = T.zoneBounds(self.x1, self.y1, self.x2, self.y2)
-        valid = w >= 2 and h >= 2 and w <= 200 and h <= 200
+        local overlap, nearby
+        valid, overlap, nearby = T.safehousePlacement(x, yy, w, h)
+        if overlap then
+            status = "Overlaps an existing safehouse. Redraw the area."
+            sr, sg, sb = 1, 0.3, 0.3
+            self.ok.tooltip = 'Selection overlaps "' .. overlap:getTitle() .. '".'
+        elseif not valid then
+            status = "Invalid size: select 2-200 tiles per side."
+            sr, sg, sb = 1, 0.3, 0.3
+        elseif nearby then
+            status = "Warning: an existing safehouse is within the 3-tile border."
+            sr, sg, sb = 1, 0.8, 0.3
+            self.ok.tooltip = 'Near "' .. nearby:getTitle() .. '". Placement is allowed.'
+        else
+            status = self.drawing and "No overlap. Release the mouse to lock the selection."
+                or "No overlap. Selection locked; Add Zone when ready."
+            sr, sg, sb = 0.5, 1, 0.6
+        end
         lines = {
             "Starting coordinate: " .. self.x1 .. " x " .. self.y1,
             "Ending coordinate: " .. self.x2 .. " x " .. self.y2,
@@ -173,17 +217,7 @@ function AdminCoreWorldSafezone:prerender()
         self:drawText(line, 12, y + 4, 1, 1, 1, 1, UIFont.Small)
         y = y + self.rowH + 8
     end
-    self:drawText(
-        self.drawing and "Select the two corners by dragging."
-            or "Selection locked. Walk without changing its size.",
-        12,
-        y + 4,
-        0.7,
-        0.9,
-        1,
-        1,
-        UIFont.Small
-    )
+    self:drawText(status, 12, y + 4, sr, sg, sb, 1, UIFont.Small)
     self.ok:setEnable(
         valid
             and not self.drawing

@@ -9,7 +9,9 @@ class ObserveFailureTest {
     @Test
     void failedSelectionRestoresOriginalAndClearsObservation() throws Exception {
         Object original = new Object();
-        AdminCoreObserveCamera.follow("test-target");
+        var name = AdminCoreObserveCamera.class.getDeclaredField("username");
+        name.setAccessible(true);
+        name.set(null, "test-target");
         assertSame(
                 original,
                 AdminCoreObserveCamera.selectSafely(

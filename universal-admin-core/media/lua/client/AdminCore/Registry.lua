@@ -2,35 +2,42 @@ require("AdminCore/WindowSizing")
 local C = AdminCore
 C.actions = C.actions or {}
 C.registryVersion = C.registryVersion or 0
-C.sections = {
-    "Dashboard",
-    "World",
-    "Zones",
-    "Vehicles",
-    "Events",
-    "Server",
-    "Security",
-    "Logs",
-    "Mods",
-    "Settings",
+C.sections = { "Dashboard", "World", "Zones", "Server" }
+-- Retain the extension contract used by separately installed mods. A section
+-- removed from navigation is still a valid registered category and search alias.
+C.categoryAliases = {
+    Vehicles = "Server",
+    Events = "World",
+    Security = "Server",
+    Logs = "Server",
+    Mods = "Server",
+    Settings = "Server",
+}
+C.aliasGroups = {
+    Vehicles = "Vehicles",
+    Security = "Security",
+    Logs = "Logs",
+    Mods = "Mod tools",
+    Settings = "Settings",
 }
 C.nativeSections = {
     CHECKSTATS = "Dashboard",
     ADMINPOWER = "Dashboard",
-    ITEMLIST = "World",
-    SEEOPTIONS = "Server",
+    ITEMLIST = "Dashboard",
+    SEEOPTIONS = "Dashboard",
     NONPVPZONE = "Zones",
     SEEFACTIONS = "Zones",
-    SEEROLES = "Security",
-    SEEUSERS = "Dashboard",
+    SEEROLES = "Server",
+    SEEUSERS = "Server",
     SEESAFEHOUSES = "Zones",
-    SAFEZONE = "Zones",
-    SEETICKETS = "Logs",
+    SAFEZONE = "Dashboard",
+    SEETICKETS = "Server",
     MINISCOREBOARD = "Dashboard",
-    SANDBOX = "Settings",
+    SANDBOX = "Dashboard",
     CLIMATE = "World",
-    STATISTICS = "Dashboard",
-    PVPLOGTOOL = "Logs",
+    STATISTICS = "Server",
+    PVPLOGTOOL = "Server",
+    DEATHMATCH = "Server",
     ZONE_EDITOR = "Zones",
 }
 C.nativeKeywords = {
@@ -45,14 +52,83 @@ C.nativeKeywords = {
     NONPVPZONE = "no pvp zones",
     SEEROLES = "roles permissions access level",
     SEETICKETS = "tickets reports",
+    PVPLOGTOOL = "pvp log combat player kills deaths",
+    ITEMLIST = "items list viewer item spawn inventory",
+    SEEFACTIONS = "factions list owner members tag search",
+    SEESAFEHOUSES = "safehouses list house owner property members search",
 }
-C.quickAccess = {
-    SEEUSERS = true,
-    ADMINPOWER = true,
-    STATISTICS = true,
-    SEEOPTIONS = true,
-    SEESAFEHOUSES = true,
+C.nativeGroups = {}
+C.quickAccess = {}
+C.defaultToolLayout = {
+    ["native.ADMINPOWER"] = { sortOrder = 10 },
+    ["native.CHECKSTATS"] = { sortOrder = 20 },
+    ["native.MINISCOREBOARD"] = { sortOrder = 30 },
+    ["native.ITEMLIST"] = { sortOrder = 40 },
+    ["native.SAFEZONE"] = { sortOrder = 50, displayName = "Add Safehouse..." },
+    ["core.vehicle"] = { sortOrder = 60 },
+    ["native.SANDBOX"] = { sortOrder = 70 },
+    ["native.SEEOPTIONS"] = { sortOrder = 80 },
+    ["native.SEETICKETS"] = { visibleInNavigation = false, searchable = false, hidden = true },
+    ["native.PVPLOGTOOL"] = { visibleInNavigation = false },
 }
+
+function C.sectionForCategory(category)
+    for _, section in ipairs(C.sections) do
+        if section == category then
+            return section
+        end
+    end
+    return C.categoryAliases[category]
+end
+
+-- Presentation metadata does not grant permissions or replace an action's
+-- original category. Server-wide editing and personal pins are separate scope.
+function C.actionPresentation(id, category, groups, options)
+    local defaults = C.defaultToolLayout[id] or {}
+    options = options or {}
+    local result = {
+        category = C.sectionForCategory(category) or "Server",
+        sourceCategory = category,
+        groups = {},
+        visibleInNavigation = true,
+        searchable = true,
+        hidden = false,
+        sortOrder = 1000,
+    }
+    for _, key in ipairs({
+        "visibleInNavigation",
+        "searchable",
+        "hidden",
+        "sortOrder",
+        "displayName",
+    }) do
+        if defaults[key] ~= nil then
+            result[key] = defaults[key]
+        end
+        if options[key] ~= nil then
+            result[key] = options[key]
+        end
+    end
+    for _, label in ipairs(groups or {}) do
+        result.groups[#result.groups + 1] = label
+    end
+    if #result.groups == 0 and C.aliasGroups[category] then
+        result.groups[1] = C.aliasGroups[category]
+    end
+    return result
+end
+
+function C.actionLess(a, b)
+    local ao, bo = tonumber(a.sortOrder) or 1000, tonumber(b.sortOrder) or 1000
+    if ao ~= bo then
+        return ao < bo
+    end
+    local at, bt = a.title:lower(), b.title:lower()
+    if at ~= bt then
+        return at < bt
+    end
+    return tostring(a.id or a.category) < tostring(b.id or b.category)
+end
 
 -- Extensions supply their own server-authorized implementation. No arbitrary command RPC.
 function C.registerAction(action)
@@ -68,18 +144,21 @@ function C.registerAction(action)
         action.capability or type(action.allowed) == "function",
         "Action needs an explicit permission gate"
     )
-    local valid = false
-    for _, section in ipairs(C.sections) do
-        if section == action.category then
-            valid = true
+    assert(C.sectionForCategory(action.category), "Unknown control-center category")
+    if action.group then
+        assert(type(action.group) == "table", "Action group must be a path of labels")
+        for _, label in ipairs(action.group) do
+            assert(type(label) == "string" and label ~= "", "Group labels must not be empty")
         end
     end
-    assert(valid, "Unknown control-center category")
     C.actions[action.id] = action
     C.registryVersion = C.registryVersion + 1
 end
 
 function C.canRun(action)
+    if action.disabled == true then
+        return false
+    end
     if action.capability and not C.allowed(action.capability) then
         return false
     end
@@ -114,14 +193,43 @@ function C.matchesAction(title, category, keywords, section, query, quick)
 end
 
 -- Pagination keeps every action reachable at small resolutions and large fonts.
-function C.pageGeometry(width, height, fontHeight, count, page)
+function C.pageGeometry(
+    width,
+    height,
+    fontHeight,
+    count,
+    page,
+    hierarchical,
+    footerHeight,
+    titleHeight
+)
     local rowHeight = math.max(32, fontHeight + 12)
-    local rows = math.max(1, math.floor((height - 166) / (rowHeight + 8)))
+    local searchHeight = math.max(28, fontHeight + 6)
+    titleHeight = titleHeight or fontHeight
+    local searchY = math.max(42, 10 + titleHeight + 12)
+    local summaryY = math.max(78, searchY + searchHeight + 8)
+    local top = math.max(108, summaryY + fontHeight + 8)
+    footerHeight = math.max(30, fontHeight + 6, footerHeight or 0)
+    local footerY = height - 32 - footerHeight
+    local contentHeight = footerY - 8 - top
+    local rows = math.max(1, math.floor((contentHeight + 8) / (rowHeight + 8)))
+    -- A collapsed group is a tool row too. Its presence must not force an
+    -- otherwise wide window into a different, one-column layout.
     local columns = width >= 900 and 2 or 1
     local pageSize = rows * columns
     local pages = math.max(1, math.ceil(count / pageSize))
     return {
         rowHeight = rowHeight,
+        searchHeight = searchHeight,
+        searchY = searchY,
+        summaryY = summaryY,
+        top = top,
+        footerY = footerY,
+        footerHeight = footerHeight,
+        width = width,
+        height = height,
+        fontHeight = fontHeight,
+        titleHeight = titleHeight,
         rows = rows,
         columns = columns,
         pageSize = pageSize,

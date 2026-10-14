@@ -33,6 +33,21 @@ class RunLuaKahlua {
         for (int i = 0; i < args.length; i++) arguments.rawset((double) i, args[i]);
         environment.rawset("arg", arguments);
         environment.rawset(
+                "readTestSource",
+                (JavaFunction)
+                        (frame, count) -> {
+                            String file = (String) frame.get(0);
+                            try {
+                                Path source =
+                                        Path.of(System.getProperty("lua.test.root", "."))
+                                                .resolve(file);
+                                frame.push(Files.readString(source));
+                                return 1;
+                            } catch (Exception ex) {
+                                throw new RuntimeException("Failed Lua source: " + file, ex);
+                            }
+                        });
+        environment.rawset(
                 "dofile",
                 (JavaFunction)
                         (frame, count) -> {

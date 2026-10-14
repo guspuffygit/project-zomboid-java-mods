@@ -1,4 +1,5 @@
 require("ISUI/ISResizeWidget")
+require("ISUI/ISPanel")
 require("ISUI/ISLayoutManager")
 require("ISUI/ISTextBox")
 require("ISUI/ISModalDialog")
@@ -57,37 +58,56 @@ function T.fit(window, width, height, dragging)
             grip:bringToTop()
         end
     end
-    if window.uacSizeButton then
-        window.uacSizeButton:setX(window.width - 140)
-        window.uacSizeButton:setY(2)
-    end
 end
 
 function T.resize(window, width, height)
     T.fit(window, width, height, true)
 end
 
-function T.sizeDialog(window)
-    local dialog = ISTextBox:new(
-        0,
-        0,
-        370,
-        180,
-        "Window size (example: 1000x620)",
-        math.floor(window.width) .. "x" .. math.floor(window.height),
+-- Both the widget and the panel fallback use one capture owner and a fixed
+-- screen-space origin. Relayout/anchor updates cannot turn a resize into a move.
+function T.beginResize(window, owner, yonly)
+    window.moving = false
+    if window.uacResizeDrag then
+        return true
+    end
+    window.uacResizeDrag = {
+        owner = owner,
+        x = getMouseX(),
+        y = getMouseY(),
+        width = window.width,
+        height = window.height,
+        yonly = yonly,
+    }
+    owner.resizing = true
+    owner:setCapture(true)
+    return true
+end
+
+function T.continueResize(window)
+    local drag = window.uacResizeDrag
+    if not drag then
+        return false
+    end
+    window.moving = false
+    T.resize(
         window,
-        function(target, button)
-            if button.internal ~= "OK" then
-                return
-            end
-            local w, h = button.parent.entry:getText():match("^%s*(%d+)%s*[xX]%s*(%d+)%s*$")
-            if w and h then
-                T.fit(target, tonumber(w), tonumber(h))
-            end
-        end
+        drag.width + (drag.yonly and 0 or getMouseX() - drag.x),
+        drag.height + getMouseY() - drag.y
     )
-    dialog:initialise()
-    dialog:addToUIManager()
+    return true
+end
+
+function T.endResize(window)
+    local drag = window.uacResizeDrag
+    if not drag then
+        return false
+    end
+    drag.owner.resizing = false
+    drag.owner:setCapture(false)
+    window.uacResizeDrag = nil
+    window.moving = false
+    return true
 end
 
 T.savedGeometry = T.savedGeometry or {}
@@ -135,10 +155,68 @@ function T.resizable(window, key, minW, minH, layout)
     if window.resizeWidget2 then
         window.resizeWidget2.resizeFunction = T.resize
     end
-    window.uacSizeButton =
-        ISButton:new(window.width - 140, 2, 65, 22, "Size...", window, T.sizeDialog)
-    window.uacSizeButton:initialise()
-    window:addChild(window.uacSizeButton)
+    for _, grip in ipairs({ window.resizeWidget, window.resizeWidget2 }) do
+        grip.moveWithMouse = false
+        grip.onMouseDown = function(self)
+            if not self:getIsVisible() then
+                return false
+            end
+            return T.beginResize(window, self, self.yonly)
+        end
+        grip.onMouseMove = function()
+            return T.continueResize(window)
+        end
+        grip.onMouseMoveOutside = grip.onMouseMove
+        grip.onMouseUp = function()
+            return T.endResize(window)
+        end
+        grip.onMouseUpOutside = grip.onMouseUp
+    end
+    -- The native ISResizeWidget is invisible: Inventory draws its icon itself.
+    window.resizeWidget.render = function(self)
+        local texture = getTexture("media/ui/ResizeIcon.png")
+        self:drawTextureScaled(texture, 2, 2, self.width - 4, self.height - 4, 1, 1, 1, 1)
+    end
+    if not window.uacResizeMouseWrapped then
+        window.uacResizeMouseWrapped = true
+        local mouseDown = window.onMouseDown
+        window.onMouseDown = function(self, x, y, ...)
+            if
+                x >= self.width - 24
+                and x <= self.width
+                and y >= self.height - 24
+                and y <= self.height
+            then
+                return T.beginResize(self, self, false)
+            end
+            if self.uacResizeDrag then
+                return true
+            end
+            if mouseDown then
+                return mouseDown(self, x, y, ...)
+            end
+        end
+        for _, name in ipairs({
+            "onMouseMove",
+            "onMouseMoveOutside",
+            "onMouseUp",
+            "onMouseUpOutside",
+        }) do
+            local previous = window[name]
+            local finish = name == "onMouseUp" or name == "onMouseUpOutside"
+            window[name] = function(self, ...)
+                if self.uacResizeDrag then
+                    if finish then
+                        return T.endResize(self)
+                    end
+                    return T.continueResize(self)
+                end
+                if previous then
+                    return previous(self, ...)
+                end
+            end
+        end
+    end
     local functions = {
         SaveLayout = function(target, name, saved)
             saved.x, saved.y = target:getX(), target:getY()
@@ -171,6 +249,7 @@ function T.resizable(window, key, minW, minH, layout)
         end
         local remove = window.removeFromUIManager
         window.removeFromUIManager = function(self, ...)
+            T.endResize(self)
             remember(self)
             if remove then
                 return remove(self, ...)

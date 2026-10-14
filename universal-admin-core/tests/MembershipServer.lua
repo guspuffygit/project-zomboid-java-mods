@@ -177,15 +177,6 @@ AdminCoreBridge = {
         calls[#calls + 1] = "transfer"
         return "OK"
     end,
-    canObserve = function()
-        return caps.observe
-    end,
-    follow = function()
-        return caps.follow
-    end,
-    returnFromObserve = function(_, x, y, z)
-        calls[#calls + 1] = { x = x, y = y, z = z }
-    end,
 }
 dofile("universal-admin-core/media/lua/server/AdminCoreServer.lua")
 local S = AdminCoreServer
@@ -235,17 +226,19 @@ check(persisted.admin.seconds == 2, "Rejoin does not credit previous offline int
 now = now + 2000
 S.tick()
 check(persisted.admin.seconds == 4, "Session totals accumulate")
-caps.observe = true
-caps.follow = true
 caps.TeleportToPlayer = true
+local callsBefore, responsesBefore = #calls, #responses
 command("observeStart", { username = "guest", x = 999, y = 999, z = 9 })
-check(persisted.admin.returnPosition.x == 1, "Return coordinates are server-owned")
 now = now + 12000
 S.tick()
-local returned = calls[#calls]
 check(
-    type(returned) == "table" and returned.x == 1 and returned.y == 2 and returned.z == 0,
-    "Expired observation returns to server-recorded origin"
+    #calls == callsBefore and #responses == responsesBefore,
+    "Membership server no longer handles the obsolete automatic-teleport observer protocol"
 )
-check(persisted.admin.returnPosition == nil, "Completed observation clears pending return")
+check(
+    persisted.admin.returnPosition == nil,
+    "Playtime tracking never creates camera return markers"
+)
+-- Authorization, camera leases and explicit one-shot returns are exercised by
+-- ObserveLifecycle.lua against the dedicated ObserverServer implementation.
 print("PASS: " .. n .. " expanded admin regression checks")
