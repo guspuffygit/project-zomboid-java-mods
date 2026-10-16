@@ -5,6 +5,7 @@ import static io.pzstorm.storm.logging.StormLogger.LOGGER;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.FBORenderCutawaysRecreateLevelGuardPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkBackupBlamPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.IsoChunkSetMinMaxLevelGuardPatch;
+import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.RemoveAnimalsCommandBlockPatch;
 import com.sentientsimulations.projectzomboid.guspuffyatfpatches.patch.VehiclePartStatsOverloadPatch;
 import io.pzstorm.storm.core.StormClassTransformer;
 import io.pzstorm.storm.event.core.StormEventDispatcher;
@@ -39,6 +40,8 @@ public class GuspuffyAtfPatchesMod implements ZomboidMod {
         // Client-only: the FBO cutaway render path never runs on the dedicated server.
         if (!StormEnv.isStormServer()) {
             transformers.add(new FBORenderCutawaysRecreateLevelGuardPatch());
+        } else {
+            transformers.add(new RemoveAnimalsCommandBlockPatch());
         }
         return transformers;
     }
