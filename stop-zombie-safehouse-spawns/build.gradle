@@ -19,10 +19,11 @@ Prevents zombies from spawning inside claimed safehouses.
 All knobs live under the [b]Stop Zombie Safehouse Spawns[/b] sandbox page:
 [list]
 [*][b]Block zombie respawn inside safehouses[/b]: ON (default) blocks the natural respawn path inside claimed safehouses. OFF restores vanilla behavior.
+[*][b]Block zombie respawn inside PvE zones[/b]: ON blocks the natural respawn path inside admin-defined PvE (non-PvP) zones. OFF (default) restores vanilla behavior.
 [/list]
 
 [hr][/hr]
 
 Tested and compatible with 42.21.0'''
-	modVersion = '1.0.0'
+	modVersion = '1.1.0'
 }

@@ -8,6 +8,7 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.pool.TypePool;
 import zombie.iso.IsoGridSquare;
+import zombie.iso.areas.NonPvpZone;
 import zombie.iso.areas.SafeHouse;
 
 public class PlayerSpawnsAllowZombieSafehousePatch extends StormClassTransformer {
@@ -32,16 +33,15 @@ public class PlayerSpawnsAllowZombieSafehousePatch extends StormClassTransformer
         public static void onExit(
                 @Advice.Argument(0) IsoGridSquare sq,
                 @Advice.Return(readOnly = false) boolean result) {
-            if (!result) {
+            if (!result || sq == null) {
                 return;
             }
-            if (!StopZombieSafehouseSpawnsConfig.isEnabled()) {
+            if (StopZombieSafehouseSpawnsConfig.isEnabled() && SafeHouse.getSafeHouse(sq) != null) {
+                result = false;
                 return;
             }
-            if (sq == null) {
-                return;
-            }
-            if (SafeHouse.getSafeHouse(sq) != null) {
+            if (StopZombieSafehouseSpawnsConfig.isBlockPveZones()
+                    && NonPvpZone.getNonPvpZone(sq.getX(), sq.getY()) != null) {
                 result = false;
             }
         }

@@ -8,3 +8,12 @@ option StopZombieSafehouseSpawns.Enabled
   page = StopZombieSafehouseSpawns,
   translation = StopZombieSafehouseSpawns_Enabled,
 }
+
+option StopZombieSafehouseSpawns.BlockPveZones
+{
+  type = boolean,
+  default = false,
+
+  page = StopZombieSafehouseSpawns,
+  translation = StopZombieSafehouseSpawns_BlockPveZones,
+}

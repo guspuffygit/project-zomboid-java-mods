@@ -7,6 +7,7 @@ import zombie.config.ConfigOption;
 public final class StopZombieSafehouseSpawnsConfig {
 
     public static final boolean DEFAULT_ENABLED = true;
+    public static final boolean DEFAULT_BLOCK_PVE_ZONES = false;
 
     private static final String PREFIX = "StopZombieSafehouseSpawns.";
 
@@ -14,6 +15,10 @@ public final class StopZombieSafehouseSpawnsConfig {
 
     public static boolean isEnabled() {
         return readBoolean("Enabled", DEFAULT_ENABLED);
+    }
+
+    public static boolean isBlockPveZones() {
+        return readBoolean("BlockPveZones", DEFAULT_BLOCK_PVE_ZONES);
     }
 
     private static boolean readBoolean(String shortName, boolean fallback) {

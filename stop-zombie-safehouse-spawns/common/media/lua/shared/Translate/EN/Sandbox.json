@@ -1,5 +1,7 @@
 {
   "Sandbox_StopZombieSafehouseSpawns": "Stop Zombie Safehouse Spawns",
   "Sandbox_StopZombieSafehouseSpawns_Enabled": "Block zombie respawn inside safehouses",
-  "Sandbox_StopZombieSafehouseSpawns_Enabled_tooltip": "When ON (default), the natural zombie respawn path will not place real zombies on any tile inside a claimed safehouse. Gates PlayerSpawns.allowZombie so both standing and moving respawn slots are rejected for safehouse squares. Existing zombies inside a safehouse are not removed; admin/scripted horde spawns and network sync are unaffected. OFF restores vanilla behavior."
+  "Sandbox_StopZombieSafehouseSpawns_Enabled_tooltip": "When ON (default), the natural zombie respawn path will not place real zombies on any tile inside a claimed safehouse. Gates PlayerSpawns.allowZombie so both standing and moving respawn slots are rejected for safehouse squares. Existing zombies inside a safehouse are not removed; admin/scripted horde spawns and network sync are unaffected. OFF restores vanilla behavior.",
+  "Sandbox_StopZombieSafehouseSpawns_BlockPveZones": "Block zombie respawn inside PvE zones",
+  "Sandbox_StopZombieSafehouseSpawns_BlockPveZones_tooltip": "When ON, the natural zombie respawn path will not place real zombies on any tile inside an admin-defined PvE (non-PvP) zone. Independent of the safehouse option. Existing zombies inside a PvE zone are not removed; admin/scripted horde spawns and network sync are unaffected. OFF (default) restores vanilla behavior."
 }
