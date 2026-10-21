@@ -1,7 +1,7 @@
 modInfo {
 	name = 'Universal Admin Core'
-	description = 'Searchable administration, player tools and observation for Project Zomboid 42.21.0. Requires Storm.'
-	modVersion = '0.1.6'
+	description = 'Searchable administration, player tools and observation for Project Zomboid 42.21.0. Ctrl+E opens the Admin Panel with the search focused; Enter runs the marked action, Up/Down move the mark. Requires Storm.'
+	modVersion = '0.1.7'
 	workshopId = '3811280587'
 	workshopIdStage = '3811291537'
 	workshopIdProd = '3811291377'

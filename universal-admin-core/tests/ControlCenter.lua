@@ -90,11 +90,19 @@ SafeHouse = {
 }
 Events = setmetatable({}, {
     __index = function(t, key)
-        local e = { Add = function() end }
+        local e = { handlers = {} }
+        e.Add = function(fn)
+            e.handlers[#e.handlers + 1] = fn
+        end
         rawset(t, key, e)
         return e
     end,
 })
+local ctrl = false
+Keyboard = { KEY_E = 18, KEY_LCONTROL = 29, KEY_RCONTROL = 157 }
+isKeyDown = function(key)
+    return ctrl and key == Keyboard.KEY_LCONTROL
+end
 local W = {}
 W.__index = W
 function W:derive(name)
@@ -104,10 +112,22 @@ function W:derive(name)
     return cls
 end
 function W:new(x, y, w, h)
-    return setmetatable(
-        { x = x, y = y, width = w, height = h, children = {}, visible = true, enable = true },
-        self
-    )
+    return setmetatable({
+        x = x,
+        y = y,
+        width = w,
+        height = h,
+        children = {},
+        visible = true,
+        enable = true,
+        javaObject = { setVisible = function() end },
+    }, self)
+end
+function W:addToUIManager()
+    self.added = true
+end
+function W:removeFromUIManager()
+    self.added = false
 end
 for _, name in ipairs({ "X", "Y", "Width", "Height" }) do
     local field = name:lower()
@@ -161,6 +181,9 @@ end
 function W:setTitle(value)
     self.title = value
 end
+function W:setWantMouseEvents(value)
+    self.wantMouse = value
+end
 function W:drawText() end
 ISPanel = W:derive("ISPanel")
 ISButton = W:derive("ISButton")
@@ -170,6 +193,11 @@ function ISButton:new(x, y, w, h, title, target, onclick)
     b.target = target
     b.onclick = onclick
     return b
+end
+function ISButton:forceClick()
+    if self:getIsVisible() and self.enable then
+        self.onclick(self.target, self)
+    end
 end
 dofile(game .. "/media/lua/client/ISUI/ISResizeWidget.lua")
 ISLayoutManager = { RegisterWindow = function() end }
@@ -184,6 +212,12 @@ function ISTextEntryBox:getInternalText()
 end
 function ISTextEntryBox:setText(text)
     self.text = text
+end
+function ISTextEntryBox:focus()
+    self.focused = true
+end
+function ISTextEntryBox:isFocused()
+    return self.focused == true
 end
 dofile(game .. "/media/lua/client/ISUI/AdminPanel/ISAdminPanelUI.lua")
 dofile(client .. "WindowSizing.lua")
@@ -367,5 +401,91 @@ reopened:create()
 check(
     reopened.width == 800 and reopened.height == 520,
     "Admin defaults must not overwrite restored compact geometry"
+)
+local keys = Events.OnKeyPressed.handlers
+check(#keys == 1, "Control center registers one hotkey handler")
+local function press(key)
+    for _, fn in ipairs(keys) do
+        fn(key)
+    end
+end
+press(Keyboard.KEY_E)
+check(ISAdminPanelUI.instance == reopened, "Plain E leaves the panel alone")
+ctrl = true
+press(Keyboard.KEY_E)
+check(ISAdminPanelUI.instance == nil and reopened.added == false, "Ctrl+E closes an open panel")
+role.hasAdminTool = function()
+    return false
+end
+press(Keyboard.KEY_E)
+check(ISAdminPanelUI.instance == nil, "Hotkey requires the admin tool")
+role.hasAdminTool = function()
+    return true
+end
+press(Keyboard.KEY_E)
+local opened = ISAdminPanelUI.instance
+check(
+    opened and opened.added and opened.uacSearch.focused,
+    "Ctrl+E opens the panel with the search focused"
+)
+opened.uacSearch:setText("no such action anywhere")
+opened:uacRefresh()
+opened.uacSearch.onCommandEntered()
+check(ISAdminPanelUI.instance == opened, "Enter with no matches keeps the panel open")
+local mark = opened.uacEnterMark
+check(
+    mark and not mark.visible and mark.wantMouse == false,
+    "Enter mark hides when nothing matches"
+)
+opened.uacSearch:setText("")
+opened.uacSearch.onTextChange()
+local shown = opened:uacShown()
+check(#shown >= 3, "Dashboard shows enough actions to walk with the arrow keys")
+opened.uacSearch.onPressDown()
+opened.uacSearch.onPressDown()
+check(
+    mark.x == shown[3].x and mark.y == shown[3].y,
+    "Down arrow moves the selection along the page"
+)
+opened.uacSearch.onPressUp()
+check(mark.x == shown[2].x and mark.y == shown[2].y, "Up arrow moves the selection back")
+for _ = 1, 5 do
+    opened.uacSearch.onPressUp()
+end
+check(mark.x == shown[1].x and mark.y == shown[1].y, "Selection stops at the first action")
+for _ = 1, #shown + 5 do
+    opened.uacSearch.onPressDown()
+end
+check(mark.x == shown[#shown].x and mark.y == shown[#shown].y, "Selection stops at the last action")
+opened.uacSearch:setText("weather")
+opened.uacSearch.onTextChange()
+check(opened.uacSelected == 1, "Typing resets the selection to the first match")
+local first
+for _, e in ipairs(opened.uacEntries) do
+    if e.button:getIsVisible() then
+        first = e.button
+        break
+    end
+end
+check(
+    mark.visible
+        and mark.x == first.x
+        and mark.y == first.y
+        and mark.width == first.width
+        and mark.height == first.height,
+    "Enter mark covers the first visible action"
+)
+local clicks = 0
+first.onclick = function()
+    clicks = clicks + 1
+end
+first.enable = false
+opened.uacSearch.onCommandEntered()
+check(clicks == 0 and ISAdminPanelUI.instance == opened, "Enter skips a disabled first action")
+first.enable = true
+opened.uacSearch.onCommandEntered()
+check(
+    clicks == 1 and ISAdminPanelUI.instance == nil,
+    "Enter runs the first action and closes the panel"
 )
 print("PASS: " .. count .. " control-center integration/layout checks")

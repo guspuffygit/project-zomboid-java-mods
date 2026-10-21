@@ -8,9 +8,20 @@ provides selected-player administration, membership tools and observation. Ordin
 safehouse/faction invitation searches retain native permissions. Visible-row caching
 limits repeated user-list work. The admin can also use Add Item on their own inventory.
 
-Resize handles and Size controls adjust supported windows. Closing a window stores
+Drag the corner grip to resize supported windows. Closing a window stores
 its geometry immediately; reopening restores it, clamped to the current screen.
 The native layout.ini provides persistence across client sessions.
+
+## Keyboard control
+
+Ctrl+E opens and closes the Admin Panel for any account with the admin tool. The
+search box takes focus on open, so typing filters immediately. A green frame with a
+return arrow marks the selected action; Enter runs it and closes the panel. Up and
+Down move the mark through the visible actions in reading order and stop at the ends.
+Typing, changing category and paging reset the mark to the first action. Ctrl+E
+cannot close the panel while the search box has focus, because the game withholds
+key events during text entry; press Esc or click elsewhere first. Vanilla binds E
+alone to Interact; no shipped binding or known mod uses Ctrl+E.
 
 Observe requires server-validated capabilities, invisibility, god mode and noclip.
 It follows a streamed target from the admin's client; it is not the target's screen.

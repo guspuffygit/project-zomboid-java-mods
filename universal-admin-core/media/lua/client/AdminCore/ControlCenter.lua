@@ -21,6 +21,83 @@ local function button(panel, title, callback)
     return b
 end
 
+-- Buttons on the current page, in layout order.
+function ISAdminPanelUI:uacShown()
+    local shown = {}
+    for _, entry in ipairs(self.uacEntries or {}) do
+        if entry.button:getIsVisible() then
+            shown[#shown + 1] = entry.button
+        end
+    end
+    return shown
+end
+
+function ISAdminPanelUI:uacSelectedButton()
+    local shown = self:uacShown()
+    self.uacSelected = math.max(1, math.min(self.uacSelected or 1, #shown))
+    return shown[self.uacSelected]
+end
+
+-- Up/down in the search box walk the page in layout order.
+function ISAdminPanelUI:uacMove(step)
+    self.uacSelected = (self.uacSelected or 1) + step
+    self:uacPlaceMark()
+end
+
+-- Enter in the search box runs the selected action and closes the panel.
+function ISAdminPanelUI:uacOpenSelected()
+    local b = self:uacSelectedButton()
+    if not (b and b.enable) then
+        return
+    end
+    b:forceClick()
+    if ISAdminPanelUI.instance == self then
+        self:close()
+    end
+end
+
+local green = { r = 0.35, g = 0.9, b = 0.45 }
+
+-- Green frame and a return arrow over the selected action.
+local function drawEnterMark(mark)
+    if not mark.parent.uacSearch:isFocused() then
+        return
+    end
+    local w, h = mark.width, mark.height
+    mark:drawRectBorder(0, 0, w, h, 1, green.r, green.g, green.b)
+    mark:drawRectBorder(1, 1, w - 2, h - 2, 1, green.r, green.g, green.b)
+    local x, y = w - 22, math.floor(h / 2) - 8
+    mark:drawRect(x + 12, y + 2, 2, 9, 1, green.r, green.g, green.b)
+    mark:drawRect(x + 3, y + 9, 11, 2, 1, green.r, green.g, green.b)
+    mark:drawLine2(x + 3, y + 10, x + 8, y + 5, 1, green.r, green.g, green.b)
+    mark:drawLine2(x + 3, y + 10, x + 8, y + 15, 1, green.r, green.g, green.b)
+end
+
+function ISAdminPanelUI:uacPlaceMark()
+    local mark = self.uacEnterMark
+    if not mark then
+        mark = ISPanel:new(0, 0, 10, 10)
+        mark:initialise()
+        mark.background = false
+        mark:setWantMouseEvents(false)
+        mark.render = drawEnterMark
+        self:addChild(mark)
+        self.uacEnterMark = mark
+    end
+    local b = self:uacSelectedButton()
+    mark:setVisible(b ~= nil)
+    if not b then
+        return
+    end
+    mark:setX(b.x)
+    mark:setY(b.y)
+    mark:setWidth(b.width)
+    mark:setHeight(b.height)
+    if mark.bringToTop then
+        mark:bringToTop()
+    end
+end
+
 function ISAdminPanelUI:addChild(child)
     originalAddChild(self, child)
     if self.uacReady and child.Type == "ISButton" and not child.uacOwned then
@@ -148,6 +225,7 @@ function ISAdminPanelUI:uacRefresh()
     self.uacHeading = query:match("%S") and "Search results" or self.uacSection
     self.uacSummary = #visible .. " actions  |  Page " .. g.page .. " / " .. g.pages
     self.uacEmpty = #visible == 0
+    self:uacPlaceMark()
 end
 
 function ISAdminPanelUI:create()
@@ -160,6 +238,7 @@ function ISAdminPanelUI:create()
         self.uacNav[#self.uacNav + 1] = button(self, name, function(p)
             p.uacSection = name
             p.uacPage = 1
+            p.uacSelected = 1
             p.uacSearch:setText("")
             p:uacRefresh()
         end)
@@ -170,15 +249,27 @@ function ISAdminPanelUI:create()
         "Search every category by action or topic, for example weather, players or permissions."
     self.uacSearch.onTextChange = function()
         self.uacPage = 1
+        self.uacSelected = 1
         self:uacRefresh()
+    end
+    self.uacSearch.onCommandEntered = function()
+        self:uacOpenSelected()
+    end
+    self.uacSearch.onPressDown = function()
+        self:uacMove(1)
+    end
+    self.uacSearch.onPressUp = function()
+        self:uacMove(-1)
     end
     self:addChild(self.uacSearch)
     self.uacPrevious = button(self, "Previous", function(p)
         p.uacPage = p.uacPage - 1
+        p.uacSelected = 1
         p:uacRefresh()
     end)
     self.uacNext = button(self, "Next", function(p)
         p.uacPage = p.uacPage + 1
+        p.uacSelected = 1
         p:uacRefresh()
     end)
     self.uacReady = true
@@ -187,7 +278,34 @@ function ISAdminPanelUI:create()
     C.resizable(self, "ControlCenter", 660, 490, function(p)
         p:uacRefresh()
     end)
+    self.uacSearch:focus()
 end
+
+C.controlCenterKey = Keyboard.KEY_E
+
+function C.toggleControlCenter()
+    if ISAdminPanelUI.instance then
+        ISAdminPanelUI.instance:close()
+        return
+    end
+    local player = getPlayer()
+    if not (player and player:getRole() and player:getRole():hasAdminTool()) then
+        return
+    end
+    local panel = ISAdminPanelUI:new(200, 200, 350, 400)
+    panel:initialise()
+    panel:addToUIManager()
+end
+
+-- OnKeyPressed fires on release, so Ctrl must still be held when E comes up.
+Events.OnKeyPressed.Add(function(key)
+    if
+        key == C.controlCenterKey
+        and (isKeyDown(Keyboard.KEY_LCONTROL) or isKeyDown(Keyboard.KEY_RCONTROL))
+    then
+        C.toggleControlCenter()
+    end
+end)
 
 function ISAdminPanelUI:updateButtons()
     originalUpdate(self)
