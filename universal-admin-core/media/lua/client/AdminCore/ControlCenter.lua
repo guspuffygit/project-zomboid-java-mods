@@ -31,12 +31,7 @@ end
 function ISAdminPanelUI:uacCollect()
     self.uacEntries = {}
     for _, child in pairs(self:getChildren()) do
-        if
-            child.Type == "ISButton"
-            and child ~= self.cancel
-            and not child.uacOwned
-            and child ~= self.uacSizeButton
-        then
+        if child.Type == "ISButton" and child ~= self.cancel and not child.uacOwned then
             local id = child.internal or ""
             self.uacEntries[#self.uacEntries + 1] = {
                 button = child,

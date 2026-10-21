@@ -1,6 +1,5 @@
 require("ISUI/ISResizeWidget")
 require("ISUI/ISLayoutManager")
-require("ISUI/ISTextBox")
 require("ISUI/ISModalDialog")
 require("ISUI/ISButton")
 require("ISUI/ISRichTextPanel")
@@ -57,37 +56,28 @@ function T.fit(window, width, height, dragging)
             grip:bringToTop()
         end
     end
-    if window.uacSizeButton then
-        window.uacSizeButton:setX(window.width - 140)
-        window.uacSizeButton:setY(2)
-    end
+    window.uacFitWidth, window.uacFitHeight = window.width, window.height
 end
 
 function T.resize(window, width, height)
     T.fit(window, width, height, true)
 end
 
-function T.sizeDialog(window)
-    local dialog = ISTextBox:new(
-        0,
-        0,
-        370,
-        180,
-        "Window size (example: 1000x620)",
-        math.floor(window.width) .. "x" .. math.floor(window.height),
-        window,
-        function(target, button)
-            if button.internal ~= "OK" then
-                return
-            end
-            local w, h = button.parent.entry:getText():match("^%s*(%d+)%s*[xX]%s*(%d+)%s*$")
-            if w and h then
-                T.fit(target, tonumber(w), tonumber(h))
-            end
-        end
-    )
-    dialog:initialise()
-    dialog:addToUIManager()
+local resizeIcon
+
+-- ISResizeWidget draws nothing; show the vanilla inventory corner grip.
+local function drawGrip(grip)
+    resizeIcon = resizeIcon or getTexture("media/ui/ResizeIcon.png")
+    grip:drawTextureScaled(resizeIcon, grip.width - 15, grip.height - 15, 14, 14, 1, 1, 1, 1)
+end
+
+-- Other mods grow these windows after fit, e.g. pvp-raids adds an admin panel row in create().
+-- Keeping that growth would ratchet the saved size up on every open, so the fitted size wins.
+local function restoreFittedSize(grip)
+    local window = grip.target
+    if window.width ~= window.uacFitWidth or window.height ~= window.uacFitHeight then
+        T.fit(window, window.uacFitWidth, window.uacFitHeight)
+    end
 end
 
 T.savedGeometry = T.savedGeometry or {}
@@ -132,13 +122,11 @@ function T.resizable(window, key, minW, minH, layout)
         window:addChild(window.resizeWidget)
     end
     window.resizeWidget.resizeFunction = T.resize
+    window.resizeWidget.prerender = restoreFittedSize
+    window.resizeWidget.render = drawGrip
     if window.resizeWidget2 then
         window.resizeWidget2.resizeFunction = T.resize
     end
-    window.uacSizeButton =
-        ISButton:new(window.width - 140, 2, 65, 22, "Size...", window, T.sizeDialog)
-    window.uacSizeButton:initialise()
-    window:addChild(window.uacSizeButton)
     local functions = {
         SaveLayout = function(target, name, saved)
             saved.x, saved.y = target:getX(), target:getY()
