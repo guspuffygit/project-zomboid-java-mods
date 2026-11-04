@@ -11,6 +11,12 @@ main thread) swaps it for a real IsoGenerator. Converted squares are
 remembered in global ModData so the top-up loop survives restarts; on reload
 the map save restores the object as an IsoGenerator directly.
 
+Brush tool (MP, 42.21+): the brush sends AddObjectToMapPacket, which builds a
+plain tile object and fires no server event. The client wrapper in
+ATFPatches_InfiniteGeneratorBrush sends the "brushPlace" command instead. A
+MapObjects load hook converts any plain atf_generators tile when its chunk
+loads, and registers any infinite IsoGenerator the registry missed.
+
 Adoption: dropping the item from hands (ISDropWorldItemAction,
 ISDropVehicleItemAction, ISTransferAction to the floor) goes through
 IsoGridSquare.AddWorldInventoryItem, which builds the IsoGenerator directly
@@ -122,20 +128,8 @@ function Gen.adoptOnSquare(square)
     print("[ATFPatches] Infinite generator adopted at " .. key)
 end
 
-function Gen.onObjectAdded(obj)
-    if instanceof(obj, "IsoGenerator") then
-        if isInfiniteGenSprite(obj) and obj:getSquare() then
-            registry()[squareKey(obj:getSquare())] = true
-        end
-        return
-    end
-    if not isInfiniteGenSprite(obj) then
-        return
-    end
-    local square = obj:getSquare()
-    if not square then
-        return
-    end
+-- Replaces the plain tile object (if any) with a real IsoGenerator.
+local function convertOnSquare(square, tileObj, how)
     -- The chunk generator registry is position-keyed; a second generator on
     -- the same tile kills the live one's power. Leave the tile decorative.
     if square:getGenerator() then
@@ -146,8 +140,10 @@ function Gen.onObjectAdded(obj)
         )
         return
     end
-    square:transmitRemoveItemFromSquareOnClients(obj)
-    square:RemoveTileObject(obj)
+    if tileObj then
+        square:transmitRemoveItemFromSquareOnClients(tileObj)
+        square:RemoveTileObject(tileObj)
+    end
     -- Constructor adds itself to the square and transmits to clients; the
     -- setters below each self-sync on the server.
     local gen = IsoGenerator.new(instanceItem(ITEM_FULL_TYPE), getCell(), square)
@@ -156,7 +152,65 @@ function Gen.onObjectAdded(obj)
     gen:setFuel(MAX_FUEL)
     gen:setActivated(true)
     registry()[squareKey(square)] = true
-    print("[ATFPatches] Infinite generator placed at " .. squareKey(square))
+    print("[ATFPatches] Infinite generator " .. how .. " at " .. squareKey(square))
+end
+
+local function findPlainTile(square)
+    local objects = square:getObjects()
+    for i = 0, objects:size() - 1 do
+        local obj = objects:get(i)
+        if not instanceof(obj, "IsoGenerator") and isInfiniteGenSprite(obj) then
+            return obj
+        end
+    end
+    return nil
+end
+
+function Gen.onObjectAdded(obj)
+    if instanceof(obj, "IsoGenerator") then
+        if isInfiniteGenSprite(obj) and obj:getSquare() then
+            registry()[squareKey(obj:getSquare())] = true
+        end
+        return
+    end
+    if not isInfiniteGenSprite(obj) or not obj:getSquare() then
+        return
+    end
+    convertOnSquare(obj:getSquare(), obj, "placed")
+end
+
+function Gen.onLoadWithSprite(obj)
+    local square = obj:getSquare()
+    if not square then
+        return
+    end
+    if instanceof(obj, "IsoGenerator") then
+        local key = squareKey(square)
+        if not registry()[key] then
+            registry()[key] = true
+            print("[ATFPatches] Infinite generator registered on load at " .. key)
+        end
+        return
+    end
+    convertOnSquare(square, obj, "converted on load")
+end
+
+function Gen.onClientCommand(module, command, player, args)
+    if module ~= "ATFPatches_InfiniteGenerator" or command ~= "brushPlace" then
+        return
+    end
+    if not isRemovalAllowed(player) then
+        print(
+            "[ATFPatches] Infinite generator brushPlace rejected for "
+                .. tostring(player and player:getUsername())
+        )
+        return
+    end
+    local square = args and getCell():getGridSquare(args.x, args.y, args.z) or nil
+    if not square then
+        return
+    end
+    convertOnSquare(square, findPlainTile(square), "brush-placed")
 end
 
 -- Fuel/condition only drain while the chunk is loaded (IsoGenerator.update),
@@ -284,4 +338,10 @@ if not Gen.__eventsRegistered then
     Events.EveryOneMinute.Add(function()
         ATFPatches_InfiniteGenerator.everyOneMinute()
     end)
+    Events.OnClientCommand.Add(function(module, command, player, args)
+        ATFPatches_InfiniteGenerator.onClientCommand(module, command, player, args)
+    end)
+    MapObjects.OnLoadWithSprite("atf_generators_01_0", function(obj)
+        ATFPatches_InfiniteGenerator.onLoadWithSprite(obj)
+    end, 5)
 end
