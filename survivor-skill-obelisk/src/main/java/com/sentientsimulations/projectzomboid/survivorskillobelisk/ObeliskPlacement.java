@@ -45,8 +45,8 @@ public final class ObeliskPlacement {
      * Makes sure the square at {@code x, y, z} holds an obelisk of {@code type}. A missing obelisk
      * is placed with a random colour; an obelisk already there keeps its colour. The type row is
      * upserted either way and every client is told. {@code type} is {@code None}, {@code Blessing}
-     * or a perk id. Answers {@link #STATUS_UNLOADED} while the square's chunk is not loaded, so the
-     * caller tries again later.
+     * {@code Extraction} or a perk id. Answers {@link #STATUS_UNLOADED} while the square's chunk is
+     * not loaded, so the caller tries again later.
      */
     public static String ensure(int x, int y, int z, String type, String by) {
         String cleanType = type == null || type.isBlank() ? ObeliskTypes.NONE : type.trim();
@@ -138,7 +138,9 @@ public final class ObeliskPlacement {
     }
 
     public static boolean isKnownType(String type) {
-        if (ObeliskTypes.NONE.equals(type) || ObeliskTypes.BLESSING.equals(type)) {
+        if (ObeliskTypes.NONE.equals(type)
+                || ObeliskTypes.BLESSING.equals(type)
+                || ObeliskTypes.EXTRACTION.equals(type)) {
             return true;
         }
         PerkFactory.Perk perk = PerkFactory.Perks.FromString(type);

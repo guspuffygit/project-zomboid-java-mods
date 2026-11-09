@@ -11,16 +11,15 @@ import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.pool.TypePool;
 
 /**
- * Server only. Captures each PvP hit's {@code ignoreDamage} flag as it came off the wire. Hooks the
- * superclass {@code PlayerHitCharacter.parse}, whose exit runs inside {@code
+ * Server only. Captures each PvP hit's {@code isIgnoreDamage} flag as it came off the wire. Hooks
+ * the superclass {@code PlayerHit.parse}, whose exit runs inside {@code
  * PlayerHitPlayerPacket.parse} and so before any mod's exit advice on that method.
  *
- * <p>Re-validate on game updates: assumes {@code PlayerHitCharacter.parse} still fills {@code
- * hits}.
+ * <p>Re-validate on game updates: assumes {@code PlayerHit.parse} still fills {@code hits}.
  */
 public class PvpHitParsePatch extends StormClassTransformer {
 
-    static final String TARGET = "zombie.network.packets.hit.PlayerHitCharacter";
+    static final String TARGET = "zombie.network.packets.hit.PlayerHit";
     static final String ADVICE = PvpHitParsePatch.class.getName() + "$ParseAdvice";
 
     public PvpHitParsePatch() {

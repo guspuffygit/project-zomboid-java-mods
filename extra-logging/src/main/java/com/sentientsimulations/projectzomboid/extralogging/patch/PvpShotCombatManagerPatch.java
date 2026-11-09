@@ -12,14 +12,15 @@ import net.bytebuddy.pool.TypePool;
 
 /**
  * Client only. Brackets {@code CombatManager.attackCollisionCheck}, which computes each target's
- * hit chance and rolls it. It also watches {@code processClientHit}, which queues each hit that
- * will be sent with its {@code ignoreDamage} flag. Together they give the chance and the roll
- * outcome per target.
+ * hit chance and, for zombies, rolls it. It also watches {@code addTargetHitCharacter}, which
+ * queues each character hit that will be sent with its {@code HitData}. Together they give the
+ * chance and the queued outcome per target. Player and animal targets are rolled by the server
+ * since 42.22, so for them the client queues every hit and the server log holds the roll.
  *
- * <p>Why a client patch: the chance and roll exist only on the shooter's client and are never sent.
+ * <p>Why a client patch: the chance exists only on the shooter's client and is never sent.
  * Fail-soft: the advice suppresses every throwable, and a missing method fails the weave, which
- * leaves the class vanilla. Re-validate on game updates: assumes the roll stays inline in {@code
- * attackCollisionCheck} and every rolled hit goes through {@code processClientHit}.
+ * leaves the class vanilla. Re-validate on game updates: assumes the chance stays inline in {@code
+ * attackCollisionCheck} and every queued character hit goes through {@code addTargetHitCharacter}.
  */
 public class PvpShotCombatManagerPatch extends StormClassTransformer {
 
@@ -40,9 +41,10 @@ public class PvpShotCombatManagerPatch extends StormClassTransformer {
                 ElementMatchers.named("attackCollisionCheck")
                         .and(ElementMatchers.takesArguments(4));
         ElementMatcher.Junction<MethodDescription> clientHit =
-                ElementMatchers.named("processClientHit").and(ElementMatchers.takesArguments(9));
+                ElementMatchers.named("addTargetHitCharacter")
+                        .and(ElementMatchers.takesArguments(5));
         PatchTargets.require(typePool, TARGET, collision, "attackCollisionCheck (4 args)");
-        PatchTargets.require(typePool, TARGET, clientHit, "processClientHit (9 args)");
+        PatchTargets.require(typePool, TARGET, clientHit, "addTargetHitCharacter (5 args)");
         return builder.visit(
                         Advice.to(typePool.describe(COLLISION_ADVICE).resolve(), locator)
                                 .on(collision))
@@ -69,8 +71,8 @@ public class PvpShotCombatManagerPatch extends StormClassTransformer {
 
         @Advice.OnMethodEnter(suppress = Throwable.class)
         public static void onEnter(
-                @Advice.Argument(1) Object target, @Advice.Argument(3) boolean ignoreDamage) {
-            PvpShotClientLog.onClientHit(target, ignoreDamage);
+                @Advice.Argument(1) Object target, @Advice.Argument(2) Object hitData) {
+            PvpShotClientLog.onClientHit(target, hitData);
         }
     }
 }

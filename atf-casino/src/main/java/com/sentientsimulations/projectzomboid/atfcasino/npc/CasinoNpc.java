@@ -230,7 +230,7 @@ public final class CasinoNpc {
             // NetworkPlayerAI's timer gate and yields an empty prediction for a synthetic
             // player that never ticks.
             PlayerPacket packet = new PlayerPacket();
-            packet.id.set(fake);
+            packet.player.set(fake);
             packet.variables.set(fake);
             packet.prediction.type = (byte) 0;
             packet.prediction.x = x;

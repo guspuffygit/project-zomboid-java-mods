@@ -114,7 +114,7 @@ public final class CasinoAssaultWatch {
             if (!GameServer.server || !AtfCasinoConfig.isEnabled()) {
                 return;
             }
-            IsoPlayer attacker = packet.getWielder();
+            IsoPlayer attacker = packet.getPlayer();
             IsoPlayer victim = packet.target.getPlayer();
             if (attacker == null || attacker.getUsername() == null || victim == null) {
                 return;

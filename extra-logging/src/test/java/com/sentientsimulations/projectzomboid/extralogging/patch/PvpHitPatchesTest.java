@@ -60,7 +60,7 @@ class PvpHitPatchesTest {
         byte[] woven = weave(new PvpShotCombatManagerPatch());
         assertEquals(1, countCalls(woven, "attackCollisionCheck", CLIENT, "beforeCollision"));
         assertTrue(countCalls(woven, "attackCollisionCheck", CLIENT, "afterCollision") >= 1);
-        assertEquals(1, countCalls(woven, "processClientHit", CLIENT, "onClientHit"));
+        assertEquals(1, countCalls(woven, "addTargetHitCharacter", CLIENT, "onClientHit"));
         assertEquals(0, countCalls(woven, "calculateHitInfoList", CLIENT, null));
     }
 

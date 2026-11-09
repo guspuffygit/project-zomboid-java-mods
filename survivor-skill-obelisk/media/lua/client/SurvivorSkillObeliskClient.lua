@@ -3,7 +3,8 @@
 -- Right-click on a placed obelisk -> "Recover Skills" context menu entry ->
 -- ISCollapsableWindow with the player's past deaths fetched from the server.
 -- Blessing-type obelisks show "Receive Obelisk Blessing" instead (see
--- SurvivorSkillObeliskBlessing.lua).
+-- SurvivorSkillObeliskBlessing.lua). Extraction-type obelisks get no option here; the game-mode
+-- mod that placed them adds its own.
 --
 
 require("ISUI/ISCollapsableWindowJoypad")
@@ -26,6 +27,8 @@ local DEFAULT_LIMIT = 50
 local NONE_TYPE = "None"
 local BLESSING_TYPE = "Blessing"
 local BLESSING_LABEL = "Obelisk Blessing"
+local EXTRACTION_TYPE = "Extraction"
+local EXTRACTION_LABEL = "Extraction Obelisk"
 
 local SurvivorSkillObelisk = {}
 local openWindow = nil
@@ -91,6 +94,9 @@ local function perkDisplayName(typeId)
     end
     if typeId == BLESSING_TYPE then
         return BLESSING_LABEL
+    end
+    if typeId == EXTRACTION_TYPE then
+        return EXTRACTION_LABEL
     end
     local perk = PerkFactory.Perks.FromString(typeId)
     if perk == nil then
@@ -474,6 +480,7 @@ function ConfigureObeliskWindow:createChildren()
     self.skillCombo:instantiate()
     self.skillCombo:addOptionWithData(NONE_TYPE, NONE_TYPE)
     self.skillCombo:addOptionWithData(BLESSING_LABEL, BLESSING_TYPE)
+    self.skillCombo:addOptionWithData(EXTRACTION_LABEL, EXTRACTION_TYPE)
     for _, perk in ipairs(collectSkillPerks()) do
         self.skillCombo:addOptionWithData(perk.name, perk.id)
     end
@@ -732,9 +739,10 @@ local function onFillWorldObjectContextMenu(player, context, worldobjects, test)
     if test == true then
         return ISWorldObjectContextMenu.setTest()
     end
-    if cachedObeliskType(obelisk) == BLESSING_TYPE then
+    local obeliskType = cachedObeliskType(obelisk)
+    if obeliskType == BLESSING_TYPE then
         addBlessingOption(context, worldobjects, player)
-    else
+    elseif obeliskType ~= EXTRACTION_TYPE then
         context:addOption(
             "Recover Skills",
             worldobjects,

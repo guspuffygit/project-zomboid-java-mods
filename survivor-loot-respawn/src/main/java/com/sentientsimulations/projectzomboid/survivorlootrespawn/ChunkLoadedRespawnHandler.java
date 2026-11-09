@@ -33,7 +33,6 @@ import zombie.network.ServerMap;
 import zombie.network.packets.INetworkPacket;
 import zombie.scripting.objects.ContainerType;
 import zombie.scripting.objects.ResourceLocation;
-import zombie.util.list.PZArrayList;
 
 /**
  * Respawns loot in a chunk as it streams in. The flow is split across threads to keep SQLite I/O
@@ -170,7 +169,7 @@ public final class ChunkLoadedRespawnHandler {
             return;
         }
         int idx = 0;
-        PZArrayList<IsoObject> objects = sq.getObjects();
+        List<IsoObject> objects = sq.getObjects();
         for (int oi = 0; oi < objects.size(); oi++) {
             IsoObject obj = objects.get(oi);
             if (VanillaLootRespawnGate.isExcludedObject(obj)) {
@@ -394,7 +393,7 @@ public final class ChunkLoadedRespawnHandler {
         }
 
         int idx = 0;
-        PZArrayList<IsoObject> objects = sq.getObjects();
+        List<IsoObject> objects = sq.getObjects();
         for (int oi = 0; oi < objects.size(); oi++) {
             IsoObject obj = objects.get(oi);
             int count = obj.getContainerCount();

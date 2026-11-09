@@ -1,6 +1,7 @@
 package com.sentientsimulations.projectzomboid.extralogging.containerhistory;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import zombie.inventory.InventoryItem;
 import zombie.inventory.ItemContainer;
@@ -8,7 +9,6 @@ import zombie.iso.IsoGridSquare;
 import zombie.iso.IsoObject;
 import zombie.iso.objects.IsoWorldInventoryObject;
 import zombie.network.GameServer;
-import zombie.util.list.PZArrayList;
 
 /**
  * Captures items spawned into a world container by {@code ItemPickerJava.fillContainer} (initial
@@ -86,7 +86,7 @@ public final class ContainerLootSpawnHandler {
 
         IsoObject parent = container.getParent();
         if (parent != null) {
-            PZArrayList<IsoObject> objects = sq.getObjects();
+            List<IsoObject> objects = sq.getObjects();
             for (int i = 0; i < objects.size(); i++) {
                 if (objects.get(i) == parent) {
                     int containerIdx = parent.getContainerIndex(container);
@@ -108,7 +108,7 @@ public final class ContainerLootSpawnHandler {
         if (containingItem != null) {
             IsoWorldInventoryObject worldItem = containingItem.getWorldItem();
             if (worldItem != null) {
-                PZArrayList<IsoObject> objects = sq.getObjects();
+                List<IsoObject> objects = sq.getObjects();
                 for (int i = 0; i < objects.size(); i++) {
                     if (objects.get(i) == worldItem) {
                         return "worlditem:"

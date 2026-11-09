@@ -13,9 +13,9 @@ import net.bytebuddy.pool.TypePool;
  * Brush-tool placement runs the tiles through {@code ISMoveableSpriteProps:placeMoveableInternal},
  * and the obelisk sprites carry the {@code solid} flag, so they land in the world as {@code
  * IsoThumpable} with {@code isThumpable=true} — zombie thump damage ({@code Thump}) and player
- * melee damage ({@code WeaponHit}) both gate on this method server-side, so a null return makes
- * zombies path around obelisks and turns weapon hits into no-ops. The two-argument overload
- * delegates here for anything that is not a window.
+ * melee damage ({@code Hit}) both gate on this method server-side, so a null return makes zombies
+ * path around obelisks and turns weapon hits into no-ops. The two-argument overload delegates here
+ * for anything that is not a window.
  */
 public class IsoThumpableGetThumpableForPatch extends StormClassTransformer {
 

@@ -15,7 +15,7 @@ import net.bytebuddy.pool.TypePool;
  * the flags the hits carried and whether the target's body took damage.
  *
  * <p>Re-validate on game updates: assumes {@code process()} applies the hits synchronously through
- * {@code WeaponHit.process} and {@code IsoGameCharacter.Hit}.
+ * {@code Hit.process} and {@code IsoGameCharacter.Hit}.
  */
 public class PvpHitProcessPatch extends StormClassTransformer {
 

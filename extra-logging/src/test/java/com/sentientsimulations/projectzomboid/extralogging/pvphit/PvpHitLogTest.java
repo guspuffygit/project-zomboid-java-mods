@@ -8,8 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import zombie.CombatManager;
 import zombie.network.GameServer;
-import zombie.network.fields.hit.WeaponHit;
+import zombie.network.fields.hit.Hit;
 import zombie.network.packets.hit.PlayerHitPlayerPacket;
 
 class PvpHitLogTest {
@@ -17,7 +18,7 @@ class PvpHitLogTest {
     @Test
     void sentFlagsSurviveALaterRewrite() {
         PlayerHitPlayerPacket packet = new PlayerHitPlayerPacket();
-        List<WeaponHit> hits = PvpHitServerLog.hits(packet);
+        List<Hit> hits = PvpHitServerLog.hits(packet);
         hits.add(hit(true));
         hits.add(hit(false));
 
@@ -46,11 +47,12 @@ class PvpHitLogTest {
     }
 
     @Test
-    void hitPartNamesMatchWeaponHitEncoding() {
-        assertEquals("head", PvpHitServerLog.hitPartName((byte) 1));
-        assertEquals("legs", PvpHitServerLog.hitPartName((byte) 2));
-        assertEquals("other", PvpHitServerLog.hitPartName((byte) 4));
-        assertEquals("unknown:9", PvpHitServerLog.hitPartName((byte) 9));
+    void hitPartNamesMatchHitEncoding() {
+        assertEquals("head", PvpHitServerLog.hitPartName((byte) 1, false));
+        assertEquals("head", PvpHitServerLog.hitPartName((byte) 2, true));
+        assertEquals("legs", PvpHitServerLog.hitPartName((byte) 0, true));
+        assertEquals("other", PvpHitServerLog.hitPartName((byte) 0, false));
+        assertEquals("legs", PvpHitServerLog.hitPartName(hit(false, (byte) 0, true)));
     }
 
     @Test
@@ -76,15 +78,28 @@ class PvpHitLogTest {
         assertTrue(Float.isNaN(PvpShotClientLog.beforeReset(new Object())));
         PvpShotClientLog.onIdleEnter(new Object());
         PvpShotClientLog.beforeCollision(new Object(), new Object());
-        PvpShotClientLog.onClientHit(new Object(), true);
+        PvpShotClientLog.onClientHit(new Object(), hitData(true));
         PvpShotClientLog.afterCollision(new Object());
         assertEquals("none", PvpShotClientLog.targetType(null));
         assertEquals("Object", PvpShotClientLog.targetType(new Object()));
     }
 
-    private static WeaponHit hit(boolean ignoreDamage) {
-        WeaponHit hit = new WeaponHit();
-        hit.set(1.0F, 2.0F, 0.0F, 0.0F, 0.0F, false, false, false, ignoreDamage);
+    private static Hit hit(boolean ignoreDamage) {
+        return hit(ignoreDamage, (byte) 0, false);
+    }
+
+    private static Hit hit(boolean ignoreDamage, byte hitHead, boolean hitLegs) {
+        Hit hit = new Hit();
+        hit.set(1.0F, 0.0F, 0.0F, hitData(ignoreDamage, hitHead, hitLegs), false, 0.0F);
         return hit;
+    }
+
+    private static CombatManager.HitData hitData(boolean ignoreDamage) {
+        return hitData(ignoreDamage, (byte) 0, false);
+    }
+
+    private static CombatManager.HitData hitData(
+            boolean ignoreDamage, byte hitHead, boolean hitLegs) {
+        return new CombatManager.HitData(hitHead, hitLegs, ignoreDamage, false, true);
     }
 }

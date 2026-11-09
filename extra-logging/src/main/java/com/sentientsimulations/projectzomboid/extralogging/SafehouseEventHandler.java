@@ -15,7 +15,7 @@ public class SafehouseEventHandler {
                     "SafehouseClaim: steamId={}, user={}, player={}, square=(x{},y{},z{}), title={}",
                     event.steamId,
                     event.username,
-                    event.getPacket().getPlayer().getUsername(),
+                    event.getPacket().getUsername(),
                     square.getX(),
                     square.getY(),
                     square.getZ(),
@@ -175,7 +175,7 @@ public class SafehouseEventHandler {
                     "SafezoneClaim: steamId={}, user={}, player={}, square=(x{},y{}), title={}",
                     event.steamId,
                     event.username,
-                    event.getPacket().getPlayer().getUsername(),
+                    event.getPacket().getUsername(),
                     intField(event, "x"),
                     intField(event, "y"),
                     event.getPacket().getTitle());

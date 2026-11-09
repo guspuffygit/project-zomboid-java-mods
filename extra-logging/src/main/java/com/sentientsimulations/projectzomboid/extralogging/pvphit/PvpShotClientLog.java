@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
+import zombie.CombatManager;
 import zombie.SandboxOptions;
 import zombie.characters.IsoGameCharacter;
 import zombie.characters.IsoPlayer;
@@ -32,8 +33,10 @@ import zombie.network.fields.hit.HitInfo;
  * <ul>
  *   <li>{@code shot}: one line per aimed-firearm shot. It carries the aim delay at trigger pull,
  *       after the post-shot penalty, and at the roll. It also carries the action and AI state, and
- *       every candidate target with its hit chance and roll outcome. {@code missIgnoreDamage} is a
- *       failed roll that {@code FirearmUseDamageChance=3} still sends as a zero-damage hit.
+ *       every candidate target with its hit chance and queued outcome. {@code missIgnoreDamage} is
+ *       a failed roll that {@code FirearmUseDamageChance=3} still sends as a zero-damage hit. Only
+ *       zombie hits are rolled on the client; player and animal hits are always queued and the
+ *       server rolls them.
  *   <li>{@code idleWhileAiming}: {@code IdleState} entered while the aiming flag was set. Entering
  *       idle clears the flag.
  *   <li>{@code aimDelayReset}: the aim delay jumped back up within {@value #RESET_WINDOW_MS} ms of
@@ -136,11 +139,11 @@ public final class PvpShotClientLog {
                         : null;
     }
 
-    public static void onClientHit(Object target, boolean ignoreDamage) {
+    public static void onClientHit(Object target, Object hitDataObj) {
         if (shot != null && target != null) {
             int[] counts = shot.sent.computeIfAbsent(target, k -> new int[2]);
             counts[0]++;
-            if (ignoreDamage) {
+            if (hitDataObj instanceof CombatManager.HitData hitData && hitData.isIgnoreDamage()) {
                 counts[1]++;
             }
         }
@@ -280,11 +283,7 @@ public final class PvpShotClientLog {
         if (context != null) {
             out.put("actionState", context.getCurrentStateName());
             out.put("prevActionState", context.peekPreviousStateName());
-            List<String> children = new ArrayList<>();
-            for (ActionState child : context.getChildStates()) {
-                children.add(child.getName());
-            }
-            out.put("actionChildren", children);
+            out.put("actionChildren", context.getChildStates(ActionState::getName));
         }
         return out;
     }

@@ -87,6 +87,7 @@ public final class SetObeliskTypeHandler {
         }
         if (!NONE.equals(type)
                 && !ObeliskTypes.BLESSING.equals(type)
+                && !ObeliskTypes.EXTRACTION.equals(type)
                 && PerkFactory.Perks.FromString(type) == null) {
             LOGGER.warn(
                     "[SurvivorSkillObelisk] setObeliskType from {} with unknown perk '{}';"

@@ -16,6 +16,7 @@ local UPDATED_REPLY = "obeliskUpdated"
 local REMOVED_REPLY = "obeliskRemoved"
 local NONE_TYPE = "None"
 local BLESSING_TYPE = "Blessing"
+local EXTRACTION_TYPE = "Extraction"
 
 local DOT_R, DOT_G, DOT_B = 52 / 255, 88 / 255, 235 / 255
 local DOT_ALPHA_CONFIGURED = 0.95
@@ -200,6 +201,9 @@ local function obeliskLabel(typeId)
     if typeId == nil or typeId == "" or typeId == NONE_TYPE then
         return "Obelisk", false
     end
+    if typeId == EXTRACTION_TYPE then
+        return "Extraction Obelisk", true
+    end
     local perk = PerkFactory.Perks.FromString(typeId)
     local perkName = perk and perk:getName() or typeId
     return perkName .. " Obelisk", true
@@ -240,7 +244,7 @@ local function renderObelisk(mapUI, obelisk)
 end
 
 local function mapOptionFor(typeId)
-    if typeId == nil or typeId == "" or typeId == NONE_TYPE then
+    if typeId == nil or typeId == "" or typeId == NONE_TYPE or typeId == EXTRACTION_TYPE then
         return "MapShowGeneralObelisks"
     end
     if typeId == BLESSING_TYPE then

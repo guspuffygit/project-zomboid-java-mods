@@ -7,12 +7,12 @@ import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.Containe
 import com.sentientsimulations.projectzomboid.survivorlootrespawn.state.SurvivorLootRespawnDatabase;
 import io.pzstorm.storm.event.core.SubscribeEvent;
 import io.pzstorm.storm.event.zomboid.OnContainerLootedEvent;
+import java.util.List;
 import zombie.GameTime;
 import zombie.SandboxOptions;
 import zombie.inventory.ItemContainer;
 import zombie.iso.IsoGridSquare;
 import zombie.iso.IsoObject;
-import zombie.util.list.PZArrayList;
 
 public final class ContainerLootedHandler {
 
@@ -104,7 +104,7 @@ public final class ContainerLootedHandler {
 
     private static int computeContainerIndex(IsoGridSquare sq, ItemContainer target) {
         int idx = 0;
-        PZArrayList<IsoObject> objects = sq.getObjects();
+        List<IsoObject> objects = sq.getObjects();
         for (int oi = 0; oi < objects.size(); oi++) {
             IsoObject obj = objects.get(oi);
             int count = obj.getContainerCount();

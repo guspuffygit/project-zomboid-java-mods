@@ -20,8 +20,8 @@ import zombie.characters.IsoGameCharacter;
 import zombie.characters.IsoPlayer;
 import zombie.inventory.types.HandWeapon;
 import zombie.network.GameServer;
-import zombie.network.fields.hit.WeaponHit;
-import zombie.network.packets.hit.PlayerHitCharacter;
+import zombie.network.fields.hit.Hit;
+import zombie.network.packets.hit.PlayerHit;
 import zombie.network.packets.hit.PlayerHitPlayerPacket;
 
 /**
@@ -30,8 +30,9 @@ import zombie.network.packets.hit.PlayerHitPlayerPacket;
  *
  * <ul>
  *   <li>{@code ignoreDamageSent} is the flag as it came off the wire. It is captured when {@code
- *       PlayerHitCharacter.parse} returns, before any mod's {@code PlayerHitPlayerPacket.parse}
- *       exit advice can rewrite it.
+ *       PlayerHit.parse} returns, before any mod's {@code PlayerHitPlayerPacket.parse} exit advice
+ *       can rewrite it. The server's own roll in {@code preProcess} may later set it or drop the
+ *       hit, so {@code hits} at process time can be shorter than the sent flags.
  *   <li>{@code ignoreDamageApplied} is the flag {@code process()} actually hands to {@code
  *       IsoGameCharacter.Hit}.
  *   <li>{@code damageFromWeaponCalls} counts {@code BodyDamage.DamageFromWeapon} calls on the
@@ -40,8 +41,9 @@ import zombie.network.packets.hit.PlayerHitPlayerPacket;
  *       overallBodyHealth} is only recomputed in the body damage update, so it lags a tick.
  * </ul>
  *
- * <p>A shot the client rolled as a miss under {@code FirearmUseDamageChance} 1 or 2 never reaches
- * the server, so it has no line here. The client log records it.
+ * <p>Player hits are rolled on the server since 42.22. A hit the server rolls as a miss under
+ * {@code FirearmUseDamageChance} 1 or 2 is removed before {@code process()} and shows up here as a
+ * sent flag with no matching hit.
  *
  * <p>Methods take {@code Object} so the inlined advice carries no game-class checkcasts.
  */
@@ -51,30 +53,34 @@ public final class PvpHitServerLog {
 
     private static final VarHandle HITS;
     private static final VarHandle IGNORE_DAMAGE;
-    private static final VarHandle RANGE;
-    private static final VarHandle HIT_PART;
+    private static final VarHandle HIT_HEAD;
+    private static final VarHandle HIT_LEGS;
+    private static final VarHandle HIT_DAMAGE;
 
     static {
         VarHandle hits = null;
         VarHandle ignoreDamage = null;
-        VarHandle range = null;
-        VarHandle hitPart = null;
+        VarHandle hitHead = null;
+        VarHandle hitLegs = null;
+        VarHandle hitDamage = null;
         try {
             MethodHandles.Lookup packet =
-                    MethodHandles.privateLookupIn(PlayerHitCharacter.class, MethodHandles.lookup());
-            hits = packet.findVarHandle(PlayerHitCharacter.class, "hits", List.class);
+                    MethodHandles.privateLookupIn(PlayerHit.class, MethodHandles.lookup());
+            hits = packet.findVarHandle(PlayerHit.class, "hits", List.class);
             MethodHandles.Lookup hit =
-                    MethodHandles.privateLookupIn(WeaponHit.class, MethodHandles.lookup());
-            ignoreDamage = hit.findVarHandle(WeaponHit.class, "ignoreDamage", boolean.class);
-            range = hit.findVarHandle(WeaponHit.class, "range", float.class);
-            hitPart = hit.findVarHandle(WeaponHit.class, "hitPart", byte.class);
+                    MethodHandles.privateLookupIn(Hit.class, MethodHandles.lookup());
+            ignoreDamage = hit.findVarHandle(Hit.class, "isIgnoreDamage", boolean.class);
+            hitHead = hit.findVarHandle(Hit.class, "hitHead", byte.class);
+            hitLegs = hit.findVarHandle(Hit.class, "isHitLegs", boolean.class);
+            hitDamage = hit.findVarHandle(Hit.class, "hitDamage", float.class);
         } catch (ReflectiveOperationException | RuntimeException e) {
             LOGGER.warn("extra-logging: PvP hit audit cannot read hit fields", e);
         }
         HITS = hits;
         IGNORE_DAMAGE = ignoreDamage;
-        RANGE = range;
-        HIT_PART = hitPart;
+        HIT_HEAD = hitHead;
+        HIT_LEGS = hitLegs;
+        HIT_DAMAGE = hitDamage;
     }
 
     private static final Map<PlayerHitPlayerPacket, boolean[]> SENT_FLAGS =
@@ -115,7 +121,9 @@ public final class PvpHitServerLog {
         if (!GameServer.server || !(packetObj instanceof PlayerHitPlayerPacket packet)) {
             return null;
         }
-        Before before = new Before(packet.getTarget(), SENT_FLAGS.remove(packet));
+        IsoGameCharacter target =
+                packet.getTarget() instanceof IsoGameCharacter character ? character : null;
+        Before before = new Before(target, SENT_FLAGS.remove(packet));
         PROCESSING.set(before);
         return before;
     }
@@ -148,7 +156,7 @@ public final class PvpHitServerLog {
     static Map<String, Object> record(PlayerHitPlayerPacket packet, Before before) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("ts", System.currentTimeMillis());
-        IsoPlayer shooter = packet.getWielder();
+        IsoPlayer shooter = packet.getPlayer();
         IsoGameCharacter target = before.target;
         out.put("shooter", shooter == null ? null : shooter.getUsername());
         out.put("target", target instanceof IsoPlayer p ? p.getUsername() : null);
@@ -164,14 +172,13 @@ public final class PvpHitServerLog {
             out.put("targetState", PvpHitStates.movement(target));
         }
 
-        List<WeaponHit> hits = hits(packet);
+        List<Hit> hits = hits(packet);
         List<Map<String, Object>> hitList = new ArrayList<>();
         for (int i = 0; i < hits.size(); i++) {
-            WeaponHit hit = hits.get(i);
+            Hit hit = hits.get(i);
             Map<String, Object> h = new LinkedHashMap<>();
-            h.put("damage", hit.getDamage());
-            h.put("range", RANGE == null ? null : (float) RANGE.get(hit));
-            h.put("part", HIT_PART == null ? null : hitPartName((byte) HIT_PART.get(hit)));
+            h.put("damage", HIT_DAMAGE == null ? null : (float) HIT_DAMAGE.get(hit));
+            h.put("part", hitPartName(hit));
             boolean[] sent = before.ignoreDamageSent;
             h.put("ignoreDamageSent", sent != null && i < sent.length ? sent[i] : null);
             h.put("ignoreDamageApplied", ignoreDamage(hit));
@@ -190,15 +197,15 @@ public final class PvpHitServerLog {
     }
 
     @SuppressWarnings("unchecked")
-    static List<WeaponHit> hits(PlayerHitCharacter packet) {
+    static List<Hit> hits(PlayerHit packet) {
         if (HITS == null) {
             return List.of();
         }
-        List<WeaponHit> hits = (List<WeaponHit>) HITS.get(packet);
+        List<Hit> hits = (List<Hit>) HITS.get(packet);
         return hits == null ? List.of() : hits;
     }
 
-    static boolean[] ignoreFlags(List<WeaponHit> hits) {
+    static boolean[] ignoreFlags(List<Hit> hits) {
         boolean[] flags = new boolean[hits.size()];
         for (int i = 0; i < flags.length; i++) {
             Boolean flag = ignoreDamage(hits.get(i));
@@ -207,17 +214,22 @@ public final class PvpHitServerLog {
         return flags;
     }
 
-    static Boolean ignoreDamage(WeaponHit hit) {
+    static Boolean ignoreDamage(Hit hit) {
         return IGNORE_DAMAGE == null ? null : (boolean) IGNORE_DAMAGE.get(hit);
     }
 
-    static String hitPartName(byte part) {
-        return switch (part) {
-            case 1 -> "head";
-            case 2 -> "legs";
-            case 4 -> "other";
-            default -> "unknown:" + part;
-        };
+    static String hitPartName(Hit hit) {
+        if (HIT_HEAD == null || HIT_LEGS == null) {
+            return null;
+        }
+        return hitPartName((byte) HIT_HEAD.get(hit), (boolean) HIT_LEGS.get(hit));
+    }
+
+    static String hitPartName(byte hitHead, boolean hitLegs) {
+        if (hitHead > 0) {
+            return "head";
+        }
+        return hitLegs ? "legs" : "other";
     }
 
     static float partHealth(IsoGameCharacter character) {
